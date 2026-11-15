@@ -85,6 +85,9 @@ public partial class TDebt
     public virtual MManagementPeriod Period { get; set; } = null!;
 
     [InverseProperty("Debt")]
+    public virtual ICollection<TDebtAttachment> TDebtAttachments { get; set; } = new List<TDebtAttachment>();
+
+    [InverseProperty("Debt")]
     public virtual ICollection<TDebtPayment> TDebtPayments { get; set; } = new List<TDebtPayment>();
 
     [ForeignKey("TransactionId")]

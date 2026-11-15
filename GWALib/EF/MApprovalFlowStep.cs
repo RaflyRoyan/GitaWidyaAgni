@@ -46,13 +46,13 @@ public partial class MApprovalFlowStep
     public int? PositionId { get; set; }
 
     /// <summary>
-    /// Untuk approver_type 1 dan 3
+    /// Role yang menyetujui (approver_type=1)
     /// </summary>
     [Column("role_id")]
     public int? RoleId { get; set; }
 
     /// <summary>
-    /// Untuk approver_type 6
+    /// User tertentu yang menyetujui (approver_type=3)
     /// </summary>
     [Column("user_id")]
     public int? UserId { get; set; }

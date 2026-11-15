@@ -4,7 +4,7 @@ Library backend .NET 8 untuk sistem manajemen **satu organisasi**: anggota dan k
 
 Organisasi adalah level tertinggi. Tidak ada tenant, kampus, kategori UKM, atau pegawai.
 
-> Status: tahap awal. `GWAShared` sudah berisi helper dan enum. `GWALib` sudah berisi model EF Core hasil scaffold (`GWALib/EF`), tetapi layer service-nya belum dibuat.
+> Status: dalam pengembangan. `GWAShared` sudah berisi helper dan enum. `GWALib` sudah punya model EF Core (`GWALib/EF`) dan layer service untuk semua tabel master (`GWALib/Lib/Master`). Service untuk tabel transaksi (`GWALib/Lib/Transaksi`) belum dibuat.
 
 ## Struktur solution
 
@@ -17,7 +17,9 @@ GitaWidyaAgni.sln
 │   ├── Results/      Response<T>, ResponseFactory, ResponseMessages, ExceptionMessage
 │   └── Utilities/    Crypto, File, Session, Validate
 └── GWALib/           Akses data dan logika bisnis (mereferensikan GWAShared)
-    └── EF/           Entity dan ModelContext hasil scaffold database-first (Pomelo MySQL)
+    ├── EF/           Entity dan ModelContext hasil scaffold database-first (Pomelo MySQL)
+    ├── General/      Koneksi, penanganan error, utilitas (id dari m_sequence, gambar, validasi)
+    └── Lib/          Service per tabel: Master/<Modul>/ dan Transaksi/<Modul>/
 ```
 
 Struktur dan konvensinya mengikuti project ClubSphere (ClubLib / ClubShared).
@@ -37,7 +39,7 @@ Belum ada project test.
 
 ## Database
 
-- Skrip pembuatan database: `gitawidyaagni_create.sql` (MySQL 8.0, database `gitawidyaagni`, collation `utf8mb4_0900_ai_ci`). Skrip ini berisi 130 tabel dan 263 relasi.
+- Skrip pembuatan database: `gitawidyaagni_create.sql` (MySQL 8.0, database `gitawidyaagni`, collation `utf8mb4_0900_ai_ci`). Skrip ini berisi 131 tabel dan 264 relasi.
 - ERD: https://claude.ai/artifact/MvmojvM5z8kKz7SEwtjdJV
 - Konvensi:
   - Prefix `m_*` untuk data master dan `t_*` untuk data transaksi.

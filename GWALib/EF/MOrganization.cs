@@ -16,6 +16,13 @@ public partial class MOrganization
     [Column("id")]
     public int Id { get; set; }
 
+    /// <summary>
+    /// Kode singkat organisasi, mis. GWA | isi placeholder {org} pada penomoran dokumen
+    /// </summary>
+    [Column("code")]
+    [StringLength(20)]
+    public string Code { get; set; } = null!;
+
     [Column("name")]
     [StringLength(150)]
     public string Name { get; set; } = null!;

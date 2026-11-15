@@ -169,6 +169,8 @@ public partial class ModelContext : DbContext
 
     public virtual DbSet<TDebt> TDebts { get; set; }
 
+    public virtual DbSet<TDebtAttachment> TDebtAttachments { get; set; }
+
     public virtual DbSet<TDebtPayment> TDebtPayments { get; set; }
 
     public virtual DbSet<TDivisionMember> TDivisionMembers { get; set; }
@@ -324,10 +326,10 @@ public partial class ModelContext : DbContext
             entity.Property(e => e.ApproverType).HasComment("1=ROLE (role pengurus), 2=JABATAN (position_id), 3=USER_TERTENTU (user_id)");
             entity.Property(e => e.InsDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.PositionId).HasComment("Jabatan pengurus yang menyetujui (approver_type=2)");
-            entity.Property(e => e.RoleId).HasComment("Untuk approver_type 1 dan 3");
+            entity.Property(e => e.RoleId).HasComment("Role yang menyetujui (approver_type=1)");
             entity.Property(e => e.StepLevel).HasComment("Urutan, mulai 1");
             entity.Property(e => e.StepName).HasComment("mis. Bendahara, Ketua Umum");
-            entity.Property(e => e.UserId).HasComment("Untuk approver_type 6");
+            entity.Property(e => e.UserId).HasComment("User tertentu yang menyetujui (approver_type=3)");
 
             entity.HasOne(d => d.Flow).WithMany(p => p.MApprovalFlowSteps)
                 .OnDelete(DeleteBehavior.ClientSetNull)
@@ -715,6 +717,7 @@ public partial class ModelContext : DbContext
             entity.ToTable("m_organization", tb => tb.HasComment("Profil organisasi (satu baris)"));
 
             entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Code).HasComment("Kode singkat organisasi, mis. GWA | isi placeholder {org} pada penomoran dokumen");
             entity.Property(e => e.AdvisorEmail).HasComment("Email pembina");
             entity.Property(e => e.AdvisorName).HasComment("Nama pembina (hanya dicatat, bukan akun)");
             entity.Property(e => e.AdvisorPhone).HasComment("Kontak pembina");
@@ -1675,6 +1678,17 @@ public partial class ModelContext : DbContext
                 .HasConstraintName("fk_debt_period");
 
             entity.HasOne(d => d.Transaction).WithMany(p => p.TDebts).HasConstraintName("fk_debt_trx");
+        });
+
+        modelBuilder.Entity<TDebtAttachment>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.FileData).HasComment("Bukti hutang (surat perjanjian, nota, faktur, foto)");
+            entity.Property(e => e.InsDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(d => d.Debt).WithMany(p => p.TDebtAttachments).HasConstraintName("fk_debtattach_debt");
         });
 
         modelBuilder.Entity<TDebtPayment>(entity =>
