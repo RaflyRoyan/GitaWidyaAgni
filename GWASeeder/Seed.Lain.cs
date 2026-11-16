@@ -258,7 +258,7 @@ namespace GWASeeder
             election = Ok(election.Close(Admin), "Tutup pemungutan suara");
             Ok(election.Finalize(Admin), "Finalisasi hasil");
 
-            var open = Ok(Election.Save(new Election.NewRow { Title = "Pemilihan Koordinator Divisi Battery", PeriodId = PeriodActive.Id, StartAt = DateTime.Now.AddHours(-1), EndAt = DateTime.Now.AddDays(5) }, Admin), "Pemilihan 2");
+            var open = Ok(Election.Save(new Election.NewRow { Title = "Pemilihan Kepala Divisi Battery", PeriodId = PeriodActive.Id, StartAt = DateTime.Now.AddHours(-1), EndAt = DateTime.Now.AddDays(5) }, Admin), "Pemilihan 2");
             foreach (var m in new[] { 6, 15 })
             {
                 var c = Ok(ElectionCandidate.Register(new ElectionCandidate.NewRow { ElectionId = open.Id, MemberId = Members[m].Id, Vision = "Battery solid" }, Admin), "Kandidat battery");

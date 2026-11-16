@@ -17,10 +17,10 @@ namespace GWASeeder
         {
             var start = D(2025, 9, 1);
             Ok(ManagementAssignment.Save(new ManagementAssignment.NewRow { PeriodId = PeriodOld.Id, MemberId = KetuaLama.Id, PositionId = Positions["Ketua Umum"], SkNumber = "SK/01/GWA/IX/2025", StartDate = start }, Admin), "Ketua lama");
-            Ok(ManagementAssignment.Save(new ManagementAssignment.NewRow { PeriodId = PeriodOld.Id, MemberId = Ketua.Id, PositionId = Positions["Wakil Ketua"], SkNumber = "SK/01/GWA/IX/2025", StartDate = start }, Admin), "Wakil lama");
+            Ok(ManagementAssignment.Save(new ManagementAssignment.NewRow { PeriodId = PeriodOld.Id, MemberId = Ketua.Id, PositionId = Positions["Wakil Ketua Umum"], SkNumber = "SK/01/GWA/IX/2025", StartDate = start }, Admin), "Wakil lama");
             Ok(ManagementAssignment.Save(new ManagementAssignment.NewRow { PeriodId = PeriodOld.Id, MemberId = Sekretaris.Id, PositionId = Positions["Sekretaris"], StartDate = start }, Admin), "Sekretaris lama");
             Ok(ManagementAssignment.Save(new ManagementAssignment.NewRow { PeriodId = PeriodOld.Id, MemberId = Bendahara.Id, PositionId = Positions["Bendahara"], StartDate = start }, Admin), "Bendahara lama");
-            Ok(DivisionMember.Save(new DivisionMember.NewRow { DivisionId = Divisions["Battery"], MemberId = KetuaLama.Id, PeriodId = PeriodOld.Id, MemberRole = "Koordinator", JoinedAt = start }, Admin), "Divisi lama");
+            Ok(DivisionMember.Save(new DivisionMember.NewRow { DivisionId = Divisions["Battery"], MemberId = KetuaLama.Id, PeriodId = PeriodOld.Id, MemberRole = "Kepala Divisi", JoinedAt = start }, Admin), "Divisi lama");
 
             ProgramOldConcert = Ok(WorkProgram.Save(new WorkProgram.NewRow
             {
@@ -64,14 +64,14 @@ namespace GWASeeder
                 Assignments[member.Fullname] = row.Id;
             }
             Assign(Ketua, "Ketua Umum");
-            Assign(Wakil, "Wakil Ketua");
+            Assign(Wakil, "Wakil Ketua Umum");
             Assign(Sekretaris, "Sekretaris");
             Assign(Bendahara, "Bendahara");
             var coordinators = new (int Member, string Division)[] { (5, "Brass"), (6, "Battery"), (7, "Colour Guard"), (8, "Front Ensemble"), (9, "Logistik"), (10, "Humas & Media") };
             foreach (var (index, division) in coordinators)
             {
-                Assign(Members[index], "Koordinator Divisi", division);
-                Ok(DivisionMember.Save(new DivisionMember.NewRow { DivisionId = Divisions[division], MemberId = Members[index].Id, PeriodId = PeriodActive.Id, MemberRole = "Koordinator", JoinedAt = start }, Admin), "Koordinator divisi");
+                Assign(Members[index], "Kepala Divisi", division);
+                Ok(DivisionMember.Save(new DivisionMember.NewRow { DivisionId = Divisions[division], MemberId = Members[index].Id, PeriodId = PeriodActive.Id, MemberRole = "Kepala Divisi", JoinedAt = start }, Admin), "Kepala divisi");
             }
             // Anggota tersebar ke divisi musik.
             var musicDivisions = new[] { "Brass", "Battery", "Colour Guard", "Front Ensemble" };

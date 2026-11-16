@@ -77,19 +77,72 @@ Hentikan web sebelum build ulang dari IDE. Proses web yang masih berjalan mengun
 ## Data contoh (GWASeeder)
 
 ```
-dotnet run --project GWASeeder [-- --evoting-key <base64>]
+dotnet run --project GWASeeder                    # database kosong → isi data contoh
+dotnet run --project GWASeeder -- --reset         # KOSONGKAN semua tabel lalu isi ulang (ketik RESET; --yes melewati)
+dotnet run --project GWASeeder -- --sync-akses    # hanya sinkron controller/aksi, menu, role di database yang sudah berisi
 ```
 
+Opsi tambahan: `--evoting-key <base64>` dan `--admin-password <password>`.
+
 - Mengisi semua 131 tabel lewat service GWALib, sehingga semua validasi ikut berjalan. Datanya meliputi:
-  - menu, role, dan hak akses;
+  - controller + aksi, menu sidebar (termasuk **Area Anggota**), role, dan hak akses;
   - profil MB GWA;
   - dua periode kepengurusan, dengan serah terima periode lama ke periode baru;
-  - 25 anggota;
+  - 24 anggota dengan jabatan berbeda (lihat tabel akun);
   - kegiatan, presensi, keuangan, sponsorship, pengadaan, merchandise, inventaris, surat, prestasi, formulir, e-voting, berita, dan banner.
-- Syarat: user `admin` sudah ada, dan tabel `m_organization` masih kosong. Seeder menolak jalan di database yang sudah berisi.
+- User `admin` (SUPERADMIN) dibuat otomatis bila `m_user` kosong. Password dari `--admin-password`, env `GWA_ADMIN_PASSWORD`, atau bawaan `admin12345`. Ganti setelah login pertama.
+- Tanpa `--reset`, seeder menolak jalan bila `m_organization` sudah berisi.
+- `--sync-akses` memakai katalog di `GWASeeder/Seed.Akses.cs`. Jalankan setelah menambah halaman web baru. Aksi, menu role, dan detail menu milik role katalog disamakan persis dengan katalog, jadi perubahan manual pada role itu ikut tertimpa. Role lain dibiarkan.
 - Connection string diambil dari env `GWA_DB`. Kalau tidak ada, dari `GitaWidyaAgniWeb/appsettings.Development.json`, lalu `appsettings.json`.
 - Kunci e-voting diambil dari argumen `--evoting-key`, env `GWA_EVOTING_KEY`, atau `EVoting:Key`. Kalau tidak ada, kunci dibuat acak dan dicetak di akhir. Web harus memakai kunci yang sama supaya pemilihan bisa difinalisasi.
-- Akun contoh: username = NIM anggota, password `gwa12345`. Contohnya Ketua Umum `23011010000`.
+
+### Akun contoh
+
+Password semua akun anggota: `gwa12345`.
+
+| Username | Nama | Jabatan (periode aktif) | Role |
+|---|---|---|---|
+| `admin` | Administrator | - | SUPERADMIN |
+| `ketua` | Rizky Pratama Putra | Ketua Umum | KETUA, ANGGOTA |
+| `wakil` | Nabila Ayu Lestari | Wakil Ketua Umum | WAKIL, ANGGOTA |
+| `sekretaris` | Dimas Arya Saputra | Sekretaris | SEKRETARIS, ANGGOTA |
+| `bendahara` | Salsabila Putri Ramadhani | Bendahara | BENDAHARA, ANGGOTA |
+| `kadiv.brass` | Aditya Wicaksono | Kepala Divisi Brass | KADIV, ANGGOTA |
+| `kadiv.battery` | Bagas Setiawan | Kepala Divisi Battery | KADIV, ANGGOTA |
+| `kadiv.guard` | Citra Maharani | Kepala Divisi Colour Guard | KADIV, ANGGOTA |
+| `kadiv.front` | Dewi Kartika Sari | Kepala Divisi Front Ensemble | KADIV, ANGGOTA |
+| `kadiv.logistik` | Eko Prasetyo | Kepala Divisi Logistik | KADIV, ANGGOTA |
+| `kadiv.humas` | Farah Aulia | Kepala Divisi Humas & Media | KADIV, ANGGOTA |
+| `ketua.lama` | Fajar Nugroho | Anggota (Ketua Umum periode lalu) | ANGGOTA |
+| `anggota01` … `anggota11` | 11 anggota biasa | Anggota divisi musik | ANGGOTA |
+| `alumni01`, `alumni02` | 2 alumni | Alumni | - |
+
+Hak akses per role:
+
+| Role | Menu pengelolaan |
+|---|---|
+| KETUA, WAKIL | Semua modul operasional (tanpa Akses & Pengaturan Sistem, yang khusus SUPERADMIN) |
+| SEKRETARIS | Anggota, Alumni, Rekrutmen, Kegiatan, Presensi, Surat, Dokumen, Sertifikat, Formulir, Aspirasi, Berita |
+| BENDAHARA | Transaksi, Anggaran, Pengajuan Dana, Iuran, Hutang, Pengadaan, Merchandise, Sponsorship |
+| KADIV | Program Kerja, Kegiatan, Tim Pelaksana, Presensi, Galeri, Aset, Peminjaman, Prestasi, Berita |
+| ANGGOTA | Hanya Area Anggota (semua role juga mendapat menu ini) |
+
+Siapa yang boleh menyetujui dokumen tetap ditentukan alur persetujuan: pengajuan dana dan pengadaan oleh Bendahara lalu Ketua Umum, dan surat keluar oleh Sekretaris lalu Ketua Umum.
+
+### Kosakata aksi web
+
+Setiap controller pengelolaan punya aksi `Index`, `Create`, `Edit`, dan `Delete`, ditambah sebagian dari aksi berikut sesuai modulnya:
+
+| Aksi | Untuk |
+|---|---|
+| `Index` | Membuka halaman dan semua data baca (daftar, detail, unduh file) |
+| `Create` / `Edit` / `Delete` | Data utama maupun data anak di halaman itu |
+| `Submit` | Mengajukan dokumen ke alur persetujuan |
+| `Approve` | Menyetujui, menolak, atau meminta revisi |
+| `Process` | Perubahan status operasional (buka/tutup, publikasi, checkout, pengembalian, dan sejenisnya) |
+| `Payment` | Menerima, mencatat, atau membatalkan pembayaran yang membuat transaksi keuangan |
+
+Controller Area Anggota (`ProfilSaya`, `PresensiSaya`, `KegiatanSaya`, `IuranSaya`, `PeminjamanSaya`, `Toko`, `FormulirSaya`, `Pemilihan`, `PrestasiSaya`, `DisposisiSaya`, `Notifikasi`) cukup login.
 
 ## Konfigurasi library saat startup
 

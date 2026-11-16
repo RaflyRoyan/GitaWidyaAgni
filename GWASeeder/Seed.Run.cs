@@ -2,10 +2,14 @@ namespace GWASeeder
 {
     internal static partial class Seed
     {
+        // Hanya katalog hak akses, untuk database yang sudah berisi (mis. setelah halaman web baru ditambahkan).
+        public static void RunSyncAccess()
+        {
+            Section("Sinkron hak akses: controller, menu, role"); SyncAccess();
+        }
         public static void RunAll()
         {
-            Section("Menu & controller"); SeedMenu();
-            Section("Role & hak akses"); SeedRoles();
+            Section("Hak akses: controller, menu, role"); SyncAccess();
             Section("Profil organisasi & pengaturan situs"); SeedOrganization();
             Section("Periode, divisi, jabatan"); SeedPeriods();
             Section("User & anggota"); SeedMembers();

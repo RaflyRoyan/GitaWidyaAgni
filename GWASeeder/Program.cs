@@ -8,10 +8,14 @@ using GWAShared.Enums;
 using GWASeeder;
 
 // Pemakaian (dari folder repo):
-//   dotnet run --project GWASeeder [-- --evoting-key <base64 32 byte>]
+//   dotnet run --project GWASeeder                      isi database kosong dengan data contoh
+//   dotnet run --project GWASeeder -- --reset           KOSONGKAN semua tabel lalu isi ulang (minta ketik RESET; --yes melewati)
+//   dotnet run --project GWASeeder -- --sync-akses      hanya sinkron controller/aksi, menu, dan role (database yang sudah berisi)
+// Opsi lain: --evoting-key <base64 32 byte>, --admin-password <password>.
 // Connection string: env GWA_DB, lalu GitaWidyaAgniWeb/appsettings.Development.json, lalu appsettings.json (ConnectionStrings:Default).
 // Kunci e-voting: argumen --evoting-key, env GWA_EVOTING_KEY, atau EVoting:Key di appsettings; bila kosong dibuat acak dan dicetak.
-// Butuh user "admin" (dibuat web lewat Bootstrap) dan database yang belum di-seed (m_organization kosong).
+// User "admin" (SUPERADMIN) dibuat otomatis bila m_user masih kosong; password dari --admin-password, env GWA_ADMIN_PASSWORD,
+// atau DEFAULT_ADMIN_PASSWORD.
 
 var repoRoot = FindRepoRoot();
 var webDir = Path.Combine(repoRoot, "GitaWidyaAgniWeb");
@@ -50,18 +54,63 @@ if (string.IsNullOrWhiteSpace(evotingKey))
 }
 ElectionVote.ConfigureKey(evotingKey);
 
+string? Arg(string name)
+{
+    var i = Array.IndexOf(args, name);
+    return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
+}
+var reset = args.Contains("--reset");
+var syncOnly = args.Contains("--sync-akses");
+
+if (reset)
+{
+    Console.WriteLine("PERINGATAN: --reset menghapus SELURUH isi database (semua tabel, termasuk user) lalu mengisi ulang data contoh.");
+    if (!args.Contains("--yes"))
+    {
+        Console.Write("Ketik RESET untuk melanjutkan: ");
+        if (Console.ReadLine()?.Trim() != "RESET")
+        {
+            Console.WriteLine("Dibatalkan.");
+            return 1;
+        }
+    }
+    Console.WriteLine($"Mengosongkan {Seed.ResetDatabase()} tabel...");
+}
+
 var admin = UserAccount.GetDataList(FilterAktif.Semua).SingleOrDefault(x => x.Username == "admin");
+var adminPassword = Arg("--admin-password") ?? Environment.GetEnvironmentVariable("GWA_ADMIN_PASSWORD") ?? Seed.DEFAULT_ADMIN_PASSWORD;
+var adminCreated = false;
 if (admin == null)
 {
-    Console.Error.WriteLine("User 'admin' belum ada. Jalankan web sekali dengan Bootstrap:AdminUsername / AdminPassword.");
-    return 1;
+    admin = UserAccount.BootstrapAdmin("admin", adminPassword);
+    if (admin == null)
+    {
+        Console.Error.WriteLine("User 'admin' tidak ada, padahal m_user sudah berisi. Buat user admin dengan role SUPERADMIN, atau jalankan dengan --reset.");
+        return 1;
+    }
+    adminCreated = true;
+}
+Seed.Admin = admin.Id.ToString();
+
+if (syncOnly)
+{
+    try
+    {
+        Seed.RunSyncAccess();
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine("GAGAL: " + ex.Message);
+        return 2;
+    }
+    Console.WriteLine("Selesai. Hak akses tersinkron. Login ulang (atau tunggu 5 menit) agar cache menu web diperbarui.");
+    return 0;
 }
 if (OrganizationProfile.GetData() != null)
 {
-    Console.Error.WriteLine("Database sudah berisi data (m_organization terisi). Seeder hanya untuk database kosong.");
+    Console.Error.WriteLine("Database sudah berisi data (m_organization terisi). Pakai --reset untuk mengisi ulang, atau --sync-akses untuk hak akses saja.");
     return 1;
 }
-Seed.Admin = admin.Id.ToString();
 
 try
 {
@@ -76,7 +125,14 @@ catch (Exception ex)
 }
 
 Console.WriteLine();
-Console.WriteLine("Selesai. Password semua user contoh: " + Seed.DEFAULT_PASSWORD);
+Console.WriteLine("Selesai. Akun yang bisa dipakai login:");
+Console.WriteLine($"  {"Username",-16} {"Nama",-28} {"Jabatan",-30} Role");
+Console.WriteLine($"  {"admin",-16} {"Administrator",-28} {"-",-30} SUPERADMIN" + (adminCreated ? $"  (password: {adminPassword})" : ""));
+foreach (var a in Seed.AccountSummary)
+{
+    Console.WriteLine($"  {a.Username,-16} {a.Name,-28} {a.Jabatan,-30} {a.Roles}");
+}
+Console.WriteLine("Password semua akun contoh: " + Seed.DEFAULT_PASSWORD);
 if (generatedKey)
 {
     Console.WriteLine("Kunci e-voting dibuat acak. Simpan ke web supaya pemilihan bisa dikelola:");

@@ -13,6 +13,7 @@ namespace GWASeeder
         public static string Admin = null!;
         public static string WebRoot = null!;
         public const string DEFAULT_PASSWORD = "gwa12345";
+        public const string DEFAULT_ADMIN_PASSWORD = "admin12345";
 
         private static int _step;
 

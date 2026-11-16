@@ -19,10 +19,6 @@ namespace GWASeeder
     internal static partial class Seed
     {
         // ---- State yang dipakai bagian berikutnya ----
-        public static readonly Dictionary<string, int> Controllers = new();
-        public static readonly Dictionary<string, int> HeaderMenus = new();
-        public static readonly Dictionary<string, int> SubMenus = new();
-        public static readonly Dictionary<string, Role> Roles = new();
         public static ManagementPeriod PeriodOld = null!;
         public static ManagementPeriod PeriodActive = null!;
         public static readonly Dictionary<string, int> Divisions = new();
@@ -43,183 +39,6 @@ namespace GWASeeder
         public static ChecklistTemplate EventChecklist = null!;
 
         public static string UserOf(Member member) => MemberUser[member.Id].ToString();
-
-        // ---------------------------------------------------------------- Menu
-        private record MenuDef(string Controller, string Name, string Icon);
-        private static readonly List<(string Header, string? Controller, MenuDef[] Subs)> MenuItems = new();
-
-        private static void SeedMenu()
-        {
-            // Controller untuk halaman yang direncanakan di web; aksi standar Index / Create / Edit / Delete.
-            var controllers = new (string Name, string Description)[]
-            {
-                ("Organisasi", "Profil organisasi"), ("Periode", "Periode kepengurusan"), ("Divisi", "Divisi & tim"),
-                ("Jabatan", "Jabatan pengurus"), ("Anggota", "Data anggota"), ("Alumni", "Profil alumni"),
-                ("Rekrutmen", "Rekrutmen anggota"), ("Kepengurusan", "Penugasan pengurus"), ("ProgramKerja", "Program kerja"),
-                ("Kegiatan", "Kegiatan"), ("TimPelaksana", "Tim pelaksana kegiatan"), ("Presensi", "Presensi & notulen"),
-                ("Galeri", "Galeri kegiatan"), ("Transaksi", "Transaksi keuangan"), ("Anggaran", "Anggaran"),
-                ("PengajuanDana", "Pengajuan dana"), ("Iuran", "Iuran anggota"), ("Hutang", "Hutang organisasi"),
-                ("Aset", "Aset inventaris"), ("Peminjaman", "Peminjaman alat"), ("Pengadaan", "Pengadaan barang"),
-                ("Merchandise", "Danus & merchandise"), ("Sponsorship", "Sponsorship"), ("Mitra", "Mitra & pihak luar"),
-                ("Surat", "Persuratan"), ("Dokumen", "Arsip dokumen"), ("Prestasi", "Lomba & prestasi"),
-                ("Sertifikat", "Sertifikat"), ("Formulir", "Formulir & survei"), ("Aspirasi", "Aspirasi anggota"),
-                ("EVoting", "Pemilihan"), ("Berita", "Berita & pengumuman"), ("Banner", "Banner landing page"),
-                ("User", "User"), ("Role", "Role & hak akses"), ("Menu", "Menu & controller"), ("Pengaturan", "Pengaturan sistem")
-            };
-            foreach (var (name, description) in controllers)
-            {
-                var controller = Ok(ControllerMenu.Save(new ControllerMenu.NewRow { Name = name, IndexAction = "Index", Description = description }, Admin), "Controller " + name);
-                Ok(controller.SaveControllerActions(new[] { "Index", "Create", "Edit", "Delete" }
-                    .Select(a => new ControllerAction.NewRow { Action = a, NeedAuth = AuthRequirement.Auth, Description = $"{a} {description}" }).ToList(), Admin), "Aksi " + name);
-                Controllers[name] = controller.Id;
-            }
-
-            // Struktur menu: (section, header, icon, controller langsung atau null + sub menu).
-            var menu = new (string Section, string Header, string Icon, string? Controller, MenuDef[] Subs)[]
-            {
-                ("Organisasi", "Organisasi", "ri-building-4-line", null, new[]
-                {
-                    new MenuDef("Organisasi", "Profil Organisasi", "ri-information-line"), new MenuDef("Periode", "Periode", "ri-calendar-2-line"),
-                    new MenuDef("Divisi", "Divisi", "ri-team-line"), new MenuDef("Jabatan", "Jabatan", "ri-medal-line"),
-                    new MenuDef("Kepengurusan", "Kepengurusan", "ri-user-star-line")
-                }),
-                ("Organisasi", "Anggota", "ri-group-line", null, new[]
-                {
-                    new MenuDef("Anggota", "Data Anggota", "ri-user-line"), new MenuDef("Alumni", "Alumni", "ri-graduation-cap-line"),
-                    new MenuDef("Rekrutmen", "Rekrutmen", "ri-user-add-line")
-                }),
-                ("Program", "Program Kerja", "ri-briefcase-4-line", "ProgramKerja", Array.Empty<MenuDef>()),
-                ("Program", "Kegiatan", "ri-calendar-event-line", null, new[]
-                {
-                    new MenuDef("Kegiatan", "Daftar Kegiatan", "ri-calendar-line"), new MenuDef("TimPelaksana", "Tim Pelaksana", "ri-team-line"),
-                    new MenuDef("Presensi", "Presensi", "ri-qr-scan-2-line"), new MenuDef("Galeri", "Galeri", "ri-gallery-line")
-                }),
-                ("Keuangan", "Keuangan", "ri-wallet-3-line", null, new[]
-                {
-                    new MenuDef("Transaksi", "Transaksi", "ri-exchange-dollar-line"), new MenuDef("Anggaran", "Anggaran", "ri-file-list-3-line"),
-                    new MenuDef("PengajuanDana", "Pengajuan Dana", "ri-hand-coin-line"), new MenuDef("Iuran", "Iuran", "ri-money-dollar-circle-line"),
-                    new MenuDef("Hutang", "Hutang", "ri-bank-card-line")
-                }),
-                ("Operasional", "Inventaris", "ri-archive-line", null, new[]
-                {
-                    new MenuDef("Aset", "Aset", "ri-music-2-line"), new MenuDef("Peminjaman", "Peminjaman", "ri-swap-box-line")
-                }),
-                ("Operasional", "Pengadaan", "ri-shopping-cart-2-line", "Pengadaan", Array.Empty<MenuDef>()),
-                ("Operasional", "Merchandise", "ri-t-shirt-line", "Merchandise", Array.Empty<MenuDef>()),
-                ("Operasional", "Kemitraan", "ri-handshake-line", null, new[]
-                {
-                    new MenuDef("Mitra", "Mitra", "ri-building-line"), new MenuDef("Sponsorship", "Sponsorship", "ri-award-line")
-                }),
-                ("Operasional", "Persuratan", "ri-mail-line", null, new[]
-                {
-                    new MenuDef("Surat", "Surat", "ri-mail-send-line"), new MenuDef("Dokumen", "Arsip Dokumen", "ri-folder-2-line")
-                }),
-                ("Lainnya", "Prestasi", "ri-trophy-line", null, new[]
-                {
-                    new MenuDef("Prestasi", "Lomba & Prestasi", "ri-trophy-line"), new MenuDef("Sertifikat", "Sertifikat", "ri-file-paper-2-line")
-                }),
-                ("Lainnya", "Formulir", "ri-survey-line", null, new[]
-                {
-                    new MenuDef("Formulir", "Formulir", "ri-survey-line"), new MenuDef("Aspirasi", "Aspirasi", "ri-chat-3-line")
-                }),
-                ("Lainnya", "E-Voting", "ri-checkbox-multiple-line", "EVoting", Array.Empty<MenuDef>()),
-                ("Lainnya", "Informasi", "ri-megaphone-line", null, new[]
-                {
-                    new MenuDef("Berita", "Berita", "ri-newspaper-line"), new MenuDef("Banner", "Banner", "ri-image-line")
-                }),
-                ("Pengaturan", "Akses", "ri-shield-user-line", null, new[]
-                {
-                    new MenuDef("User", "User", "ri-user-settings-line"), new MenuDef("Role", "Role", "ri-key-2-line"),
-                    new MenuDef("Menu", "Menu", "ri-menu-line")
-                }),
-                ("Pengaturan", "Pengaturan Sistem", "ri-settings-3-line", "Pengaturan", Array.Empty<MenuDef>())
-            };
-            var seq = 1;
-            foreach (var (section, header, icon, controller, subs) in menu)
-            {
-                MenuItems.Add((header, controller, subs));
-                var row = Ok(HeaderMenu.Save(new HeaderMenu.NewRow
-                {
-                    Name = header,
-                    Section = section,
-                    ControllerId = controller == null ? null : Controllers[controller],
-                    Icon = icon,
-                    Seq = seq++
-                }, Admin), "Header menu " + header);
-                HeaderMenus[header] = row.Id;
-                if (subs.Length == 0)
-                {
-                    continue;
-                }
-                var details = new List<HeaderMenuDetail.NewRow>();
-                var detailSeq = 1;
-                foreach (var sub in subs)
-                {
-                    var subMenu = Ok(SubMenu.Save(new SubMenu.NewRow { Name = sub.Name, ControllerId = Controllers[sub.Controller], Icon = sub.Icon }, Admin), "Sub menu " + sub.Name);
-                    SubMenus[sub.Controller] = subMenu.Id;
-                    details.Add(new HeaderMenuDetail.NewRow { HeaderMenuId = row.Id, SubMenuId = subMenu.Id, Seq = detailSeq++ });
-                }
-                Ok(row.SaveHeaderMenuDetails(details, Admin), "Detail menu " + header);
-            }
-        }
-
-        // ---------------------------------------------------------------- Role
-        private static void SeedRoles()
-        {
-            var defs = new (string Code, string Name, string Description, string[] Controllers)[]
-            {
-                ("KETUA", "Ketua Umum", "Pimpinan organisasi, akses semua modul operasional", new[]
-                {
-                    "Organisasi", "Periode", "Divisi", "Jabatan", "Kepengurusan", "Anggota", "Alumni", "Rekrutmen", "ProgramKerja", "Kegiatan",
-                    "TimPelaksana", "Presensi", "Galeri", "Transaksi", "Anggaran", "PengajuanDana", "Iuran", "Hutang", "Aset", "Peminjaman",
-                    "Pengadaan", "Merchandise", "Mitra", "Sponsorship", "Surat", "Dokumen", "Prestasi", "Sertifikat", "Formulir", "Aspirasi",
-                    "EVoting", "Berita", "Banner"
-                }),
-                ("SEKRETARIS", "Sekretaris", "Administrasi anggota, surat, dokumen", new[]
-                {
-                    "Anggota", "Alumni", "Rekrutmen", "Kegiatan", "Presensi", "Surat", "Dokumen", "Sertifikat", "Formulir", "Aspirasi", "Berita"
-                }),
-                ("BENDAHARA", "Bendahara", "Pengelolaan keuangan", new[]
-                {
-                    "Transaksi", "Anggaran", "PengajuanDana", "Iuran", "Hutang", "Pengadaan", "Merchandise", "Sponsorship"
-                }),
-                ("PENGURUS", "Pengurus", "Pengurus divisi", new[]
-                {
-                    "ProgramKerja", "Kegiatan", "TimPelaksana", "Presensi", "Galeri", "Aset", "Peminjaman", "Prestasi", "Berita"
-                }),
-                ("ANGGOTA", "Anggota", "Anggota biasa (halaman anggota tanpa menu pengelolaan)", Array.Empty<string>())
-            };
-            foreach (var (code, name, description, controllers) in defs)
-            {
-                var role = Ok(Role.Save(new Role.NewRow { Code = code, Name = name, Description = description }, Admin), "Role " + code);
-                Roles[code] = role;
-                if (controllers.Length == 0)
-                {
-                    continue;
-                }
-                var allowed = controllers.ToHashSet();
-                var actionIds = controllers.SelectMany(c => ControllerAction.GetDataList(FilterAktif.Semua, Controllers[c]).Select(a => a.Id)).ToList();
-                Ok(role.SaveRoleActions(actionIds, Admin), "Aksi role " + code);
-                // Menu: header langsung bila controllernya diizinkan; grup dengan sub menu yang controllernya diizinkan.
-                var rows = new List<RoleMenu.NewRow>();
-                foreach (var item in MenuItems)
-                {
-                    if (item.Controller != null)
-                    {
-                        if (allowed.Contains(item.Controller))
-                        {
-                            rows.Add(new RoleMenu.NewRow { RoleId = role.Id, HeaderMenuId = HeaderMenus[item.Header] });
-                        }
-                        continue;
-                    }
-                    foreach (var sub in item.Subs.Where(s => allowed.Contains(s.Controller)))
-                    {
-                        rows.Add(new RoleMenu.NewRow { RoleId = role.Id, HeaderMenuId = HeaderMenus[item.Header], SubMenuId = SubMenus[sub.Controller] });
-                    }
-                }
-                Ok(role.SaveRoleMenus(rows, Admin), "Menu role " + code);
-            }
-        }
 
         // ---------------------------------------------------------------- Organisasi
         private static void SeedOrganization()
@@ -289,8 +108,8 @@ namespace GWASeeder
             }
             var positions = new (string Name, PositionLevel Level)[]
             {
-                ("Ketua Umum", PositionLevel.Inti), ("Wakil Ketua", PositionLevel.Inti), ("Sekretaris", PositionLevel.Inti),
-                ("Bendahara", PositionLevel.Inti), ("Koordinator Divisi", PositionLevel.Biasa), ("Staf Divisi", PositionLevel.Biasa)
+                ("Ketua Umum", PositionLevel.Inti), ("Wakil Ketua Umum", PositionLevel.Inti), ("Sekretaris", PositionLevel.Inti),
+                ("Bendahara", PositionLevel.Inti), ("Kepala Divisi", PositionLevel.Biasa), ("Staf Divisi", PositionLevel.Biasa)
             };
             order = 1;
             foreach (var p in positions)
@@ -300,33 +119,38 @@ namespace GWASeeder
         }
 
         // ---------------------------------------------------------------- User & anggota
-        private static readonly (string Name, Gender Gender, string Prodi, string Fakultas, short Angkatan)[] People =
+        // Akun contoh: username mudah diingat (lihat juga README), password semua DEFAULT_PASSWORD.
+        // Indeks dipakai bagian lain: 0 ketua, 1 wakil, 2 sekretaris, 3 bendahara, 4 ketua lama, 5-10 kepala divisi,
+        // 11-21 anggota biasa, 22-23 alumni.
+        private static readonly (string Username, string Name, Gender Gender, string Prodi, string Fakultas, short Angkatan)[] People =
         {
-            ("Rizky Pratama Putra", Gender.L, "Informatika", "Fakultas Ilmu Komputer", 2023),            // 0 ketua
-            ("Nabila Ayu Lestari", Gender.P, "Manajemen", "Fakultas Ekonomi dan Bisnis", 2023),           // 1 wakil
-            ("Dimas Arya Saputra", Gender.L, "Sistem Informasi", "Fakultas Ilmu Komputer", 2023),         // 2 sekretaris
-            ("Salsabila Putri Ramadhani", Gender.P, "Akuntansi", "Fakultas Ekonomi dan Bisnis", 2023),    // 3 bendahara
-            ("Fajar Nugroho", Gender.L, "Teknik Sipil", "Fakultas Teknik dan Sains", 2022),               // 4 ketua lama
-            ("Aditya Wicaksono", Gender.L, "Teknik Mesin", "Fakultas Teknik dan Sains", 2024),            // 5 koord brass
-            ("Bagas Setiawan", Gender.L, "Teknik Kimia", "Fakultas Teknik dan Sains", 2024),              // 6 koord battery
-            ("Citra Maharani", Gender.P, "Ilmu Komunikasi", "Fakultas Ilmu Sosial dan Ilmu Politik", 2024), // 7 koord guard
-            ("Dewi Kartika Sari", Gender.P, "Arsitektur", "Fakultas Arsitektur dan Desain", 2024),        // 8 koord front
-            ("Eko Prasetyo", Gender.L, "Agroteknologi", "Fakultas Pertanian", 2024),                      // 9 koord logistik
-            ("Farah Aulia", Gender.P, "Desain Komunikasi Visual", "Fakultas Arsitektur dan Desain", 2024), // 10 koord humas
-            ("Galih Ramadhan", Gender.L, "Ilmu Hukum", "Fakultas Hukum", 2025),
-            ("Hana Safitri", Gender.P, "Administrasi Bisnis", "Fakultas Ilmu Sosial dan Ilmu Politik", 2025),
-            ("Ilham Maulana", Gender.L, "Teknik Industri", "Fakultas Teknik dan Sains", 2025),
-            ("Jasmine Amelia", Gender.P, "Ekonomi Pembangunan", "Fakultas Ekonomi dan Bisnis", 2025),
-            ("Kevin Ardiansyah", Gender.L, "Informatika", "Fakultas Ilmu Komputer", 2025),
-            ("Laila Nur Azizah", Gender.P, "Agribisnis", "Fakultas Pertanian", 2025),
-            ("Muhammad Rafi", Gender.L, "Teknik Lingkungan", "Fakultas Teknik dan Sains", 2025),
-            ("Nadia Permata", Gender.P, "Hubungan Internasional", "Fakultas Ilmu Sosial dan Ilmu Politik", 2025),
-            ("Oktavian Hidayat", Gender.L, "Sains Data", "Fakultas Ilmu Komputer", 2025),
-            ("Putri Wulandari", Gender.P, "Kedokteran", "Fakultas Kedokteran", 2025),
-            ("Raka Firmansyah", Gender.L, "Teknik Elektro", "Fakultas Teknik dan Sains", 2025),
-            ("Siti Rahmawati", Gender.P, "Akuntansi", "Fakultas Ekonomi dan Bisnis", 2020),               // 22 alumni
-            ("Taufik Hidayatullah", Gender.L, "Teknik Kimia", "Fakultas Teknik dan Sains", 2019)          // 23 alumni
+            ("ketua", "Rizky Pratama Putra", Gender.L, "Informatika", "Fakultas Ilmu Komputer", 2023),
+            ("wakil", "Nabila Ayu Lestari", Gender.P, "Manajemen", "Fakultas Ekonomi dan Bisnis", 2023),
+            ("sekretaris", "Dimas Arya Saputra", Gender.L, "Sistem Informasi", "Fakultas Ilmu Komputer", 2023),
+            ("bendahara", "Salsabila Putri Ramadhani", Gender.P, "Akuntansi", "Fakultas Ekonomi dan Bisnis", 2023),
+            ("ketua.lama", "Fajar Nugroho", Gender.L, "Teknik Sipil", "Fakultas Teknik dan Sains", 2022),
+            ("kadiv.brass", "Aditya Wicaksono", Gender.L, "Teknik Mesin", "Fakultas Teknik dan Sains", 2024),
+            ("kadiv.battery", "Bagas Setiawan", Gender.L, "Teknik Kimia", "Fakultas Teknik dan Sains", 2024),
+            ("kadiv.guard", "Citra Maharani", Gender.P, "Ilmu Komunikasi", "Fakultas Ilmu Sosial dan Ilmu Politik", 2024),
+            ("kadiv.front", "Dewi Kartika Sari", Gender.P, "Arsitektur", "Fakultas Arsitektur dan Desain", 2024),
+            ("kadiv.logistik", "Eko Prasetyo", Gender.L, "Agroteknologi", "Fakultas Pertanian", 2024),
+            ("kadiv.humas", "Farah Aulia", Gender.P, "Desain Komunikasi Visual", "Fakultas Arsitektur dan Desain", 2024),
+            ("anggota01", "Galih Ramadhan", Gender.L, "Ilmu Hukum", "Fakultas Hukum", 2025),
+            ("anggota02", "Hana Safitri", Gender.P, "Administrasi Bisnis", "Fakultas Ilmu Sosial dan Ilmu Politik", 2025),
+            ("anggota03", "Ilham Maulana", Gender.L, "Teknik Industri", "Fakultas Teknik dan Sains", 2025),
+            ("anggota04", "Jasmine Amelia", Gender.P, "Ekonomi Pembangunan", "Fakultas Ekonomi dan Bisnis", 2025),
+            ("anggota05", "Kevin Ardiansyah", Gender.L, "Informatika", "Fakultas Ilmu Komputer", 2025),
+            ("anggota06", "Laila Nur Azizah", Gender.P, "Agribisnis", "Fakultas Pertanian", 2025),
+            ("anggota07", "Muhammad Rafi", Gender.L, "Teknik Lingkungan", "Fakultas Teknik dan Sains", 2025),
+            ("anggota08", "Nadia Permata", Gender.P, "Hubungan Internasional", "Fakultas Ilmu Sosial dan Ilmu Politik", 2025),
+            ("anggota09", "Oktavian Hidayat", Gender.L, "Sains Data", "Fakultas Ilmu Komputer", 2025),
+            ("anggota10", "Putri Wulandari", Gender.P, "Kedokteran", "Fakultas Kedokteran", 2025),
+            ("anggota11", "Raka Firmansyah", Gender.L, "Teknik Elektro", "Fakultas Teknik dan Sains", 2025),
+            ("alumni01", "Siti Rahmawati", Gender.P, "Akuntansi", "Fakultas Ekonomi dan Bisnis", 2020),
+            ("alumni02", "Taufik Hidayatullah", Gender.L, "Teknik Kimia", "Fakultas Teknik dan Sains", 2019)
         };
+        // Ringkasan akun untuk dicetak di akhir seeding: (username, nama, jabatan, role).
+        public static readonly List<(string Username, string Name, string Jabatan, string Roles)> AccountSummary = new();
 
         private static void SeedMembers()
         {
@@ -334,7 +158,7 @@ namespace GWASeeder
             {
                 var p = People[i];
                 var nim = $"{p.Angkatan % 100:D2}0{(i % 9) + 1}10{10000 + i * 37:D5}";
-                var user = Ok(UserAccount.Save(new UserAccount.NewRow { Username = nim, Password = DEFAULT_PASSWORD }, Admin), "User " + p.Name);
+                var user = Ok(UserAccount.Save(new UserAccount.NewRow { Username = p.Username, Password = DEFAULT_PASSWORD }, Admin), "User " + p.Name);
                 var member = Ok(Member.Save(new Member.NewRow
                 {
                     UserId = user.Id,
@@ -384,17 +208,35 @@ namespace GWASeeder
                 }, Admin), "Profil alumni");
             }
 
-            // Role: pengurus inti terikat periode aktif; anggota tanpa periode.
-            Ok(UserRole.Save(new UserRole.NewRow { UserId = MemberUser[Ketua.Id], RoleId = Roles["KETUA"].Id, PeriodId = PeriodActive.Id }, Admin), "Role ketua");
-            Ok(UserRole.Save(new UserRole.NewRow { UserId = MemberUser[Sekretaris.Id], RoleId = Roles["SEKRETARIS"].Id, PeriodId = PeriodActive.Id }, Admin), "Role sekretaris");
-            Ok(UserRole.Save(new UserRole.NewRow { UserId = MemberUser[Bendahara.Id], RoleId = Roles["BENDAHARA"].Id, PeriodId = PeriodActive.Id }, Admin), "Role bendahara");
-            foreach (var m in Members.Skip(1).Take(10).Where(m => m.Id != Sekretaris.Id && m.Id != Bendahara.Id))
+            // Role: pengurus inti dan kepala divisi terikat periode aktif; role ANGGOTA tanpa periode (Area Anggota untuk semua).
+            void Grant(Member member, string roleCode, bool perPeriod)
             {
-                Ok(UserRole.Save(new UserRole.NewRow { UserId = MemberUser[m.Id], RoleId = Roles["PENGURUS"].Id, PeriodId = PeriodActive.Id }, Admin), "Role pengurus");
+                Ok(UserRole.Save(new UserRole.NewRow { UserId = MemberUser[member.Id], RoleId = Roles[roleCode].Id, PeriodId = perPeriod ? PeriodActive.Id : null }, Admin), $"Role {roleCode} {member.Fullname}");
+            }
+            Grant(Ketua, "KETUA", true);
+            Grant(Wakil, "WAKIL", true);
+            Grant(Sekretaris, "SEKRETARIS", true);
+            Grant(Bendahara, "BENDAHARA", true);
+            foreach (var m in Members.Skip(5).Take(6))
+            {
+                Grant(m, "KADIV", true);
             }
             foreach (var m in Members.Take(22))
             {
-                Ok(UserRole.Save(new UserRole.NewRow { UserId = MemberUser[m.Id], RoleId = Roles["ANGGOTA"].Id }, Admin), "Role anggota");
+                Grant(m, "ANGGOTA", false);
+            }
+
+            var jabatan = new Dictionary<int, (string Jabatan, string Roles)>
+            {
+                [0] = ("Ketua Umum", "KETUA, ANGGOTA"), [1] = ("Wakil Ketua Umum", "WAKIL, ANGGOTA"), [2] = ("Sekretaris", "SEKRETARIS, ANGGOTA"),
+                [3] = ("Bendahara", "BENDAHARA, ANGGOTA"), [4] = ("Anggota (ketua periode lalu)", "ANGGOTA"),
+                [5] = ("Kepala Divisi Brass", "KADIV, ANGGOTA"), [6] = ("Kepala Divisi Battery", "KADIV, ANGGOTA"), [7] = ("Kepala Divisi Colour Guard", "KADIV, ANGGOTA"),
+                [8] = ("Kepala Divisi Front Ensemble", "KADIV, ANGGOTA"), [9] = ("Kepala Divisi Logistik", "KADIV, ANGGOTA"), [10] = ("Kepala Divisi Humas & Media", "KADIV, ANGGOTA")
+            };
+            for (var i = 0; i < People.Length; i++)
+            {
+                var (title, roles) = jabatan.TryGetValue(i, out var j) ? j : i >= 22 ? ("Alumni", "-") : ("Anggota", "ANGGOTA");
+                AccountSummary.Add((People[i].Username, People[i].Name, title, roles));
             }
         }
 
