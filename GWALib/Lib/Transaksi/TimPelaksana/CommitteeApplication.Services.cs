@@ -165,9 +165,15 @@ namespace GWALib.Lib.Transaksi.TimPelaksana
                 throw new ArgumentException(ExceptionMessage.COMMITTEE_ALREADY_MEMBER);
             }
             var formResponseId = newrow.FormResponseId > 0 ? newrow.FormResponseId : null;
-            if (formResponseId != null && !context.TFormResponses.Any(x => x.Id == formResponseId))
+            if (formResponseId != null)
             {
-                throw new ArgumentException(string.Format(ExceptionMessage.DATA_X_NOT_FOUND, "Jawaban Formulir"));
+                var response = context.TFormResponses.Where(x => x.Id == formResponseId).Select(x => new { x.FormId, x.MemberId }).SingleOrDefault()
+                    ?? throw new ArgumentException(string.Format(ExceptionMessage.DATA_X_NOT_FOUND, "Jawaban Formulir"));
+                // Jawaban harus dari formulir rekrutmen ini dan milik anggota yang melamar.
+                if (response.FormId != recruitment.FormId || response.MemberId != newrow.MemberId)
+                {
+                    throw new ArgumentException(ExceptionMessage.FORM_RESPONSE_MISMATCH);
+                }
             }
             var existing = context.TCommitteeApplications.SingleOrDefault(x => x.RecruitmentId == newrow.RecruitmentId && x.MemberId == newrow.MemberId);
             if (existing != null && existing.Status != (int)CommitteeApplicationStatus.Mundur)

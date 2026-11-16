@@ -193,31 +193,222 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
   - `MeetingMinutes`:
     - One per Open or Closed session. Draft → Final, and Final is locked.
     - The attachment is not loaded in lists. Filtering by activity happens before the projection (`Project`).
+- Shared transaction helpers:
+  - `TransaksiHelper.GenerateNumber(context, type, date, fallbackPrefix, id, userId)` uses `DocumentNumberSeq` when an active format exists for the type, otherwise `PREFIX/yyyyMMdd/id`. Call it inside `BeginTransaction`.
+  - `TransaksiHelper` also has `ToNullable`, `AppendNote` (adds a reason to a text column, truncated), `ValidateFile` and `ValidatePositive`.
+  - `Approval/ApprovalHelper` (internal): `GetActiveSteps(context, documentType)` returns the active flow's steps, or fails when there is no flow or no step. `IsApprover` / `ValidateApprover` check one step: Role means the user has that role with no period or an Active period; Jabatan means the user's member currently holds that position in an Active period; UserTertentu means that user. Reuse it for Pengadaan and Surat.
+- `Lib/Transaksi/Keuangan/` (all new):
+  - `FinancialTransaction`:
+    - Draft → Posted → Void, and Draft → Void. Only a Draft can be edited or deleted. The number uses format `FIN_TRX` (fallback `TRX`).
+    - The category type must equal the transaction type. An empty period means the Active period.
+    - A closed `t_period_balance` for (period, account) blocks create, post and void (`internal ValidateBalanceOpen`).
+    - `FundingRequestId` is set only by `FundingRequest`, `ProcurementId` only by `ProcurementRequest.RecordPayment`, `SalesOrderId` only by `SalesOrder.ReceivePayment`, and `BorrowRequestId` only by `BorrowRequest.ReceivePayment`. `Save` refuses the last three. A transaction linked to a funding request, procurement, sales order, borrow request, maintenance, dues bill, debt or debt payment can only be voided through that document.
+    - `internal CreateRow(context, newrow, fundingRequestId, posted, userId)` is used by the other documents, which create Posted transactions. `internal VoidRow` voids without the link check. `OpenPeriodOrDefault` keeps a document's period unless it is Closed.
+  - `FinancialAttachment`, `BudgetDocument` (10 MB) and `DebtAttachment`: file blobs, at most 5 MB unless noted, not loaded in lists (`GetFile`). Financial attachments are refused on a Void transaction.
+  - `Budget` and `BudgetItem`:
+    - Draft → Submitted → Approved / Rejected, and Rejected can be edited and resubmitted. Submitting needs at least one item.
+    - Items change only in Draft / Rejected. `Amount` = quantity × unit price. `TotalAmount` is recalculated on every item change (`internal RecalculateTotal`, which loads the items and sums the context's Local view).
+    - A program on an item must belong to the budget's period. `internal GetApprovedItem` is the check for transactions and funding requests.
+    - `BudgetItem.RealizedAmount` (lists only) = Posted expenses minus Posted income that use the item.
+    - Approve / Reject records the decider in `approved_by`. There is no column for a rejection note.
+  - `DuesBill`:
+    - `Generate(settingId, billPeriod, dueDate, memberIds?)` bills Active members (or the given ones) that have no bill for that period yet, and copies the amount. The period format follows the frequency: `yyyy-MM`, `yyyy-GANJIL` / `yyyy-GENAP`, `yyyy`, or free text for Once (default `SEKALI`).
+    - `Pay(accountId, date, categoryId?)` creates a Posted Income transaction (the category defaults to the setting's). `CancelPayment` voids it and returns to Unpaid. `Waive` / `Unwaive` are also available.
+    - Only an Unpaid bill can be edited or deleted.
+  - `FundingRequest`, `FundingApproval` and `FundingRealization`:
+    - Draft → Submitted → Approved → Disbursed, Submitted → Rejected (final), and Submitted → Draft on a revision request. The number uses format `FUNDING_REQUEST` (fallback `PD`).
+    - The period defaults to the budget item's period, then the Active period. The program defaults to the budget item's or the activity's program.
+    - Approval follows the active `FUNDING_REQUEST` flow. The current step is the lowest step level not Approved in this round. `RequestRevision` needs `allow_revision`.
+    - `approver_user_id` is NOT NULL, so a `t_funding_approval` row is written when someone decides, with that user as approver. Resubmitting sets earlier decisions back to Pending and keeps the approver and note as history.
+    - `Disburse` creates a Posted Expense transaction. Realizations can change only while Disbursed with settlement Belum, and they recalculate `RealizedAmount`. The receipt is optional (5 MB, `GetReceipt` / `UpdateReceipt`).
+    - Settlement Belum → Diajukan → Selesai, and `ReturnSettlement` goes back to Belum. `Settle` creates Income for unused money (`ReturnedAmount`) or Expense for overspending, and then needs an account and category.
+  - `PeriodBalance`:
+    - `Open(periodId, accountId?)` creates rows for one account or all active accounts without one. The opening balance is the latest earlier Closed balance of the account, else the account's opening balance.
+    - Totals come from Posted transactions (`Refresh`). `Close` refuses while Draft transactions exist, then fills the closing balance and locks the (period, account) transactions. `Reopen` is refused once a later period has a balance for the account. Only an Open row can be deleted.
+  - `Debt` and `DebtPayment`:
+    - The number uses format `DEBT` (fallback `HT`). The period is required and defaults to the Active period.
+    - A cash loan (`LoanAccountId` + `LoanCategoryId`) creates a Posted Income transaction and locks the amount.
+    - `DebtPayment.Save` creates a Posted Expense transaction, refuses more than the remaining amount, and recalculates `paid_amount` and the status (`internal RecalculatePaid`). `DebtPayment.Delete` voids the transaction. There is no payment update.
+    - `WriteOff` sets Dihapuskan (final). A debt can be edited only while BelumBayar / Sebagian, and deleted only while BelumBayar without payments, which voids the loan transaction.
+- `Lib/Transaksi/Sponsorship/` (all new):
+  - `SponsorshipDeal` maps `t_sponsorship`. The class name avoids clashing with the namespace.
+    - The number uses format `SPONSORSHIP` (fallback `SPN`). The party must be Active (`GetActiveExternalParty`, so Blacklist is refused) and the contact must belong to it.
+    - The package is optional and fixed after creation. Its name is copied to `package_name`, an amount of 0 takes the package price, and the package benefits are copied.
+    - Dana needs an amount above 0. Other forms need `InKindDescription`.
+    - Aktif → Selesai (all benefits done) / Batal (no money received). It can be edited only while Aktif, and the amount cannot go below the money received.
+    - `ReceivePayment` creates a Posted Income transaction with `sponsorship_id` and refuses more than the remaining amount. `ReceivedAmount` = Posted Income transactions of the sponsorship, so voiding one of them through `FinancialTransaction.Void` is allowed.
+    - Delete is allowed only while Aktif without transactions, MoU or assets, and it also deletes the benefits.
+  - `SponsorshipBenefit`: a checklist, `SeqNo` 0 means append. Changes need the sponsorship Aktif. `MarkDone` records time, user and an optional proof (5 MB, `GetProof` / `UpdateProof`). `MarkUndone` keeps the proof. `internal CopyFromPackage` is used on create.
+  - `SponsorshipMou`: the number is unique; when empty it uses format `MOU` (fallback `MOU`). It can change while the sponsorship is Aktif or Selesai. The document is at most 10 MB (`GetDocument` / `UpdateDocument`). Delete is refused when a handover item (MouAktif) uses it. `GetActiveList(date)` lists MoUs of Aktif sponsorships that have not ended.
+- `Lib/Transaksi/Pengadaan/` (all new):
+  - `ProcurementRequest`:
+    - The number uses format `PROCUREMENT` (fallback `PGD`). The requester defaults to the logged-in user's member. An activity or a program may be set, but not both. The period defaults to the budget item's period, then the Active period.
+    - Draft → Diajukan → Disetujui / Revisi / Ditolak, and Revisi can be edited and resubmitted. Then Disetujui → Dibeli → DiterimaSebagian → Selesai, where the last two follow the receipts (`internal RecalculateReceiveStatus`).
+    - It can be cancelled from Draft, Diajukan, Revisi or Disetujui, or from Dibeli when there is no payment or receipt. The reason goes to `reject_reason`. Only a Draft can be deleted, which also deletes its items and quotations (there is no cascade).
+    - `Submit` needs at least one item, recalculates `TotalEstimate`, and compares it with the budget item's remainder (amount minus Posted expenses plus income). It only sets the `IsOverBudget` / `BudgetRemaining` warning and never refuses.
+    - Approval follows the active `PROCUREMENT` flow. `t_procurement_approval` has no unique key, so every decision is a log row. A round restarts after the last Revisi decision, and the current step is the lowest step not Setuju in this round. The signature is optional (2 MB).
+    - `Purchase(fundingRequestId?)`: the PengajuanDana method needs an Approved or Disbursed funding request that no other procurement uses.
+    - `RecordPayment` is for the DibayarLangsung method only. It creates a Posted Expense transaction with `procurement_id`, budget item, activity and program. `CancelPayment(transactionId)` voids it. `TotalActual` = the procurement's Posted Expense transactions.
+  - `ProcurementItem`: an asset item needs an active asset category, and the vendor must be an active party. Items change only in Draft / Revisi and recalculate `TotalEstimate`. `SetActual(price, partyId?)` works from Disetujui to DiterimaSebagian. `ReceivedQuantity` changes only through receipts.
+  - `ProcurementQuotation`:
+    - `ItemId` NULL means a quote for the whole request. It needs either an active party or a vendor name.
+    - It can change in Draft / Diajukan / Revisi / Disetujui. `Select` keeps one selected quote per scope (the same item, or the whole request), and an item quote with a party sets the item's vendor.
+    - The file is at most 5 MB.
+  - `ProcurementReceipt` and `ProcurementReceiptItem`:
+    - A receipt and its lines are saved in one transaction, only while the request is Dibeli / DiterimaSebagian. The received quantity cannot exceed what is left of the item.
+    - `ProcurementReceiptItem.NewRow.Asset` (an `Asset.NewRow`) creates an `m_asset` for an asset item that is not Hilang, through `Asset.CreateRow`, which is now internal and takes `procurementItemId`. Quantity, source Beli and condition come from the line; the category, date and cost (actual or estimated price × quantity) are filled when empty.
+    - Delete subtracts the received quantities and is refused when an asset was created for any of its items.
+  - There is no product stock movement on receipt, because `t_procurement_item` has no product column. Merchandise records stock-in movements with `procurement_id`.
+- `Lib/Transaksi/Merchandise/` (all new):
+  - `ProductStockMovement`:
+    - A stock ledger. `Quantity` is signed, and each movement changes `m_product.stock` (product without variants) or `m_product_variant.stock` at once. Stock may never go negative. Only products with `track_stock` Dilacak.
+    - Manual `Save` accepts Masuk (positive, optional `ProcurementId`), Penyesuaian (signed) and RusakHilang (entered positive, stored negative). Terjual and Retur come only from `SalesOrder`. There is no update or delete; correct with Penyesuaian.
+    - `internal GetSellable(context, productId, variantId)` requires an active product, and an active variant exactly when the product has variants. `internal Apply` writes the movement and the stock.
+  - `SalesOrder` and `SalesOrderItem`:
+    - The number uses format `DANUS` (fallback `DNS`). The buyer is a member or a buyer name; a member buyer clears the name.
+    - Items (at least one) are created with the order and never edited separately; cancel and recreate instead. The price is copied (variant price, else product price). A ready-stock tracked product is deducted with a Terjual movement. A pre-order product must still be open and is not deducted.
+    - Fulfillment Dipesan → SiapDiambil → Selesai (requires Lunas). Dipesan / SiapDiambil → Batal is refused once money was received, and returns the stock with Retur movements.
+    - `ReceivePayment` creates a Posted Income transaction with `sales_order_id`, and refuses more than the remainder. `CancelPayment(transactionId)` voids it. `PaidAmount` / `PaymentStatus` come from Posted Income; a total of 0 is Lunas.
+- `Lib/Transaksi/Inventaris/` (all new):
+  - `InventarisHelper` (internal):
+    - `GetOutstanding` returns the quantity of an asset still out on Borrowed / Overdue requests. It loads into the context and reads Local, so status changes in the same command count.
+    - `RefreshAssetStatus` sets Borrowed or Available. A per-unit asset is Borrowed when no unit is Tersedia and some unit is Dipinjam. A quantity asset is Borrowed when nothing is available. Disposed and Maintenance are left alone.
+    - `AddMovement` writes `t_asset_movement` with `reference_type` `BORROW_REQUEST` / `MAINTENANCE` / `MANUAL`. `GetLateDays` = MAX(0, CEIL(days late)).
+  - `BorrowRequest`:
+    - The number uses format `BORROW` (fallback `PJM`). Borrower Anggota (active member), OrganisasiInstansi (active party plus optional contact) or PeroranganLuar (name required). The columns of the other types are cleared, and the name defaults to the member's or party's name.
+    - Seikhlasnya is for members only. Rental fee = rental days (CEIL, at least 1) × the asset's rate × quantity, only for TarifTetap. Rates are copied from the asset.
+    - Pending → Approved / Rejected, Pending / Approved → Cancelled (refused once paid), Approved → Borrowed through `Checkout(lines)`, and → Returned when every item is fully returned. `MarkOverdue` (for a job) sets Borrowed past the expected date to Overdue.
+    - `Checkout` takes all items at once. Quantity assets need enough available quantity, which is checked before the status changes. Per-unit assets need exactly `Quantity` scanned unit codes of Tersedia units. Units and assets are updated and Borrow movements are written.
+    - `WaiveLateFee(amount, note)` cannot exceed the late fee. `ReceivePayment` creates Posted Income with `borrow_request_id`; the category tells rent, donation or fine apart. It refuses more than the amount due, except for Seikhlasnya.
+    - `PaymentStatus` is TidakAdaTagihan when nothing is due or paid. Only Pending / Rejected / Cancelled requests can be deleted (items cascade).
+  - `BorrowItem`:
+    - Unique per (request, asset). Items change only while the request is Pending, and the quantity cannot exceed the asset's stock (for per-unit assets, units that are not deleted or lost).
+    - `ReturnQuantity(returned, lost, condition)` is for quantity assets and may be done in parts. Lost units reduce `m_asset.quantity` with an Out movement. The late fee = late days × rate × count. Every return writes a return inspection.
+  - `BorrowItemUnit`:
+    - Created by Checkout. `ReturnUnit(requestId, unitCode, condition, lost)` scans the QR: the unit becomes Tersedia with the new condition, or Hilang.
+    - Unit late fee = late days × the item's rate. The item's returned count, late days and late fee are recalculated from its units.
+  - `AssetMovement`: a history list. Manual `Save` is for quantity assets only: In, Out (cannot go below the quantity still borrowed) and signed Adjustment. Per-unit assets use `AssetUnit`.
+  - `AssetInspection`:
+    - Manual `Save` updates the condition. A per-unit asset needs a unit, and Hilang marks the unit Hilang (refused while it is borrowed). A quantity asset updates `asset_condition`.
+    - Return inspections (`BorrowItemId` set) are only a record and cannot be deleted. The photo is not loaded in lists (`GetPhoto`).
+  - `MaintenanceLog`:
+    - A per-unit asset needs a unit. Scheduled → InProgress → Done, and Scheduled → Done directly.
+    - `Start` moves the unit (must be Tersedia) to Perawatan, or the quantity asset (nothing borrowed) to Maintenance. `Finish(condition?, accountId?, categoryId?)` restores the status and can update the condition. When an account and category are given and the cost is above 0, it creates a Posted Expense transaction that can only be voided through the maintenance.
+  - `Asset.Delete` (dispose) is also refused while part of a quantity asset is still borrowed.
+- `Lib/Transaksi/Surat/` (all new):
+  - `Letter`:
+    - The letter type is normalised with `LetterTemplate.ToTypeCode`. A template, if given, fills the type and the body when they are empty. The period defaults to the Active period. The number is unique per direction.
+    - Outgoing (Out): Draft → WaitingApproval (needs a body or a file) → Approved / Rejected, and Rejected can be edited and resubmitted. Then Approved → Sent → Archived.
+    - Approval follows the active `LETTER` flow step by step, like `FundingRequest`. Without a flow there is one level-1 approval by the signer, with an optional position.
+    - On final approval, `LetterDate` defaults to today and the number is generated inside a DB transaction: the letter type's format if active, else format `LETTER`, else `SRT/yyyyMMdd/id`. A number entered by hand is kept.
+    - Incoming (In) starts as Received (sender's number, received date and sender required) → Archived.
+    - The file is at most 10 MB (`GetFile` / `UpdateFile`). A final file can still be uploaded while Approved.
+    - Delete is allowed for Out in Draft / Rejected and In while Received, and is refused when a borrow request uses the letter. Approvals and dispositions cascade.
+  - `LetterApproval`: unique per (letter, level), written on decision, reset to Pending on resubmit (same pattern as `FundingApproval`). It stores the position and an optional signature (2 MB, `GetSignature`).
+  - `LetterDisposition`: for In letters (Received / Archived) or Out letters that are Approved / Sent / Archived. `FromUserId` is the logged-in user. Open → Done (`MarkDone`) → `Reopen`. It can be edited or deleted only while Open, and `GetDataList(toMemberId:)` lists a member's dispositions.
+  - `Document`: the category must be active. The file is required, at most 20 MB, not loaded in lists (`GetFile` / `UpdateFile`), and `FileSize` is filled automatically. `GetDataList(visibilities)` filters what the caller may see. Delete is permanent.
+- `Lib/Transaksi/Prestasi/` (all new):
+  - `Competition`:
+    - Status moves forward only: Upcoming → Registration → Ongoing → Finished (skipping is allowed), and anything except Finished → Cancelled. Finished also marks Registered / Participating participants as Finished.
+    - Featured requires public. `GetPublicList` serves the landing page. The poster is at most 5 MB (`GetPoster` / `UpdatePoster`).
+    - Only an Upcoming competition with no participants, achievements, materials, activities, transactions or funding requests can be deleted.
+  - `CompetitionMaterial`:
+    - `CompetitionId` NULL means a general material, and `GetDataList(0)` lists only general ones.
+    - File needs a file (20 MB), Link needs a URL, and Video needs a URL or a file. `GetDataList(visibilities)` filters by visibility.
+  - `CompetitionParticipant`:
+    - Unique per (competition, member). `Register` needs status Registration before the deadline, and registering again after Withdrawn reactivates the row.
+    - The role is KETUA_TIM, ANGGOTA or PEMBIMBING. Registered → Participating → Finished, and Registered / Participating → Withdrawn.
+  - `Achievement`:
+    - Needs a member or a team name. The level defaults to the competition's level. Featured requires public, and `GetPublicList` serves the landing page.
+    - A member achievement gets Prestasi points (`MemberPoint.Award`, RefId = achievement). They are recalculated on update, moved when the member changes, and removed on delete. Delete is refused when a certificate uses the achievement.
+    - The certificate file and the photo are each at most 5 MB.
+  - `Certificate`:
+    - The number uses format `CERTIFICATE` (fallback `SRT-C`) and is unique. `VerificationCode` is 12 random characters without look-alikes, and unique.
+    - Required reference by type: Peserta / Panitia / Pemateri need an activity, Pengurus needs the member's own assignment, and Prestasi needs the member's own achievement. Other columns are cleared.
+    - Terbit ↔ Dicabut (`Revoke` / `Restore`). `Verify(code)` is the public check. There is no delete.
+  - `MemberPoint`:
+    - Unique per (member, source, ref). `internal Award` uses `PointRule.GetEffectiveRow`; without an active rule no point is given and existing rows are kept. Running it again updates the points. `internal Revoke` removes points.
+    - `GenerateForActivity(activityId)` gives Hadir points (RefId = `t_attendance_record` with Hadir / Terlambat) and Panitia points (RefId = active `t_committee_member`). `GenerateForPeriod(periodId)` gives Pengurus points (RefId = `t_management_assignment`).
+    - Manual `Save` cannot have 0 points; use it for Pemateri and Lainnya. `GetLeaderboard(periodId, top)` ranks members.
+- `Lib/Transaksi/Formulir/` (all new):
+  - `Form`:
+    - EvaluasiKegiatan needs an activity. PendaftaranRekrutmen may name a member recruitment (answered by applicants without login), or leave it empty for a committee recruitment (`t_committee_recruitment.form_id`), and cannot be anonymous. SurveiUmum has no reference. References that do not apply are cleared.
+    - Draft → Open → Closed, and Closed can be reopened when the close time is empty or in the future. Open needs at least one question. `GetOpenList` lists forms that are Open within their time window.
+    - Once a response exists, the questions, type, references and anonymous mode are locked (`internal GetEditableForm`). Only a Draft that no committee recruitment uses can be deleted, and its questions go with it.
+    - `GetSummary()` returns per question the answer count, counts per option (choices and scale) and the scale average.
+    - `CommitteeRecruitment` now accepts only a PendaftaranRekrutmen form without a member recruitment.
+  - `FormQuestion`: `Seq` 0 means append. PilihanGanda / KotakCentang need at least 2 distinct options, stored as a JSON array in `options`; other types clear it. Changes only while the form has no responses.
+  - `FormResponse`:
+    - Saved with its answers and never edited. The form must be Open within its time window.
+    - `Submit` (login): an anonymous form stores no identity at all (`member_id` and `ins_by` NULL, so there is no one-response limit). A form that is not anonymous allows one response per user, and `member_id` is the user's member if any. A committee recruitment form requires an active member. Member recruitment forms are refused here.
+    - `SubmitApplicant` (no login): the applicant must belong to the form's recruitment, the email must match, and the status must not be final. One response per applicant.
+    - `GetMyResponse(formId, user)`. Delete is refused when a committee application uses the response; answers are removed through stubs.
+    - `CommitteeApplication` now requires the response to come from the recruitment's form and belong to the applying member.
+  - `FormAnswer`: unique per (response, question), built by `internal BuildRows`. TeksSingkat at most 255, Paragraf at most 2000, PilihanGanda exactly one option, KotakCentang a JSON array of options (input `Choices`), scale 1-5, Tanggal stored as `yyyy-MM-dd`, File at most 5 MB (`GetFile`). Required questions must be answered; empty optional answers create no row.
+  - `Aspiration`:
+    - `Submit` needs login. Anonymous stores no identity (`user_id` and `ins_by` NULL), so it is not in `GetMyList` and the sender cannot edit it.
+    - Baru → Diproses → Selesai / Ditolak, and Baru → Selesai / Ditolak directly (`Respond`). Selesai / Ditolak need a response text.
+    - Only the sender can edit (category, title, content, attachment) while Baru. Delete is allowed while Baru by the sender, or once Ditolak. The attachment is at most 5 MB (`GetAttachment` / `UpdateAttachment`).
+- `Lib/Transaksi/EVoting/` (all new):
+  - `ElectionCrypto` (internal):
+    - AES-256-GCM. The 32-byte master key is passed by the app at startup with `ElectionVote.ConfigureKey(base64)`, from a secret, never from the database. Opening, voting and finalizing fail with `ELECTION_KEY_NOT_SET` without it. The same key must stay in place until every election that used it is finalized.
+    - The per-election key comes from HKDF-SHA256 (info = election id). The AAD is election id + ballot reference, so a ciphertext cannot be moved to another row or election. Stored as `v1:` + base64(nonce | ciphertext | tag), with plaintext `{candidateId}|{random}`.
+  - `Election`:
+    - Draft → Registration → Open → Closed → Finalized, and Draft → Open directly. The period is optional and must not be Closed.
+    - `OpenVoting` needs at least 1 Verified candidate, no Registered candidate left undecided, at least 1 Eligible voter and an end time in the future. It numbers Verified candidates that have no number.
+    - Votes are accepted only while Open within `StartAt`..`EndAt`. `CloseExpired` is for a job.
+    - `Finalize` decrypts every vote and requires the vote count to equal the voters with `voted_at`. It writes `t_election_result` for every Verified candidate: percentage of total votes, competition rank, and a winner only for a unique rank 1 (a tie has no winner).
+    - The title and description can change until Finalized. The period and schedule can change only in Draft / Registration; `EndAt` may be extended while Open.
+    - Delete is allowed only in Draft / Registration and removes candidates, voters and audit events. `internal GetEditableElection` / `GetOpenElection` are available.
+  - `ElectionCandidate`:
+    - Unique per (election, member) and per number. Every change requires the election to be Draft / Registration, and the member must be active. Re-registering after Rejected / Withdrawn reactivates the row.
+    - Registered → Verified / Rejected, Rejected → Verified, and Registered / Verified → Withdrawn. Rejected / Withdrawn free the number.
+    - The photo goes through `ImageUtility` and is not loaded in lists (`GetPhoto` / `UpdatePhoto`). `GetBallot` returns Verified candidates by number.
+  - `ElectionEligibleVoter`:
+    - Unique per (election, member). `Add(memberIds)` / `Generate(memberTypes?)` add active members, skipping existing ones. They and `SetEligibility` work while Draft / Registration / Open. Delete works only in Draft / Registration.
+    - A voter who has voted cannot be changed or deleted. Use `GetMyStatus` for the logged-in user.
+  - `ElectionVote`:
+    - The id is random, `ins_by` is always NULL and `ins_date` holds the date only. Nothing links a vote to a voter.
+    - `Cast` runs in one transaction. It validates the voter, sets `voted_at` with a conditional `ExecuteUpdate` (`voted_at IS NULL`) to stop double voting, then stores the encrypted vote. It returns a `VoteReceipt` holding a random token, shown only once; `ballot_reference` is its SHA-256 hex.
+    - `VerifyReceipt(electionId, receipt)` needs no login. `GetDataList` is a bulletin board of ballot references without choices.
+  - `ElectionResult`: read-only, written by `Finalize`, sorted by rank.
+  - `ElectionAuditEvent`: read-only, written by the other classes. Events are CREATED, UPDATED, REGISTRATION_OPENED, OPENED, CLOSED, RESULT_FINALIZED, CANDIDATE_*, VOTERS_ADDED, VOTER_CHANGED and VOTER_DELETED. Individual votes are deliberately not audited. `ip_address` is only filled when a caller passes it to `internal Add`; no public method takes it yet.
+- `Lib/Transaksi/Information/` (all new):
+  - `InformationHelper.ValidateLink` (internal): a link is an http(s) URL or a path starting with `/` (not `//`).
+  - `Announcement`:
+    - The author is the logged-in user at creation. The slug is unique, lowercase a-z 0-9 with hyphens (diacritics dropped, `internal ToSlug`). An empty slug is made from the title, with `-2`, `-3`, … on collision. A manual slug that collides is refused, and an empty slug on update keeps the old one.
+    - Draft → Published → Archived, Published → Draft (`Unpublish`) and Archived → Published. `PublishedAt` is set on the first publish. Featured requires public, and Private means logged-in members only.
+    - Delete is allowed only for Draft / Archived.
+    - Lists load neither the content nor the cover; the encKey constructor and `GetBySlug(slug, publicOnly)` load the content. `GetPublishedList(publicOnly, category, featuredOnly)` serves the landing page and the member page.
+    - The cover goes through `ImageUtility` (`GetCover` / `UpdateCover`).
+  - `Banner`:
+    - The image is required, at most 5 MB, JPEG / PNG / WebP by magic bytes, and stored unchanged (not resized, because it is a hero image). It is not loaded in lists (`GetImage` / `UpdateImage`).
+    - `Seq` 0 means append. Empty `StartAt` / `EndAt` mean no limit. Button text needs a link. `GetActiveList` serves the landing page. Delete is permanent.
+  - `Notification`:
+    - `Send(UserIds, …)` and `internal Add(context, userId, …)` create in-app notifications. The type is normalised with `ToTypeCode`, the same code as the template / preference. Recipients with InApp disabled in `m_user_notification_pref` are skipped (no row means enabled).
+    - Recipients manage only their own notifications: `GetMyList`, `GetUnreadCount`, `MarkRead`, `MarkAllRead` (`ExecuteUpdate`) and `Delete`. `Purge(olderThanDays)` is for a job and deletes read notifications.
+  - `ActivityLog`:
+    - `Log(NewRow)` needs no login (e.g. LOGIN_FAILED); the user comes from `NewRow.UserId`. Other modules use `internal Add(context, …)`. There is no update or delete except `Purge(before)` for a job.
+    - Module and Action are uppercase codes, and EntityName is the lowercase table name.
+    - Old / new values accept an object or a JSON string and are stored as JSON. Values under keys containing password / token / secret / hash / key / signature become `***`. Lists do not load the old / new values.
+  - The other modules do not call `Notification.Add` / `ActivityLog.Add` yet; wiring them in is a later step.
+- Read-only child classes (`ProcurementReceiptItem`, `BorrowItemUnit`, `SalesOrderItem`, `LetterApproval`, `LetterDisposition`, `AssetMovement`, `Document`, `Competition`) also follow the `<Name>.cs` + `<Name>.Services.cs` split.
 - Transaction order: Approval → Akses → Anggota → Program → TimPelaksana → Presensi → Keuangan → Sponsorship → Pengadaan → Merchandise → Inventaris → Surat → Prestasi → Formulir → EVoting → Information.
 
-### Transactions not done yet (status 2026-11-15)
+### Status (2026-11-16)
 
-Done: `Approval`, `Akses`, `Anggota`, `Program`, `TimPelaksana`, `Presensi` (32 of 88 `t_*` tables). Still to do, in this order (56 tables):
-
-| # | Folder | Tables | Notes for the design |
-|---|---|---|---|
-| 1 | `Keuangan` (13) | `t_financial_transaction`, `t_financial_attachment`, `t_dues_bill`, `t_budget`, `t_budget_item`, `t_budget_document`, `t_funding_request`, `t_funding_approval`, `t_funding_realization`, `t_period_balance`, `t_debt`, `t_debt_attachment`, `t_debt_payment` | Draft → Posted → Void transactions numbered with `DocumentNumberSeq`. Funding requests follow `m_approval_flow` (FUNDING_REQUEST) step by step. Dues bills are generated from `m_dues_setting` and their payment creates an Income transaction. Debt `paid_amount` / status come from the payments. Period balances close the period. Lock `m_financial_account` opening balance once used. |
-| 2 | `Sponsorship` (3) | `t_sponsorship`, `t_sponsorship_benefit`, `t_sponsorship_mou` | Copy benefits from `m_sponsorship_package_benefit`. Income through `t_financial_transaction.sponsorship_id`. Refuse blacklisted parties. |
-| 3 | `Pengadaan` (6) | `t_procurement_request`, `t_procurement_item`, `t_procurement_quotation`, `t_procurement_approval`, `t_procurement_receipt`, `t_procurement_receipt_item` | Approval via `m_approval_flow` (PROCUREMENT). A receipt can create `m_asset` / `m_asset_unit` (`procurement_item_id`) and a product stock movement. |
-| 4 | `Merchandise` (3) | `t_sales_order`, `t_sales_order_item`, `t_product_stock_movement` | Stock per product or per variant (`track_stock`), pre-order, payment through `sales_order_id`. |
-| 5 | `Inventaris` (6) | `t_borrow_request`, `t_borrow_item`, `t_borrow_item_unit`, `t_asset_movement`, `t_asset_inspection`, `t_maintenance_log` | Lending of quantity or per-unit assets (QR), rental scheme / late fee, return status per unit, asset / unit status updates, `AssetUnit` integration. `Asset.CreateMovement` is already internal. |
-| 6 | `Surat` (4) | `t_letter`, `t_letter_approval`, `t_letter_disposition`, `t_document` | Letter numbering via `DocumentNumberSeq`, approval via `m_approval_flow` (LETTER) or position, disposition to members. |
-| 7 | `Prestasi` (6) | `t_competition`, `t_competition_material`, `t_competition_participant`, `t_achievement`, `t_certificate`, `t_member_point` | Certificate number plus `verification_code`. Points via `PointRule.GetEffectiveRow`, unique per (member, source, ref). |
-| 8 | `Formulir` (5) | `t_form`, `t_form_question`, `t_form_response`, `t_form_answer`, `t_aspiration` | Forms for activity evaluation and recruitment questions (`Recruitment` / `CommitteeRecruitment` already reference `t_form`). Anonymous aspirations. |
-| 9 | `EVoting` (6) | `t_election`, `t_election_candidate`, `t_election_eligible_voter`, `t_election_vote`, `t_election_result`, `t_election_audit_event` | `t_election_vote.id` is random (not `m_sequence`). The vote must be anonymous and encrypted. Audit events, and results on finalize. |
-| 10 | `Information` (4) | `t_announcement`, `t_banner`, `t_notification`, `t_activity_log` | Landing page content, in-app notifications (use `UserNotificationPref`), activity log. |
+All 88 `t_*` tables have a service class. Every transaction module is done: `Approval`, `Akses`, `Anggota`, `Program`, `TimPelaksana`, `Presensi`, `Keuangan`, `Sponsorship`, `Pengadaan`, `Merchandise`, `Inventaris`, `Surat`, `Prestasi`, `Formulir`, `EVoting` and `Information`. Next comes testing against the database.
 
 Open items not tied to one folder:
 - **Pending user decisions:**
   - The DDL comment on `t_period_handover_item.ref_id` still names `t_partnership_agreement` for MOU_AKTIF. The code uses `t_sponsorship_mou`; fixing the comment awaits the user's OK.
   - There is no column for an email-verified flag (`UserToken.VerifyEmail` only consumes the token) and none for report revision notes (`ActivityReport`). Adding them is up to the user.
-- **Not committed:** nothing since commit `c82d762` has been committed. The user wants one commit after the transactions are done; commit only when asked.
-- **Test programs:** the test scenarios are in the scratchpad (`tests/*.cs`, run through `seqtest`) and are not part of the repo. Every test cleaned up its data and reset `m_sequence` to 0.
+- **Not committed:** commit `631695d` holds everything up to Presensi. Keuangan, Sponsorship, Pengadaan, Merchandise, Inventaris, Surat, Prestasi, Formulir, EVoting and Information are not committed yet. The user wants one commit now that the transactions are done; commit only when asked.
+- **Testing:**
+  - Keuangan, Sponsorship, Pengadaan, Merchandise, Inventaris, Surat, Prestasi, Formulir, EVoting and Information have only been built, not run against a database. The user wants to test them now that all transactions are done.
+  - A Keuangan scenario program exists in the scratchpad (`fintest`, connection string from env `GWA_DB`). It refuses to run on non-empty tables and resets `m_sequence` to 0 afterwards. Scratchpad files can disappear; they are not part of the repo.
+  - Earlier modules were tested on the previous device. Every test cleaned up its data and reset `m_sequence` to 0.
+- **Local database (this device):** `C:\Users\hisya\Documents\gitawidyaagni-sql\gitawidyaagni_create.sql` was generated from the EF model with Pomelo `GenerateCreateScript`. It has no seed data, CHECK constraints, triggers or views. MySQL 8 is in `C:\Program Files\MySQL\MySQL Server 8.0\bin` and is not on PATH.
 
 ## Schema sources
 

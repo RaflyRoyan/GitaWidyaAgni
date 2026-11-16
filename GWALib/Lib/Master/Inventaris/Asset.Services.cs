@@ -272,7 +272,8 @@ namespace GWALib.Lib.Master.Inventaris
                 InsBy = userId
             };
         }
-        private static EF.MAsset CreateRow(EF.ModelContext context, NewRow newrow, int userId)
+        // procurementItemId diisi oleh penerimaan pengadaan (ProcurementReceipt).
+        internal static EF.MAsset CreateRow(EF.ModelContext context, NewRow newrow, int userId, int? procurementItemId = null)
         {
             var assetCode = newrow.AssetCode?.Trim().ToUpperInvariant() ?? string.Empty;
             var name = newrow.Name?.Trim() ?? string.Empty;
@@ -301,6 +302,7 @@ namespace GWALib.Lib.Master.Inventaris
                 AcquisitionDate = newrow.AcquisitionDate,
                 AcquisitionCost = newrow.AcquisitionCost,
                 AcquisitionSource = (int)newrow.AcquisitionSource,
+                ProcurementItemId = procurementItemId,
                 Location = ToNullable(newrow.Location),
                 AssetCondition = (int)newrow.AssetCondition,
                 RentalFeePerDay = newrow.RentalFeePerDay,
@@ -370,7 +372,10 @@ namespace GWALib.Lib.Master.Inventaris
             {
                 throw new ArgumentException(ExceptionMessage.ASSET_DISPOSED);
             }
-            if (row.Status != (int)AssetStatus.Available)
+            // Aset cukup jumlah bisa berstatus Tersedia walau sebagian masih dipinjam.
+            if (row.Status != (int)AssetStatus.Available
+                || context.TBorrowItems.Any(x => x.AssetId == row.Id && x.Quantity > x.ReturnedQuantity
+                    && (x.BorrowRequest.Status == (int)BorrowRequestStatus.Borrowed || x.BorrowRequest.Status == (int)BorrowRequestStatus.Overdue)))
             {
                 throw new ArgumentException(ExceptionMessage.ASSET_IN_USE);
             }

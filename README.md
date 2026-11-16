@@ -4,7 +4,7 @@ Library backend .NET 8 untuk sistem manajemen **satu organisasi**: anggota dan k
 
 Organisasi adalah level tertinggi. Tidak ada tenant, kampus, kategori UKM, atau pegawai.
 
-> Status: dalam pengembangan. `GWAShared` sudah berisi helper dan enum. `GWALib` sudah punya model EF Core (`GWALib/EF`) dan layer service untuk semua tabel master (`GWALib/Lib/Master`). Service untuk tabel transaksi (`GWALib/Lib/Transaksi`) belum dibuat.
+> Status: dalam pengembangan. Layer service sudah ada untuk semua tabel master (`GWALib/Lib/Master`) dan semua 88 tabel transaksi (`GWALib/Lib/Transaksi`). Modul sampai Presensi sudah diuji ke database. Modul Keuangan sampai Information baru lolos build dan belum diuji ke database.
 
 ## Struktur solution
 
@@ -36,6 +36,44 @@ dotnet build GitaWidyaAgni.sln
 ```
 
 Belum ada project test.
+
+## Konfigurasi saat startup
+
+Aplikasi yang memakai library ini wajib memanggil dua method berikut sekali saat startup:
+
+```csharp
+// Connection string MySQL; jangan di-commit, ambil dari konfigurasi / secret.
+DBClass.Configure(connectionString);
+
+// Kunci e-voting: base64 dari 32 byte acak, dari secret aplikasi (bukan database).
+// Tanpa kunci ini, membuka pemungutan suara, memilih dan finalisasi akan ditolak.
+// Kunci tidak boleh diganti sebelum semua pemilihan yang memakainya difinalisasi.
+ElectionVote.ConfigureKey(base64Key);
+```
+
+Membuat kunci e-voting, misalnya dengan PowerShell:
+
+```powershell
+[Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+```
+
+`OnConfiguring` di `GWALib/EF/ModelContext.cs` sengaja dibiarkan dikomentari supaya connection string tidak ikut ter-commit. Scaffold ulang akan menimpa file EF.
+
+## Job terjadwal
+
+Method berikut disediakan untuk dipanggil job atau scheduler aplikasi. Pakai `ScheduledJobLog` (`Start` / `Finish` / `Fail`) untuk mencatat setiap run.
+
+| Method | Fungsi |
+|---|---|
+| `Election.CloseExpired()` | Menutup pemilihan yang sudah lewat waktu selesai |
+| `BorrowRequest.MarkOverdue(user)` | Menandai peminjaman yang lewat tanggal kembali |
+| `ActivitySchedule.GenerateSessions(from, to, activityId, user)` | Membuat sesi presensi dari jadwal rutin |
+| `Notification.Purge(olderThanDays)` | Menghapus notifikasi yang sudah dibaca |
+| `ActivityLog.Purge(before)` | Menghapus log aktivitas lama |
+| `UserToken.Purge(before, user)` | Menghapus token lama |
+| `ScheduledJobLog.Purge(startedBefore, user)` | Menghapus log job lama |
+
+Setiap method di atas juga punya versi `...Async`.
 
 ## Database
 

@@ -204,9 +204,15 @@ namespace GWALib.Lib.Transaksi.TimPelaksana
             {
                 throw new ArgumentException(ExceptionMessage.RECRUITMENT_QUOTA_BELOW_ACCEPTED);
             }
-            if (formId != null && !context.TForms.Any(x => x.Id == formId))
+            if (formId != null)
             {
-                throw new ArgumentException(string.Format(ExceptionMessage.DATA_X_NOT_FOUND, "Formulir"));
+                var form = context.TForms.Where(x => x.Id == formId).Select(x => new { x.FormType, x.RecruitmentId }).SingleOrDefault()
+                    ?? throw new ArgumentException(string.Format(ExceptionMessage.DATA_X_NOT_FOUND, "Formulir"));
+                // Hanya formulir PendaftaranRekrutmen yang tidak terikat rekrutmen anggota.
+                if (form.FormType != (int)FormType.PendaftaranRekrutmen || form.RecruitmentId != null)
+                {
+                    throw new ArgumentException(string.Format(ExceptionMessage.FIELD_INVALID, "Formulir"));
+                }
             }
         }
         private static void ValidateDelete(EF.ModelContext context, EF.TCommitteeRecruitment row)
