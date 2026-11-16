@@ -1,10 +1,266 @@
-/* Tambahan kecil untuk halaman DevExtreme. Tampilan widget sengaja TIDAK ditimpa: tema yang dipakai sama dengan
-   SurabayaTaxWeb (css/devextreme/dx.material.blue.light.compact.css). */
+/* Standar halaman DevExtreme (diambil dari BEGateSecuritySystemWeb site.css, warna GWA).
+   Tema widget: dx.material.blue.light.compact.css (sama dengan SurabayaTaxWeb). File ini dimuat sesudahnya. */
 
 /* Label wajib di form modal. */
 .gwa-required::after { content: " *"; color: var(--gwa-flame, #c8202a); }
 
-/* Tombol aksi di sel grid. */
+/* ===== DataGrid (semua grid) =====
+   Header bronze dengan teks putih (kontras 4.9:1, tebal). Selektor 4 class sengaja lebih spesifik dari tema material
+   (.dx-datagrid-headers .dx-datagrid-table .dx-row > td) supaya menang apa pun urutan CSS-nya. Warna sama dengan header PDF (js/grid-export.js). */
+.dx-datagrid .dx-datagrid-headers {
+    background: #9a6b00;
+    color: #fff;
+    border-bottom: 0;
+}
+
+.dx-datagrid .dx-datagrid-headers .dx-datagrid-table .dx-header-row > td {
+    background: #9a6b00;
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    border-color: rgba(255, 255, 255, .2);
+}
+
+    .dx-datagrid .dx-datagrid-headers .dx-datagrid-table .dx-header-row > td .dx-sort,
+    .dx-datagrid .dx-datagrid-headers .dx-datagrid-table .dx-header-row > td .dx-header-filter {
+        color: rgba(255, 255, 255, .9);
+    }
+
+    .dx-datagrid .dx-datagrid-headers .dx-datagrid-table .dx-header-row > td .dx-header-filter-empty {
+        color: rgba(255, 255, 255, .55);
+    }
+
+/* Baris filter tetap terang di bawah header bronze. */
+.dx-datagrid .dx-datagrid-headers .dx-datagrid-table .dx-row.dx-datagrid-filter-row > td {
+    background: #fffdf8;
+    color: var(--vz-body-color);
+}
+
+/* zebra tidak menimpa baris nonaktif (AppUI.inactiveRowPrepared → bg-soft-danger di <tr>) */
+.dx-datagrid .dx-datagrid-rowsview .dx-row-alt:not(.bg-soft-danger) > td {
+    background-color: #fdfaf3;
+}
+
+.dx-datagrid .dx-datagrid-rowsview .dx-data-row.dx-state-hover:not(.dx-selection) > td {
+    background-color: rgba(232, 181, 42, .14);
+}
+
+.dx-datagrid .dx-pager .dx-pages .dx-selection,
+.dx-datagrid .dx-pager .dx-page-sizes .dx-selection {
+    background: #9a6b00;
+    color: #fff;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+/* ===== Grid list standar (DevExtremeExtensions.ListGrid / DetailGrid) ===== */
+
+/* Judul kolom tidak dipatah: kolom pendek (jumlah, Status, Aksi) selebar isi/judul utuh. */
+.gwa-list-grid .dx-header-row > td {
+    white-space: nowrap;
+}
+
+.gwa-list-grid .dx-data-row > td {
+    vertical-align: middle;
+}
+
+/* Tombol aksi outline: latar kartu supaya tetap terbaca di baris tidak aktif (bg-soft-danger). */
+.gwa-list-grid .btn[class*=btn-outline-]:not(:hover) {
+    background-color: var(--vz-card-bg, #fff);
+}
+
+.gwa-grid-actions { white-space: nowrap; }
 .gwa-grid-actions .btn-icon { width: 30px; height: 30px; }
-.gwa-grid-actions .btn + .btn { margin-left: 4px; }
 .dx-datagrid .dx-row > td.gwa-grid-actions, .dx-treelist .dx-row > td.gwa-grid-actions { vertical-align: middle; }
+
+/* Sel dua baris: nama + keterangan kecil (mis. anggota + nomor, tanggal + pembuat). */
+.gwa-cell-main { font-weight: 500; }
+.gwa-cell-sub, .gwa-created small { display: block; font-size: .75rem; color: var(--gwa-muted, #5f5849); }
+
+/* ===== Legend inline (_LegendInline.cshtml): panel collapse di bawah toolbar ===== */
+
+.gwa-legend-toggle[aria-expanded=true] .gwa-when-closed,
+.gwa-legend-toggle:not([aria-expanded=true]) .gwa-when-open {
+    display: none;
+}
+
+.gwa-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem 2rem;
+    margin-top: .75rem;
+    padding: .75rem 1rem;
+    border: 1px dashed rgba(154, 107, 0, .45);
+    border-radius: 8px;
+    background: rgba(232, 181, 42, .07);
+}
+
+.gwa-legend-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem 1.25rem;
+}
+
+.gwa-legend-title {
+    font-size: .75rem;
+    font-weight: 600;
+    color: var(--gwa-muted, #5f5849);
+}
+
+.gwa-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .8125rem;
+}
+
+.gwa-legend-swatch {
+    display: inline-block;
+    width: 28px;
+    height: 18px;
+    border-radius: 4px;
+}
+
+/* ===== Form di modal (gwa-mform-*): label di atas, ringkasan data, panel input, footer ===== */
+
+.gwa-mform .dx-field-item-label-text {
+    font-weight: 600;
+}
+
+.gwa-mform .dx-field-item-help-text {
+    font-size: .75rem;
+}
+
+.gwa-mform .dx-radiogroup-horizontal .dx-radiobutton {
+    margin-right: 1.5rem;
+}
+
+/* Ringkasan data yang sedang diatur */
+.gwa-mform-info {
+    display: flex;
+    align-items: center;
+    gap: .875rem;
+    margin-bottom: 1rem;
+    padding: .75rem 1rem;
+    border: 1px solid rgba(154, 107, 0, .25);
+    border-radius: 10px;
+    background: rgba(232, 181, 42, .08);
+}
+
+.gwa-mform-info-icon {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 20px;
+    color: #fff;
+    background: #9a6b00;
+}
+
+.gwa-mform-info > div {
+    min-width: 0;
+}
+
+.gwa-mform-info-title {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.gwa-mform-info-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem 1rem;
+    font-size: .75rem;
+    color: var(--gwa-muted, #5f5849);
+}
+
+.gwa-mform-info-meta b {
+    font-weight: 600;
+    color: var(--vz-body-color);
+}
+
+/* Judul bagian */
+.gwa-mform-section {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .5rem;
+    margin: 1rem 0 .5rem;
+    padding-bottom: .35rem;
+    border-bottom: 1px dashed var(--gwa-line, #ece4d3);
+}
+
+.gwa-mform-section:first-child {
+    margin-top: 0;
+}
+
+.gwa-mform-section-title {
+    font-size: .75rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #9a6b00;
+}
+
+.gwa-mform-section-hint {
+    font-size: .75rem;
+    color: var(--gwa-muted, #5f5849);
+}
+
+/* Panel input baris baru (form kecil + tombol Tambah) di atas grid detail */
+.gwa-mform-add {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: .75rem;
+    margin-bottom: .75rem;
+    padding: .75rem 1rem;
+    border: 1px dashed rgba(154, 107, 0, .45);
+    border-radius: 10px;
+    background: #fffdf8;
+}
+
+.gwa-mform-add > .gwa-mform-add-form {
+    flex: 1 1 320px;
+    min-width: 0;
+}
+
+.gwa-mform-add > .btn {
+    margin-bottom: .25rem;
+}
+
+/* Panel berbingkai (tree akses, daftar detail) */
+.gwa-mform-panel {
+    padding: .5rem;
+    border: 1px solid var(--vz-border-color);
+    border-radius: 10px;
+}
+
+.gwa-mform-note {
+    margin: .5rem 0 0;
+    font-size: .75rem;
+    color: var(--gwa-muted, #5f5849);
+}
+
+.gwa-mform-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: .5rem;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--vz-border-color);
+}
+
+/* Teks pengantar halaman di card-header */
+.gwa-card-intro {
+    margin: .25rem 0 0;
+    font-size: .8125rem;
+    color: var(--gwa-muted, #5f5849);
+    max-width: 90ch;
+}

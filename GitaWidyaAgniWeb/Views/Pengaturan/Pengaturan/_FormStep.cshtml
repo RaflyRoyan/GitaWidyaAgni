@@ -1,46 +1,52 @@
-@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.FormStep
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.AddStep
+@using GitaWidyaAgniWeb.Models.Pengaturan
+@* Form bersama modal Add & Edit Langkah. Pilihan penyetuju yang tampil mengikuti jenisnya (Pengaturan.stepFormChanged). *@
 
-<form id="frmStep" data-edit="@(Model.IsEdit ? "1" : "0")" onsubmit="return false">
-    <div class="alert alert-light border small mb-3">
-        Alur <b>@Model.NamaAlur</b>. Isi penyetuju sesuai jenisnya: <b>Role</b> (user dengan role itu), <b>Jabatan</b> (pemegang jabatan di periode aktif), atau <b>User tertentu</b>.
-    </div>
-    <div class="row">
-        <div class="col-md-3 mb-3">
-            <label class="form-label">Level</label>
-            @(Html.DevExtreme().NumberBox().ID("StepLevel").Value(Model.StepLevel).Min(0).ShowSpinButtons(true).Format("#0"))
-            <small class="text-muted">0 = berikutnya</small>
-        </div>
-        <div class="col-md-9 mb-3">
-            <label class="form-label gwa-required">Nama langkah</label>
-            @(Html.DevExtreme().TextBox().ID("StepName").Value(Model.StepName).MaxLength(100).Placeholder("mis. Verifikasi Bendahara"))
-        </div>
-        <div class="col-md-6 mb-3">
-            <label class="form-label gwa-required">Penyetuju berdasarkan</label>
-            @(Html.DevExtreme().SelectBox().ID("ApproverType").Value(Model.ApproverType)
-                .DataSource(GitaWidyaAgniWeb.Models.GwaVM.Opsi<GWAShared.Enums.ApproverType>()).ValueExpr("Value").DisplayExpr("Text")
-                .OnValueChanged("fnJenisPenyetuju"))
-        </div>
-        <div class="col-md-6 mb-3">
-            <label class="form-label gwa-required">Boleh minta revisi</label>
-            @(Html.DevExtreme().SelectBox().ID("AllowRevision").Value(Model.AllowRevision)
-                .DataSource(GitaWidyaAgniWeb.Models.GwaVM.Opsi<GWAShared.Enums.RevisionPermission>()).ValueExpr("Value").DisplayExpr("Text"))
-        </div>
-        <div class="col-12 mb-3" data-penyetuju="1">
-            <label class="form-label gwa-required">Role</label>
-            @(Html.DevExtreme().SelectBox().ID("StepRoleId").Value(Model.RoleId).DataSource(Model.RoleList).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true))
-        </div>
-        <div class="col-12 mb-3" data-penyetuju="2">
-            <label class="form-label gwa-required">Jabatan</label>
-            @(Html.DevExtreme().SelectBox().ID("StepPositionId").Value(Model.PositionId).DataSource(Model.PositionList).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true))
-        </div>
-        <div class="col-12 mb-3" data-penyetuju="3">
-            <label class="form-label gwa-required">User</label>
-            @(Html.DevExtreme().SelectBox().ID("StepUserId").Value(Model.UserId).DataSource(Model.UserList).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true))
+@{
+    var isEdit = Model is PengaturanVM.EditStep;
+}
+
+<div class="gwa-mform">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-git-merge-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.NamaAlur</div>
+            <div class="gwa-mform-info-meta"><span><b>Role</b>: user dengan role itu; <b>Jabatan</b>: pemegang jabatan di periode aktif; <b>User tertentu</b>.</span></div>
         </div>
     </div>
-</form>
-<div class="hstack gap-2 justify-content-end">
-    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-    <button type="button" class="btn btn-primary" onclick="fnSimpanStep()"><i class="ri-save-line me-1"></i>Simpan</button>
+
+    @(Html.DevExtreme().Form<PengaturanVM.NewStep>()
+        .ID("frmStep")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(4)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .OnFieldDataChanged("Pengaturan.stepFormChanged")
+        .OnContentReady("Pengaturan.stepFormChanged")
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.StepLevel).HelpText("0 = berikutnya")
+                .Editor(e => e.NumberBox().Min(0).ShowSpinButtons(true).Format("#0"));
+            items.AddSimpleFor(m => m.StepName).ColSpan(3)
+                .Editor(e => e.TextBox().MaxLength(100).Placeholder("mis. Verifikasi Bendahara"));
+            items.AddSimpleFor(m => m.ApproverType).ColSpan(2)
+                .Editor(e => e.SelectBox().DataSource(Model.JenisList).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.AllowRevision).ColSpan(2)
+                .Editor(e => e.SelectBox().DataSource(Model.RevisiList).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.RoleId).ColSpan(4).Name("RoleId")
+                .Editor(e => e.SelectBox().DataSource(Model.RoleList).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).Placeholder("Pilih role..."));
+            items.AddSimpleFor(m => m.PositionId).ColSpan(4).Name("PositionId")
+                .Editor(e => e.SelectBox().DataSource(Model.PositionList).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).Placeholder("Pilih jabatan..."));
+            items.AddSimpleFor(m => m.UserId).ColSpan(4).Name("UserId")
+                .Editor(e => e.SelectBox().DataSource(Model.UserList).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).Placeholder("Pilih user..."));
+        })
+    )
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Pengaturan.@(isEdit ? "updateStep" : "saveStep")()">
+            <i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")
+        </button>
+    </div>
 </div>
-<script>fnTampilPenyetuju(@Model.ApproverType);</script>

@@ -1,40 +1,58 @@
-@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.FormFormat
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.AddFormat
+@using GitaWidyaAgniWeb.Models.Pengaturan
+@* Form bersama modal Add & Edit Format Nomor. Jenis dokumen tidak bisa diubah; status hanya di Edit. *@
 
-<form id="frmFormat" data-edit="@(Model.IsEdit ? "1" : "0")" onsubmit="return false">
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <label class="form-label gwa-required">Jenis dokumen</label>
-            @(Html.DevExtreme().TextBox().ID("DocumentType").Value(Model.DocumentType).MaxLength(50).ReadOnly(Model.IsEdit)
-                .Placeholder("LETTER, FUNDING_REQUEST, SURAT UND"))
-        </div>
-        <div class="col-md-6 mb-3">
-            <label class="form-label gwa-required">Nomor urut direset</label>
-            @(Html.DevExtreme().SelectBox().ID("ResetPeriod").Value(Model.ResetPeriod)
-                .DataSource(GitaWidyaAgniWeb.Models.GwaVM.Opsi<GWAShared.Enums.NumberResetPeriod>()).ValueExpr("Value").DisplayExpr("Text"))
-        </div>
-        <div class="col-md-8 mb-3">
-            <label class="form-label gwa-required">Format</label>
-            @(Html.DevExtreme().TextBox().ID("NumberFormat").Value(Model.NumberFormat).MaxLength(100).Placeholder("{seq}/{org}/SK/{month_roman}/{year}"))
-        </div>
-        <div class="col-md-4 mb-3">
-            <label class="form-label gwa-required">Digit nomor urut</label>
-            @(Html.DevExtreme().NumberBox().ID("SeqPadding").Value(Model.SeqPadding).Min(1).Max(10).ShowSpinButtons(true).Format("#0"))
-        </div>
-        <div class="col-12 mb-3">
-            <label class="form-label">Keterangan</label>
-            @(Html.DevExtreme().TextBox().ID("FormatDescription").Value(Model.Description).MaxLength(200))
-        </div>
-        @if (Model.IsEdit)
-        {
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Status</label>
-                @(Html.DevExtreme().SelectBox().ID("FormatIsActive").Value(Model.IsActive)
-                    .DataSource(GitaWidyaAgniWeb.Models.GwaVM.OpsiAktif).ValueExpr("Value").DisplayExpr("Text"))
+@{
+    var editModel = Model as PengaturanVM.EditFormat;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-hashtag"></i></span>
+            <div>
+                <div class="gwa-mform-info-title">@Model.Row.DocumentType</div>
+                <div class="gwa-mform-info-meta"><span>Contoh nomor berikutnya <b>@editModel!.Contoh</b></span></div>
             </div>
-        }
+        </div>
+    }
+
+    <div class="gwa-mform-section">
+        <span class="gwa-mform-section-title">Format nomor</span>
+        <span class="gwa-mform-section-hint">Wajib memuat {seq}</span>
     </div>
-</form>
-<div class="hstack gap-2 justify-content-end">
-    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-    <button type="button" class="btn btn-primary" onclick="fnSimpanFormat()"><i class="ri-save-line me-1"></i>Simpan</button>
+    @(Html.DevExtreme().Form<PengaturanVM.NewFormat>()
+        .ID("frmFormat")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.DocumentType).ColSpan(2)
+                .Editor(e => e.TextBox().MaxLength(50).ReadOnly(isEdit).Placeholder("LETTER, FUNDING_REQUEST, SURAT UND"));
+            items.AddSimpleFor(m => m.ResetPeriod)
+                .Editor(e => e.SelectBox().DataSource(Model.ResetList).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.NumberFormat).ColSpan(2)
+                .Editor(e => e.TextBox().MaxLength(100).Placeholder("{seq}/{org}/SK/{month_roman}/{year}"));
+            items.AddSimpleFor(m => m.SeqPadding)
+                .Editor(e => e.NumberBox().Min(1).Max(10).ShowSpinButtons(true).Format("#0"));
+            items.AddSimpleFor(m => m.Description).ColSpan(isEdit ? 2 : 3)
+                .Editor(e => e.TextBox().MaxLength(200));
+            if (isEdit)
+            {
+                items.AddSimpleFor(m => m.IsActive).Editor(e => e.SelectBox().DataSource(Model.AktifList).ValueExpr("Value").DisplayExpr("Text"));
+            }
+        })
+    )
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Pengaturan.@(isEdit ? "updateFormat" : "saveFormat")()">
+            <i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")
+        </button>
+    </div>
 </div>

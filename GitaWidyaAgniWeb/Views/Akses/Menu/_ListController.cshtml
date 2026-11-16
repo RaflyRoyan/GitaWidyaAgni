@@ -1,0 +1,22 @@
+@model GitaWidyaAgniWeb.Models.Akses.MenuVM.ListController
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Akses
+
+@(Html.DevExtreme().DataGrid<MenuVM.ControllerRow>()
+    .ID("tblController")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Daftar Controller")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Controller").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.IndexAction).Caption("Halaman Utama").Visible(false);
+        columns.AddFor(m => m.Description).Caption("Keterangan");
+        columns.AddFor(m => m.Aksi).Caption("Aksi Terdaftar");
+        columns.AddFor(m => m.JumlahAksi).Caption("Jumlah Aksi").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Menu.controllerActionTemplate");
+    })
+)

@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.ListTemplate
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Pengaturan
+
+@(Html.DevExtreme().DataGrid<PengaturanVM.TemplateRow>()
+    .ID("tblTemplate")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Template Pesan")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.TemplateCode).Caption("Kode").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Kanal).Caption("Kanal");
+        columns.AddFor(m => m.Subject).Caption("Subjek");
+        columns.AddFor(m => m.Body).Caption("Isi").CellTemplate(new JS("Pengaturan.shortTemplate"));
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Pengaturan.templateActionTemplate");
+    })
+)

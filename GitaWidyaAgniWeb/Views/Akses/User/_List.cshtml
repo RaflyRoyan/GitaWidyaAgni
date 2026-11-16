@@ -1,0 +1,22 @@
+@model GitaWidyaAgniWeb.Models.Akses.UserVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Akses
+
+@(Html.DevExtreme().DataGrid<UserVM.Row>()
+    .ID("tblGrid")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Daftar User")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Username).Caption("Username").CssClass("fw-semibold");
+        columns.AddFor(m => m.NamaAnggota).Caption("Anggota").CellTemplate(new JS("User.memberTemplate"));
+        columns.AddFor(m => m.NomorAnggota).Caption("No. Anggota").Visible(false);
+        columns.AddFor(m => m.Role).Caption("Role");
+        columns.AddFor(m => m.LastLoginAt).Caption("Login Terakhir").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("User.actionTemplate");
+    })
+)

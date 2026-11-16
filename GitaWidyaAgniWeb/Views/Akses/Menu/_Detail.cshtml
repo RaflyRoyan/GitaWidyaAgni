@@ -1,15 +1,25 @@
 @model GitaWidyaAgniWeb.Models.Akses.MenuVM.Detail
+@* Modal sub menu dalam grup: centang + seret untuk urutan (grid dibuat lewat JS, Menu.initDetail). *@
 
-<div id="frmDetail" data-key="@Model.Key">
-    <p class="small text-muted">Centang sub menu untuk grup <b>@Model.Nama</b>. Urutan di sidebar mengikuti urutan daftar; seret baris lewat ikon di kiri untuk mengubah urutan.</p>
-    <div id="tblDetail"></div>
-</div>
-<div class="hstack gap-2 justify-content-end mt-3">
-    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-    <button type="button" class="btn btn-primary" onclick="fnSimpanDetail()"><i class="ri-save-line me-1"></i>Simpan</button>
+<div class="gwa-mform" id="menuDetail" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-list-ordered"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Nama</div>
+            <div class="gwa-mform-info-meta"><span><b>@Model.Items.Count(x => x.Dipilih)</b> sub menu dipilih</span></div>
+        </div>
+    </div>
+
+    <p class="gwa-mform-note mt-0 mb-2">Centang sub menu untuk grup ini. Urutan di sidebar mengikuti urutan daftar; seret baris lewat ikon di kiri untuk mengubah urutan.</p>
+    <div class="gwa-mform-panel">
+        <div id="tblDetail"></div>
+    </div>
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Menu.saveDetail()"><i class="ri-save-3-line align-bottom me-1"></i> Simpan</button>
+    </div>
 </div>
 <script>
-    // Grid dibuat lewat JS supaya urutan seret mengubah array detailItems (pola demo DevExtreme "Row Drag & Drop").
-    window.detailItems = @Json.Serialize(Model.Items);
-    fnInitDetail();
+    Menu.initDetail(@Json.Serialize(Model.Items));
 </script>

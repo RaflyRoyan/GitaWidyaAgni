@@ -1,5 +1,7 @@
 using GWALib.Lib.Master.Akses;
 using GWALib.Lib.Master.Organization;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace GitaWidyaAgniWeb.Infrastructure
@@ -13,10 +15,13 @@ namespace GitaWidyaAgniWeb.Infrastructure
         public const string DEFAULT_APP_NAME = "Gita Widya Agni";
         private static readonly TimeSpan Duration = TimeSpan.FromMinutes(5);
         private readonly IMemoryCache _cache;
+        private readonly IActionDescriptorCollectionProvider _actions;
+        private Dictionary<string, string>? _areas;
 
-        public AccessService(IMemoryCache cache)
+        public AccessService(IMemoryCache cache, IActionDescriptorCollectionProvider actions)
         {
             _cache = cache;
+            _actions = actions;
         }
 
         // null = semua aksi (SUPERADMIN).
@@ -52,6 +57,22 @@ namespace GitaWidyaAgniWeb.Infrastructure
                 return UserAccess.GetProfile(userId);
             });
         }
+        /// <summary>
+        /// Area ([Area("...")]) sebuah controller, untuk membangun URL menu dari m_controller (yang hanya menyimpan nama controller).
+        /// Controller tanpa area atau belum dibuat → "" (URL /Controller/Action).
+        /// </summary>
+        public string AreaOf(string? controller)
+        {
+            if (string.IsNullOrEmpty(controller))
+            {
+                return string.Empty;
+            }
+            _areas ??= _actions.ActionDescriptors.Items.OfType<ControllerActionDescriptor>()
+                .GroupBy(x => x.ControllerName, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First().RouteValues.TryGetValue("area", out var a) ? a ?? "" : "", StringComparer.OrdinalIgnoreCase);
+            return _areas.TryGetValue(controller, out var area) ? area : string.Empty;
+        }
+
         public string GetAppName()
         {
             return _cache.GetOrCreate("brand:name", entry =>

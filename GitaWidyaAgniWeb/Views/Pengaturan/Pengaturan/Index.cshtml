@@ -1,6 +1,9 @@
-@using GitaWidyaAgniWeb.Models.Pengaturan
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
 @{
     ViewData["Title"] = "Pengaturan Sistem";
+    // Id tab = akhiran nama aksi List<Id> dan target #target<Id>. Grid tiap tab dimuat saat tab pertama kali dibuka.
     var tabs = new (string Id, string Icon, string Name)[]
     {
         ("Setting", "ri-global-line", "Pengaturan Situs"), ("Format", "ri-hashtag", "Format Nomor"), ("Flow", "ri-git-merge-line", "Alur Persetujuan"),
@@ -8,271 +11,102 @@
         ("Log", "ri-history-line", "Log Aktivitas"), ("Sequence", "ri-sort-number-asc", "Sequence ID")
     };
 }
-<div class="gwa-page-head">
-    <div>
-        <span class="gwa-eyebrow">Pengaturan</span>
-        <h4>Pengaturan Sistem</h4>
-        <p>Isi landing page, penomoran dokumen, alur persetujuan, template pesan, serta pemantauan antrian pesan, job terjadwal, dan log aktivitas.</p>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-settings-3-line align-bottom me-1"></i> Pengaturan Sistem</h5>
+        <p class="gwa-card-intro">Isi landing page, penomoran dokumen, alur persetujuan, template pesan, serta pemantauan antrian pesan, job terjadwal, dan log aktivitas.</p>
     </div>
-</div>
+    <div class="card-body">
+        <ul class="nav nav-tabs gwa-tabs mb-3 flex-nowrap overflow-auto" role="tablist">
+            @foreach (var t in tabs)
+            {
+                <li class="nav-item"><button class="nav-link text-nowrap @(t.Id == "Setting" ? "active" : "")" data-bs-toggle="tab" data-bs-target="#tab@(t.Id)" data-tab="@t.Id" type="button" role="tab"><i class="@t.Icon me-1"></i>@t.Name</button></li>
+            }
+        </ul>
 
-<ul class="nav nav-tabs gwa-tabs mb-3 flex-nowrap overflow-auto" role="tablist">
-    @foreach (var t in tabs)
-    {
-        <li class="nav-item"><button class="nav-link text-nowrap @(t.Id == "Setting" ? "active" : "")" data-bs-toggle="tab" data-bs-target="#tab@(t.Id)" type="button"><i class="@t.Icon me-1"></i>@t.Name</button></li>
-    }
-</ul>
-
-<div class="tab-content">
-    @* ---------------- Pengaturan situs *@
-    <div class="tab-pane fade show active" id="tabSetting">
-        <div class="card"><div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-2 gap-2 flex-wrap">
-                <small class="text-muted">Dipakai landing page (kunci seperti <span class="gwa-code">hero_title</span>, <span class="gwa-code">whatsapp</span>, <span class="gwa-code">instagram</span>).</small>
-                <button class="btn btn-primary" onclick="TambahSetting()"><i class="ri-add-line me-1"></i>Tambah</button>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tabSetting" role="tabpanel">
+                <p class="gwa-mform-note mt-0 mb-2">Dipakai landing page (kunci seperti <span class="gwa-code">hero_title</span>, <span class="gwa-code">whatsapp</span>, <span class="gwa-code">instagram</span>).</p>
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Pengaturan", "Pengaturan.addSetting()",
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah pengaturan"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus pengaturan")) { LegendId = "legendSetting" }' />
+                <div id="targetSetting" class="mt-3"></div>
             </div>
-            @(Html.DevExtreme().DataGrid<PengaturanVM.ViewModel.SettingRow>()
-                .ID("tblSetting")
-                .DataSource(d => d.Mvc().Controller("Pengaturan").LoadAction("GetSetting").Key("Id"))
-                .ShowBorders(true).ShowRowLines(true).ColumnAutoWidth(true).WordWrapEnabled(true)
-                .SearchPanel(s => s.Visible(true).Width(260))
-                .Grouping(g => g.AutoExpandAll(true))
-                .Paging(p => p.PageSize(50))
-                .Columns(c =>
-                {
-                    c.AddFor(m => m.SettingGroup).Caption("Grup").GroupIndex(0);
-                    c.AddFor(m => m.SettingKey).Caption("Kunci").CellTemplate(new JS("gwaRenderKode")).SortOrder(SortOrder.Asc);
-                    c.AddFor(m => m.SettingValue).Caption("Nilai").CellTemplate(new JS("fnRenderNilaiSetting"));
-                    c.AddFor(m => m.Description).Caption("Keterangan");
-                    c.Add().Caption("Aksi").Width(110).Alignment(HorizontalAlignment.Center).AllowFiltering(false).CssClass("gwa-grid-actions").CellTemplate(@<text>
-                        <button type="button" class="btn btn-sm btn-soft-primary btn-icon" title="Ubah" onclick='fnUbahSetting("<%- data.EncDecrKey %>")'><i class="ri-edit-2-line"></i></button>
-                        <button type="button" class="btn btn-sm btn-soft-danger btn-icon" title="Hapus" onclick='fnHapusSetting("<%- data.EncDecrKey %>", "<%- data.SettingKey %>")'><i class="ri-delete-bin-line"></i></button>
-                    </text>);
-                })
-            )
-        </div></div>
-    </div>
 
-    @* ---------------- Format nomor *@
-    <div class="tab-pane fade" id="tabFormat">
-        <div class="card"><div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-2 gap-2 flex-wrap">
-                <small class="text-muted">Placeholder: <span class="gwa-code">{seq}</span> <span class="gwa-code">{type}</span> <span class="gwa-code">{org}</span> <span class="gwa-code">{month_roman}</span> <span class="gwa-code">{month}</span> <span class="gwa-code">{year}</span> <span class="gwa-code">{yy}</span></small>
-                <button class="btn btn-primary" onclick="TambahFormat()"><i class="ri-add-line me-1"></i>Tambah</button>
+            <div class="tab-pane fade" id="tabFormat" role="tabpanel">
+                <p class="gwa-mform-note mt-0 mb-2">Placeholder: <span class="gwa-code">{seq}</span> <span class="gwa-code">{type}</span> <span class="gwa-code">{org}</span> <span class="gwa-code">{month_roman}</span> <span class="gwa-code">{month}</span> <span class="gwa-code">{year}</span> <span class="gwa-code">{yy}</span></p>
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Format Nomor", "Pengaturan.addFormat()",
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah format"),
+                    ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan format")) { LegendId = "legendFormat" }' />
+                <div id="targetFormat" class="mt-3"></div>
             </div>
-            @(Html.DevExtreme().DataGrid<PengaturanVM.ViewModel.FormatRow>()
-                .ID("tblFormat")
-                .DataSource(d => d.Mvc().Controller("Pengaturan").LoadAction("GetFormat").Key("Id"))
-                .ShowBorders(true).ShowRowLines(true).ColumnAutoWidth(true)
-                .SearchPanel(s => s.Visible(true).Width(260))
-                .Paging(p => p.PageSize(20))
-                .Columns(c =>
-                {
-                    c.AddFor(m => m.DocumentType).Caption("Jenis").CellTemplate(new JS("gwaRenderKode")).SortOrder(SortOrder.Asc);
-                    c.AddFor(m => m.NumberFormat).Caption("Format");
-                    c.AddFor(m => m.Contoh).Caption("Contoh hasil").CssClass("fw-semibold");
-                    c.AddFor(m => m.Reset).Caption("Reset urut");
-                    c.AddFor(m => m.IsActive).Caption("Status").CellTemplate(new JS("gwaRenderAktif")).Alignment(HorizontalAlignment.Center).Width(110);
-                    c.Add().Caption("Aksi").Width(110).Alignment(HorizontalAlignment.Center).AllowFiltering(false).CssClass("gwa-grid-actions").CellTemplate(@<text>
-                        <button type="button" class="btn btn-sm btn-soft-primary btn-icon" title="Ubah" onclick='fnUbahFormat("<%- data.EncDecrKey %>")'><i class="ri-edit-2-line"></i></button>
-                        <% if (data.IsActive === 1) { %>
-                        <button type="button" class="btn btn-sm btn-soft-danger btn-icon" title="Nonaktifkan" onclick='fnHapusFormat("<%- data.EncDecrKey %>", "<%- data.DocumentType %>")'><i class="ri-forbid-line"></i></button>
-                        <% } %>
-                    </text>);
-                })
-            )
-        </div></div>
-    </div>
 
-    @* ---------------- Alur persetujuan *@
-    <div class="tab-pane fade" id="tabFlow">
-        <div class="card"><div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-2 gap-2 flex-wrap">
-                <small class="text-muted">Satu alur aktif per jenis dokumen (FUNDING_REQUEST, PROCUREMENT, LETTER). Buka baris untuk melihat dan mengatur langkahnya.</small>
-                <button class="btn btn-primary" onclick="TambahFlow()"><i class="ri-add-line me-1"></i>Tambah Alur</button>
+            <div class="tab-pane fade" id="tabFlow" role="tabpanel">
+                <p class="gwa-mform-note mt-0 mb-2">Satu alur aktif per jenis dokumen (FUNDING_REQUEST, PROCUREMENT, LETTER). Buka baris untuk melihat dan mengatur langkahnya.</p>
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Alur", "Pengaturan.addFlow()",
+                    ("btn-outline-success", "ri-add-circle-line", "Tambah langkah"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah alur / langkah"),
+                    ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan alur / hapus langkah")) { LegendId = "legendFlow" }' />
+                <div id="targetFlow" class="mt-3"></div>
             </div>
-            @(Html.DevExtreme().DataGrid<PengaturanVM.ViewModel.FlowRow>()
-                .ID("tblFlow")
-                .DataSource(d => d.Mvc().Controller("Pengaturan").LoadAction("GetFlow").Key("Id"))
-                .ShowBorders(true).ShowRowLines(true).ColumnAutoWidth(true)
-                .Paging(p => p.PageSize(20))
-                .MasterDetail(m => m.Enabled(true).Template(new JS("fnTemplateLangkah")))
-                .Columns(c =>
-                {
-                    c.AddFor(m => m.DocumentType).Caption("Jenis").CellTemplate(new JS("gwaRenderKode")).SortOrder(SortOrder.Asc);
-                    c.AddFor(m => m.Name).Caption("Nama alur").CssClass("fw-medium");
-                    c.AddFor(m => m.Description).Caption("Keterangan");
-                    c.AddFor(m => m.JumlahLangkah).Caption("Langkah").Alignment(HorizontalAlignment.Center).Width(90);
-                    c.AddFor(m => m.IsActive).Caption("Status").CellTemplate(new JS("gwaRenderAktif")).Alignment(HorizontalAlignment.Center).Width(110);
-                    c.Add().Caption("Aksi").Width(140).Alignment(HorizontalAlignment.Center).AllowFiltering(false).CssClass("gwa-grid-actions").CellTemplate(@<text>
-                        <button type="button" class="btn btn-sm btn-soft-success btn-icon" title="Tambah langkah" onclick='fnTambahStep("<%- data.EncDecrKey %>")'><i class="ri-add-circle-line"></i></button>
-                        <button type="button" class="btn btn-sm btn-soft-primary btn-icon" title="Ubah" onclick='fnUbahFlow("<%- data.EncDecrKey %>")'><i class="ri-edit-2-line"></i></button>
-                        <% if (data.IsActive === 1) { %>
-                        <button type="button" class="btn btn-sm btn-soft-danger btn-icon" title="Nonaktifkan" onclick='fnHapusFlow("<%- data.EncDecrKey %>", "<%- data.Name %>")'><i class="ri-forbid-line"></i></button>
-                        <% } %>
-                    </text>);
-                })
-            )
-        </div></div>
-    </div>
 
-    @* ---------------- Template pesan *@
-    <div class="tab-pane fade" id="tabTemplate">
-        <div class="card"><div class="card-body">
-            <div class="d-flex justify-content-between align-items-center mb-2 gap-2 flex-wrap">
-                <small class="text-muted">Satu template per kode dan kanal. Variabel ditulis <span class="gwa-code">{name}</span>, <span class="gwa-code">{link}</span>, dst.</small>
-                <button class="btn btn-primary" onclick="TambahTemplate()"><i class="ri-add-line me-1"></i>Tambah</button>
+            <div class="tab-pane fade" id="tabTemplate" role="tabpanel">
+                <p class="gwa-mform-note mt-0 mb-2">Satu template per kode dan kanal. Variabel ditulis <span class="gwa-code">{name}</span>, <span class="gwa-code">{link}</span>, dst.</p>
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Template", "Pengaturan.addTemplate()",
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah template"),
+                    ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan template")) { LegendId = "legendTemplate" }' />
+                <div id="targetTemplate" class="mt-3"></div>
             </div>
-            @(Html.DevExtreme().DataGrid<PengaturanVM.ViewModel.TemplateRow>()
-                .ID("tblTemplate")
-                .DataSource(d => d.Mvc().Controller("Pengaturan").LoadAction("GetTemplate").Key("Id"))
-                .ShowBorders(true).ShowRowLines(true).ColumnAutoWidth(true).WordWrapEnabled(true)
-                .SearchPanel(s => s.Visible(true).Width(260))
-                .HeaderFilter(h => h.Visible(true))
-                .Paging(p => p.PageSize(20))
-                .Columns(c =>
-                {
-                    c.AddFor(m => m.TemplateCode).Caption("Kode").CellTemplate(new JS("gwaRenderKode")).SortOrder(SortOrder.Asc);
-                    c.AddFor(m => m.Kanal).Caption("Kanal").Width(110);
-                    c.AddFor(m => m.Subject).Caption("Subjek");
-                    c.AddFor(m => m.Body).Caption("Isi").CellTemplate(new JS("fnRenderRingkas"));
-                    c.AddFor(m => m.IsActive).Caption("Status").CellTemplate(new JS("gwaRenderAktif")).Alignment(HorizontalAlignment.Center).Width(110);
-                    c.Add().Caption("Aksi").Width(110).Alignment(HorizontalAlignment.Center).AllowFiltering(false).CssClass("gwa-grid-actions").CellTemplate(@<text>
-                        <button type="button" class="btn btn-sm btn-soft-primary btn-icon" title="Ubah" onclick='fnUbahTemplate("<%- data.EncDecrKey %>")'><i class="ri-edit-2-line"></i></button>
-                        <% if (data.IsActive === 1) { %>
-                        <button type="button" class="btn btn-sm btn-soft-danger btn-icon" title="Nonaktifkan" onclick='fnHapusTemplate("<%- data.EncDecrKey %>", "<%- data.TemplateCode %>")'><i class="ri-forbid-line"></i></button>
-                        <% } %>
-                    </text>);
-                })
-            )
-        </div></div>
-    </div>
 
-    @* ---------------- Antrian pesan *@
-    <div class="tab-pane fade" id="tabOutbox">
-        <div class="card"><div class="card-body">
-            @(Html.DevExtreme().DataGrid<PengaturanVM.ViewModel.OutboxRow>()
-                .ID("tblOutbox")
-                .DataSource(d => d.Mvc().Controller("Pengaturan").LoadAction("GetOutbox").Key("Id"))
-                .ShowBorders(true).ShowRowLines(true).ColumnAutoWidth(true).WordWrapEnabled(true)
-                .SearchPanel(s => s.Visible(true).Width(260))
-                .FilterRow(f => f.Visible(true))
-                .HeaderFilter(h => h.Visible(true))
-                .Paging(p => p.PageSize(20))
-                .Columns(c =>
-                {
-                    c.AddFor(m => m.ScheduledAt).Caption("Jadwal").DataType(GridColumnDataType.DateTime).Format("dd-MM-yyyy HH:mm").SortOrder(SortOrder.Desc).Width(140);
-                    c.AddFor(m => m.Kanal).Caption("Kanal").Width(100);
-                    c.AddFor(m => m.Recipient).Caption("Penerima");
-                    c.AddFor(m => m.Ringkasan).Caption("Subjek / Isi");
-                    c.AddFor(m => m.StatusText).Caption("Status").CellTemplate(new JS("fnRenderStatusPesan")).Width(160);
-                    c.AddFor(m => m.AttemptCount).Caption("Coba").Alignment(HorizontalAlignment.Center).Width(70);
-                    c.AddFor(m => m.SentAt).Caption("Terkirim").DataType(GridColumnDataType.DateTime).Format("dd-MM-yyyy HH:mm").Width(140);
-                    c.Add().Caption("Aksi").Width(140).Alignment(HorizontalAlignment.Center).AllowFiltering(false).CssClass("gwa-grid-actions").CellTemplate(@<text>
-                        <button type="button" class="btn btn-sm btn-soft-secondary btn-icon" title="Lihat" onclick='fnDetailOutbox("<%- data.EncDecrKey %>")'><i class="ri-eye-line"></i></button>
-                        <% if (data.Status === 3) { %>
-                        <button type="button" class="btn btn-sm btn-soft-warning btn-icon" title="Coba lagi" onclick='fnRetryOutbox("<%- data.EncDecrKey %>")'><i class="ri-restart-line"></i></button>
-                        <% } %>
-                        <% if (data.Status === 1 || data.Status === 3) { %>
-                        <button type="button" class="btn btn-sm btn-soft-danger btn-icon" title="Batalkan" onclick='fnCancelOutbox("<%- data.EncDecrKey %>")'><i class="ri-close-circle-line"></i></button>
-                        <% } %>
-                    </text>);
-                })
-            )
-        </div></div>
-    </div>
+            <div class="tab-pane fade" id="tabOutbox" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel(null, null,
+                    ("btn-outline-secondary", "ri-eye-line", "Lihat pesan"),
+                    ("btn-outline-warning", "ri-restart-line", "Kirim ulang (gagal)"),
+                    ("btn-outline-danger", "ri-close-circle-line", "Batalkan pesan")) { LegendId = "legendOutbox" }' />
+                <div id="targetOutbox" class="mt-3"></div>
+            </div>
 
-    @* ---------------- Log job *@
-    <div class="tab-pane fade" id="tabJob">
-        <div class="card"><div class="card-body">
-            @(Html.DevExtreme().DataGrid<PengaturanVM.ViewModel.JobRow>()
-                .ID("tblJob")
-                .DataSource(d => d.Mvc().Controller("Pengaturan").LoadAction("GetJob").Key("Id"))
-                .ShowBorders(true).ShowRowLines(true).ColumnAutoWidth(true).WordWrapEnabled(true)
-                .FilterRow(f => f.Visible(true))
-                .HeaderFilter(h => h.Visible(true))
-                .Paging(p => p.PageSize(20))
-                .Columns(c =>
-                {
-                    c.AddFor(m => m.JobName).Caption("Job").CellTemplate(new JS("gwaRenderKode"));
-                    c.AddFor(m => m.StartedAt).Caption("Mulai").DataType(GridColumnDataType.DateTime).Format("dd-MM-yyyy HH:mm:ss").SortOrder(SortOrder.Desc);
-                    c.AddFor(m => m.FinishedAt).Caption("Selesai").DataType(GridColumnDataType.DateTime).Format("dd-MM-yyyy HH:mm:ss");
-                    c.AddFor(m => m.Status).Caption("Status").CellTemplate(new JS("gwaRenderBadge")).Width(110);
-                    c.AddFor(m => m.ProcessedCount).Caption("Diproses").Alignment(HorizontalAlignment.Center).Width(90);
-                    c.AddFor(m => m.Message).Caption("Pesan");
-                })
-            )
-        </div></div>
-    </div>
+            <div class="tab-pane fade" id="tabJob" role="tabpanel">
+                <p class="gwa-mform-note mt-0 mb-2">Riwayat job terjadwal, terbaru di atas.</p>
+                <div id="targetJob"></div>
+            </div>
 
-    @* ---------------- Log aktivitas *@
-    <div class="tab-pane fade" id="tabLog">
-        <div class="card"><div class="card-body">
-            @(Html.DevExtreme().DataGrid<PengaturanVM.ViewModel.LogRow>()
-                .ID("tblLog")
-                .DataSource(d => d.Mvc().Controller("Pengaturan").LoadAction("GetLog").Key("Id"))
-                .ShowBorders(true).ShowRowLines(true).ColumnAutoWidth(true)
-                .SearchPanel(s => s.Visible(true).Width(260))
-                .FilterRow(f => f.Visible(true))
-                .HeaderFilter(h => h.Visible(true))
-                .Paging(p => p.PageSize(25))
-                .Export(e => e.Enabled(true))
-                .OnExporting("function(e){ gwaExportExcel(e, 'Log Aktivitas'); }")
-                .Columns(c =>
-                {
-                    c.AddFor(m => m.Waktu).Caption("Waktu").DataType(GridColumnDataType.DateTime).Format("dd-MM-yyyy HH:mm:ss").SortOrder(SortOrder.Desc).Width(160);
-                    c.AddFor(m => m.Username).Caption("User");
-                    c.AddFor(m => m.Module).Caption("Modul").CellTemplate(new JS("gwaRenderKode"));
-                    c.AddFor(m => m.Action).Caption("Aksi").CellTemplate(new JS("gwaRenderKode"));
-                    c.AddFor(m => m.Data).Caption("Data");
-                    c.AddFor(m => m.IpAddress).Caption("IP");
-                    c.Add().Caption("").Width(60).Alignment(HorizontalAlignment.Center).AllowFiltering(false).CssClass("gwa-grid-actions").CellTemplate(@<text>
-                        <button type="button" class="btn btn-sm btn-soft-secondary btn-icon" title="Detail" onclick='fnDetailLog("<%- data.EncDecrKey %>")'><i class="ri-eye-line"></i></button>
-                    </text>);
-                })
-            )
-        </div></div>
-    </div>
+            <div class="tab-pane fade" id="tabLog" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel(null, null,
+                    ("btn-outline-secondary", "ri-eye-line", "Detail log")) { LegendId = "legendLog" }' />
+                <div id="targetLog" class="mt-3"></div>
+            </div>
 
-    @* ---------------- Sequence *@
-    <div class="tab-pane fade" id="tabSequence">
-        <div class="card"><div class="card-body">
-            <small class="text-muted d-block mb-2">Id terakhir per tabel. Nilai tidak boleh di bawah MAX(id) tabelnya; ubah hanya untuk perbaikan data.</small>
-            @(Html.DevExtreme().DataGrid<PengaturanVM.ViewModel.SequenceRow>()
-                .ID("tblSequence")
-                .DataSource(d => d.Mvc().Controller("Pengaturan").LoadAction("GetSequence").Key("TableName"))
-                .ShowBorders(true).ShowRowLines(true).ColumnAutoWidth(true)
-                .SearchPanel(s => s.Visible(true).Width(260))
-                .Paging(p => p.PageSize(25))
-                .Columns(c =>
-                {
-                    c.AddFor(m => m.TableName).Caption("Tabel").CellTemplate(new JS("gwaRenderKode"));
-                    c.AddFor(m => m.LastId).Caption("Id terakhir").Alignment(HorizontalAlignment.Right).Width(140);
-                    c.Add().Caption("Aksi").Width(80).Alignment(HorizontalAlignment.Center).AllowFiltering(false).CssClass("gwa-grid-actions").CellTemplate(@<text>
-                        <button type="button" class="btn btn-sm btn-soft-primary btn-icon" title="Ubah" onclick='fnUbahSequence("<%- data.EncDecrKey %>")'><i class="ri-edit-2-line"></i></button>
-                    </text>);
-                })
-            )
-        </div></div>
+            <div class="tab-pane fade" id="tabSequence" role="tabpanel">
+                <p class="gwa-mform-note mt-0 mb-2">Id terakhir per tabel. Nilai tidak boleh di bawah MAX(id) tabelnya; ubah hanya untuk perbaikan data.</p>
+                <partial name="_Toolbar" model='new ToolbarModel(null, null,
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah id terakhir")) { LegendId = "legendSequence" }' />
+                <div id="targetSequence" class="mt-3"></div>
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
         window.PengaturanUrl = {
-            addSetting: '@Url.Action("AddSetting")', editSetting: '@Url.Action("EditSetting")', simpanSetting: '@Url.Action("SimpanSetting")',
-            updateSetting: '@Url.Action("UpdateSetting")', hapusSetting: '@Url.Action("DeleteSetting")', gambarSetting: '@Url.Action("GambarSetting")',
-            addFormat: '@Url.Action("AddFormat")', editFormat: '@Url.Action("EditFormat")', simpanFormat: '@Url.Action("SimpanFormat")',
-            updateFormat: '@Url.Action("UpdateFormat")', hapusFormat: '@Url.Action("DeleteFormat")',
-            addFlow: '@Url.Action("AddFlow")', editFlow: '@Url.Action("EditFlow")', simpanFlow: '@Url.Action("SimpanFlow")',
-            updateFlow: '@Url.Action("UpdateFlow")', hapusFlow: '@Url.Action("DeleteFlow")',
-            addStep: '@Url.Action("AddStep")', editStep: '@Url.Action("EditStep")', simpanStep: '@Url.Action("SimpanStep")',
-            updateStep: '@Url.Action("UpdateStep")', hapusStep: '@Url.Action("DeleteStep")',
-            addTemplate: '@Url.Action("AddTemplate")', editTemplate: '@Url.Action("EditTemplate")', simpanTemplate: '@Url.Action("SimpanTemplate")',
-            updateTemplate: '@Url.Action("UpdateTemplate")', hapusTemplate: '@Url.Action("DeleteTemplate")',
-            detailOutbox: '@Url.Action("DetailOutbox")', retryOutbox: '@Url.Action("RetryOutbox")', cancelOutbox: '@Url.Action("CancelOutbox")',
-            detailLog: '@Url.Action("DetailLog")',
-            editSequence: '@Url.Action("EditSequence")', updateSequence: '@Url.Action("UpdateSequence")'
+            listSetting: '@Url.Action("ListSetting")', addSetting: '@Url.Action("AddSetting")', editSetting: '@Url.Action("EditSetting")',
+            simpanSetting: '@Url.Action("SimpanSetting")', updateSetting: '@Url.Action("UpdateSetting")', hapusSetting: '@Url.Action("DeleteSetting")',
+            gambarSetting: '@Url.Action("GambarSetting")',
+            listFormat: '@Url.Action("ListFormat")', addFormat: '@Url.Action("AddFormat")', editFormat: '@Url.Action("EditFormat")',
+            simpanFormat: '@Url.Action("SimpanFormat")', updateFormat: '@Url.Action("UpdateFormat")', hapusFormat: '@Url.Action("DeleteFormat")',
+            listFlow: '@Url.Action("ListFlow")', addFlow: '@Url.Action("AddFlow")', editFlow: '@Url.Action("EditFlow")',
+            simpanFlow: '@Url.Action("SimpanFlow")', updateFlow: '@Url.Action("UpdateFlow")', hapusFlow: '@Url.Action("DeleteFlow")',
+            addStep: '@Url.Action("AddStep")', editStep: '@Url.Action("EditStep")',
+            simpanStep: '@Url.Action("SimpanStep")', updateStep: '@Url.Action("UpdateStep")', hapusStep: '@Url.Action("DeleteStep")',
+            listTemplate: '@Url.Action("ListTemplate")', addTemplate: '@Url.Action("AddTemplate")', editTemplate: '@Url.Action("EditTemplate")',
+            simpanTemplate: '@Url.Action("SimpanTemplate")', updateTemplate: '@Url.Action("UpdateTemplate")', hapusTemplate: '@Url.Action("DeleteTemplate")',
+            listOutbox: '@Url.Action("ListOutbox")', detailOutbox: '@Url.Action("DetailOutbox")',
+            retryOutbox: '@Url.Action("RetryOutbox")', cancelOutbox: '@Url.Action("CancelOutbox")',
+            listJob: '@Url.Action("ListJob")',
+            listLog: '@Url.Action("ListLog")', detailLog: '@Url.Action("DetailLog")',
+            listSequence: '@Url.Action("ListSequence")', editSequence: '@Url.Action("EditSequence")', updateSequence: '@Url.Action("UpdateSequence")'
         };
     </script>
     <script src="~/Scripts/Pengaturan/Pengaturan.js" asp-append-version="true"></script>

@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.ListLog
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Pengaturan
+
+@(Html.DevExtreme().DataGrid<PengaturanVM.LogRow>()
+    .ID("tblLog")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Log Aktivitas")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Waktu).Caption("Waktu").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm:ss");
+        columns.AddFor(m => m.Username).Caption("User");
+        columns.AddFor(m => m.Module).Caption("Modul").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Action).Caption("Aksi").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Data).Caption("Data");
+        columns.AddFor(m => m.IpAddress).Caption("IP");
+        columns.AddAction("Pengaturan.logActionTemplate", "Detail");
+    })
+)

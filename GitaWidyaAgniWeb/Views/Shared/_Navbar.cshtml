@@ -9,12 +9,12 @@
 }
 <div class="app-menu navbar-menu">
     <div style="z-index:1004;" class="navbar-brand-box">
-        <a href="@Url.Action("Index", "Home")" class="logo logo-light">
+        <a href="@Url.Action("Index", "Home", new { area = "" })" class="logo logo-light">
             <span class="logo-sm">
-                <img src="@Url.Action("Logo", "Brand")" alt="Gita Widya Agni" height="44">
+                <img src="@Url.Action("Logo", "Brand", new { area = "" })" alt="Gita Widya Agni" height="44">
             </span>
             <span class="logo-lg">
-                <img src="@Url.Action("Logo", "Brand")" alt="" height="70">
+                <img src="@Url.Action("Logo", "Brand", new { area = "" })" alt="" height="70">
                 <span class="gwa-brand-title">GITA WIDYA AGNI <span>BACK OFFICE</span></span>
             </span>
         </a>
@@ -29,7 +29,7 @@
             <ul class="navbar-nav" id="navbar-nav">
                 <li class="menu-title"><span>Menu</span></li>
                 <li class="nav-item">
-                    <a href="@Url.Action("Index", "Home")" class="nav-link menu-link @(currentController == "Home" ? "active" : "")">
+                    <a href="@Url.Action("Index", "Home", new { area = "" })" class="nav-link menu-link @(currentController == "Home" ? "active" : "")">
                         <i class="ri-dashboard-2-line"></i> <span>Dashboard</span>
                     </a>
                 </li>
@@ -45,7 +45,7 @@
                     if (item.Children.Count == 0)
                     {
                         <li class="nav-item">
-                            <a href="@Url.Action(item.Action, item.Controller)" class="nav-link menu-link @(currentController == item.Controller ? "active" : "")">
+                            <a href="@Url.Action(item.Action, item.Controller, new { area = Access.AreaOf(item.Controller) })" class="nav-link menu-link @(currentController == item.Controller ? "active" : "")">
                                 <i class="@icon"></i> <span>@item.Name</span>
                             </a>
                         </li>
@@ -63,7 +63,7 @@
                                     @foreach (var child in item.Children)
                                     {
                                         <li class="nav-item">
-                                            <a href="@Url.Action(child.Action, child.Controller)" class="nav-link @(currentController == child.Controller ? "active" : "")">
+                                            <a href="@Url.Action(child.Action, child.Controller, new { area = Access.AreaOf(child.Controller) })" class="nav-link @(currentController == child.Controller ? "active" : "")">
                                                 @if (!string.IsNullOrWhiteSpace(child.Icon))
                                                 {
                                                     <i class="@child.Icon"></i>

@@ -1,0 +1,20 @@
+@model GitaWidyaAgniWeb.Infrastructure.ToolbarModel
+
+@*
+    Toolbar standar halaman list (di dalam card-body, rata kiri): tombol Tambah (opsional) lalu Tampilkan Legenda.
+    Pemakaian: <partial name="_Toolbar" model='new ToolbarModel("Tambah User", "User.add()", legend)' />
+*@
+<div class="d-flex flex-wrap align-items-center gap-2">
+    @if (!string.IsNullOrEmpty(Model.AddText))
+    {
+        <button type="button" class="btn btn-outline-primary btn-sm" onclick="@Model.AddOnClick">
+            <i class="ri-add-line align-bottom me-1"></i> @Model.AddText
+        </button>
+    }
+    <button type="button" class="btn btn-outline-info btn-sm gwa-legend-toggle" data-bs-toggle="collapse" data-bs-target="#@Model.LegendId" aria-expanded="false" aria-controls="@Model.LegendId">
+        <span class="gwa-when-closed"><i class="ri-eye-line align-bottom me-1"></i> Tampilkan Legenda</span>
+        <span class="gwa-when-open"><i class="ri-eye-off-line align-bottom me-1"></i> Sembunyikan Legenda</span>
+    </button>
+</div>
+
+<partial name="_LegendInline" model="Model.Legend" view-data='new ViewDataDictionary(ViewData) { ["LegendId"] = Model.LegendId }' />

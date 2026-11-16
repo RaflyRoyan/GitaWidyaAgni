@@ -1,32 +1,52 @@
-@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.FormFlow
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.AddFlow
+@using GitaWidyaAgniWeb.Models.Pengaturan
+@* Form bersama modal Add & Edit Alur Persetujuan. Jenis dokumen tidak bisa diubah. *@
 
-<form id="frmFlow" data-edit="@(Model.IsEdit ? "1" : "0")" onsubmit="return false">
-    @if (!Model.IsEdit)
+@{
+    var editModel = Model as PengaturanVM.EditFlow;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
     {
-        <div class="alert alert-light border small mb-3">Simpan dulu sebagai <b>Tidak Aktif</b>, tambahkan langkahnya, lalu aktifkan. Alur aktif wajib punya minimal satu langkah.</div>
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-git-merge-line"></i></span>
+            <div>
+                <div class="gwa-mform-info-title">@Model.Row.Name</div>
+                <div class="gwa-mform-info-meta">
+                    <span>Jenis <b>@Model.Row.DocumentType</b></span>
+                    <span><b>@editModel!.JumlahLangkah</b> langkah</span>
+                </div>
+            </div>
+        </div>
     }
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <label class="form-label gwa-required">Jenis dokumen</label>
-            @(Html.DevExtreme().SelectBox().ID("FlowDocumentType").Value(Model.DocumentType).ReadOnly(Model.IsEdit)
-                .DataSource(new[] { "FUNDING_REQUEST", "PROCUREMENT", "LETTER" }).AcceptCustomValue(true).Placeholder("Pilih atau ketik..."))
-        </div>
-        <div class="col-md-6 mb-3">
-            <label class="form-label gwa-required">Nama alur</label>
-            @(Html.DevExtreme().TextBox().ID("FlowName").Value(Model.Name).MaxLength(100))
-        </div>
-        <div class="col-12 mb-3">
-            <label class="form-label">Keterangan</label>
-            @(Html.DevExtreme().TextBox().ID("FlowDescription").Value(Model.Description).MaxLength(200))
-        </div>
-        <div class="col-md-6 mb-3">
-            <label class="form-label">Status</label>
-            @(Html.DevExtreme().SelectBox().ID("FlowIsActive").Value(Model.IsActive)
-                .DataSource(GitaWidyaAgniWeb.Models.GwaVM.OpsiAktif).ValueExpr("Value").DisplayExpr("Text"))
-        </div>
+
+    <div class="gwa-mform-section">
+        <span class="gwa-mform-section-title">Alur persetujuan</span>
+        <span class="gwa-mform-section-hint">Alur aktif minimal punya satu langkah</span>
     </div>
-</form>
-<div class="hstack gap-2 justify-content-end">
-    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-    <button type="button" class="btn btn-primary" onclick="fnSimpanFlow()"><i class="ri-save-line me-1"></i>Simpan</button>
+    @(Html.DevExtreme().Form<PengaturanVM.NewFlow>()
+        .ID("frmFlow")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.DocumentType)
+                .Editor(e => e.SelectBox().DataSource(Model.JenisList).AcceptCustomValue(true).ReadOnly(isEdit).Placeholder("Pilih atau ketik..."));
+            items.AddSimpleFor(m => m.Name).Editor(e => e.TextBox().MaxLength(100).Placeholder("mis. Pengajuan Dana Kegiatan"));
+            items.AddSimpleFor(m => m.Description).Editor(e => e.TextBox().MaxLength(200));
+            items.AddSimpleFor(m => m.IsActive).Editor(e => e.SelectBox().DataSource(Model.AktifList).ValueExpr("Value").DisplayExpr("Text"));
+        })
+    )
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Pengaturan.@(isEdit ? "updateFlow" : "saveFlow")()">
+            <i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")
+        </button>
+    </div>
 </div>

@@ -1,0 +1,23 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.ListOutbox
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Pengaturan
+
+@(Html.DevExtreme().DataGrid<PengaturanVM.OutboxRow>()
+    .ID("tblOutbox")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Antrian Pesan")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.ScheduledAt).Caption("Jadwal").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.Kanal).Caption("Kanal");
+        columns.AddFor(m => m.Recipient).Caption("Penerima");
+        columns.AddFor(m => m.Ringkasan).Caption("Subjek / Isi");
+        columns.AddFor(m => m.StatusText).Caption("Status").CellTemplate(new JS("Pengaturan.outboxStatusTemplate"));
+        columns.AddFor(m => m.LastError).Caption("Error Terakhir").Visible(false);
+        columns.AddFor(m => m.AttemptCount).Caption("Coba").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.SentAt).Caption("Terkirim").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddAction("Pengaturan.outboxActionTemplate");
+    })
+)

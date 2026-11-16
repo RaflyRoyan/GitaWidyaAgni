@@ -1,0 +1,17 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.ListSequence
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Pengaturan
+
+@(Html.DevExtreme().DataGrid<PengaturanVM.SequenceRow>()
+    .ID("tblSequence")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Sequence ID")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.TableName).Caption("Tabel").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.LastId).Caption("Id Terakhir").Alignment(HorizontalAlignment.Right);
+        columns.AddAction("Pengaturan.sequenceActionTemplate");
+    })
+)

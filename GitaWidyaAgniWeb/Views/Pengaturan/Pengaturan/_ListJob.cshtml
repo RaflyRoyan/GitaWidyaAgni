@@ -1,0 +1,20 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.ListJob
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Pengaturan
+
+@(Html.DevExtreme().DataGrid<PengaturanVM.JobRow>()
+    .ID("tblJob")
+    .DataSource(Model.Rows)
+    .KeyExpr("Id")
+    .ListGrid("Log Job Terjadwal")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.JobName).Caption("Job").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.StartedAt).Caption("Mulai").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm:ss");
+        columns.AddFor(m => m.FinishedAt).Caption("Selesai").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm:ss");
+        columns.AddFor(m => m.Status).Caption("Status").CellTemplate(new JS("Pengaturan.jobStatusTemplate"));
+        columns.AddFor(m => m.ProcessedCount).Caption("Diproses").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.Message).Caption("Pesan");
+    })
+)

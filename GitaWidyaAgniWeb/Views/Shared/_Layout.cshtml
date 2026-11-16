@@ -26,6 +26,8 @@
     <script src="~/js/devextreme/aspnet/dx.aspnet.mvc.js"></script>
     <script src="~/js/devextreme/aspnet/dx.aspnet.data.js"></script>
     <script src="~/Scripts/Shared/dx.messages.id.js" asp-append-version="true"></script>
+    @* Handler export grid (Excel + PDF) global: gridExport, dipakai DevExtremeExtensions.ListGrid. *@
+    <script src="~/js/grid-export.js" asp-append-version="true"></script>
     @*VELZON CSS — versi warna GWA (*.gwa.min.css dibuat dari file asli dengan warna diganti)*@
     <script src="~/assets/js/layout.js"></script>
     <link href="~/assets/css/bootstrap.gwa.min.css" rel="stylesheet" />
@@ -132,21 +134,25 @@
        (SurabayaTaxWeb menambahkannya lewat assets/js/app.js loadCSSDevExtreme; di sini statis karena tidak ada mode gelap). *@
     <link href="~/css/devextreme/dx.material.blue.light.compact.css" rel="stylesheet" />
     <link href="~/css/gwa-devextreme.css" rel="stylesheet" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
     <div id="loader" class="loader" style="display: block">
         <div class="logo_sby">            
-            <img src="@Url.Action("Logo", "Brand")" alt="@appName" height="100" />
+            <img src="@Url.Action("Logo", "Brand", new { area = "" })" alt="@appName" height="100" />
         </div>
     </div>
     <div id="layout-wrapper">
         <partial name="_Header" />
         <partial name="_Navbar" />
         <partial name="_Modal" />
+        @Html.AntiForgeryToken()
 
         <div class="main-content">
             <div class="page-content">
                 <div class="container-fluid">
+                    @* Judul + breadcrumb otomatis dari route/ViewData (ViewComponents/PageTitle.cs) *@
+                    @await Component.InvokeAsync(nameof(GitaWidyaAgniWeb.ViewComponents.PageTitle))
                     @RenderBody()
                 </div>
                 <!-- container-fluid -->
@@ -216,7 +222,8 @@
     </script>
     <script src="~/js/devextreme/exceljs.min.js"></script>
     <script src="~/js/devextreme/FileSaver.min.js"></script>
-    <script src="~/Scripts/Shared/Gwa.js" asp-append-version="true"></script>
-    @RenderSection("Scripts", required: false)
+    <script src="~/js/devextreme/jspdf.umd.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

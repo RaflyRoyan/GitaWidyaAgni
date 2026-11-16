@@ -1,66 +1,41 @@
+@model GitaWidyaAgniWeb.Models.Akses.UserVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
 @{
     ViewData["Title"] = "User";
 }
-<div class="gwa-page-head">
-    <div>
-        <span class="gwa-eyebrow">Akses</span>
-        <h4>User</h4>
-        <p>Akun login. Role bisa diberikan untuk periode tertentu (berlaku selama periode itu Aktif) atau tanpa periode (selalu berlaku). Akun anggota dihubungkan dari halaman Data Anggota.</p>
-    </div>
-    <div class="gwa-head-actions">
-        <button type="button" class="btn btn-primary" onclick="Tambah()"><i class="ri-user-add-line me-1"></i>Tambah User</button>
-    </div>
-</div>
 
 <div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-user-settings-line align-bottom me-1"></i> Daftar User</h5>
+        <p class="gwa-card-intro">Akun login. Role bisa diberikan untuk periode tertentu (berlaku selama periode itu Aktif) atau tanpa periode (selalu berlaku). Akun anggota dihubungkan dari halaman Data Anggota.</p>
+    </div>
     <div class="card-body">
-        @(Html.DevExtreme().DataGrid<GitaWidyaAgniWeb.Models.Akses.UserVM.ViewModel.Row>()
-            .ID("tblGrid")
-            .DataSource(d => d.Mvc().Controller("User").LoadAction("GetData").Key("Id"))
-            .ShowBorders(true)
-            .ShowRowLines(true)
-            .ColumnAutoWidth(true)
-            .WordWrapEnabled(true)
-            .SearchPanel(s => s.Visible(true).Width(260))
-            .FilterRow(f => f.Visible(true))
-            .HeaderFilter(h => h.Visible(true))
-            .Paging(p => p.PageSize(20))
-            .Pager(p => p.ShowPageSizeSelector(true).AllowedPageSizes(new[] { 10, 20, 50 }).ShowInfo(true))
-            .Export(e => e.Enabled(true))
-            .OnExporting("function(e){ gwaExportExcel(e, 'User'); }")
-            .Sorting(s => s.Mode(GridSortingMode.Multiple))
-            .Columns(c =>
-            {
-                c.AddFor(m => m.Username).Caption("Username").CssClass("fw-semibold").SortOrder(SortOrder.Asc);
-                c.AddFor(m => m.NamaAnggota).Caption("Anggota").CellTemplate(new JS("fnRenderAnggota"));
-                c.AddFor(m => m.Role).Caption("Role");
-                c.AddFor(m => m.LastLoginAt).Caption("Login Terakhir").DataType(GridColumnDataType.DateTime).Format("dd-MM-yyyy HH:mm").Width(150);
-                c.AddFor(m => m.IsActive).Caption("Status").CellTemplate(new JS("gwaRenderAktif")).Alignment(HorizontalAlignment.Center).Width(110)
-                    .Lookup(l => l.DataSource(GitaWidyaAgniWeb.Models.GwaVM.OpsiAktif).ValueExpr("Value").DisplayExpr("Text"));
-                c.Add().Caption("Aksi").Width(170).Alignment(HorizontalAlignment.Center).AllowFiltering(false).AllowSorting(false).CssClass("gwa-grid-actions").CellTemplate(@<text>
-                    <button type="button" class="btn btn-sm btn-soft-success btn-icon" title="Role" onclick='fnRole("<%- data.EncDecrKey %>", "<%- data.Username %>")'><i class="ri-shield-user-line"></i></button>
-                    <button type="button" class="btn btn-sm btn-soft-warning btn-icon" title="Reset password" onclick='fnResetPassword("<%- data.EncDecrKey %>")'><i class="ri-lock-password-line"></i></button>
-                    <button type="button" class="btn btn-sm btn-soft-primary btn-icon" title="Ubah" onclick='fnUbah("<%- data.EncDecrKey %>")'><i class="ri-edit-2-line"></i></button>
-                    <% if (data.IsActive === 1) { %>
-                    <button type="button" class="btn btn-sm btn-soft-danger btn-icon" title="Nonaktifkan" onclick='fnNonaktif("<%- data.EncDecrKey %>", "<%- data.Username %>")'><i class="ri-forbid-line"></i></button>
-                    <% } %>
-                </text>);
-            })
-        )
+        <partial name="_Toolbar" model='new ToolbarModel("Tambah User", "User.add()",
+            ("btn-outline-success", "ri-shield-user-line", "Role user"),
+            ("btn-outline-info", "ri-lock-password-line", "Reset password"),
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah user"),
+            ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan user"))' />
+
+        <div id="target" class="mt-3">
+            <p class="text-muted text-center mb-0 py-4">Memuat data user...</p>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
         window.UserUrl = {
+            list: '@Url.Action("List")',
             add: '@Url.Action("Add")',
             edit: '@Url.Action("Edit")',
-            simpan: '@Url.Action("SimpanBaru")',
+            simpanBaru: '@Url.Action("SimpanBaru")',
             update: '@Url.Action("Update")',
             hapus: '@Url.Action("Delete")',
             resetPassword: '@Url.Action("ResetPassword")',
             simpanPassword: '@Url.Action("SimpanPassword")',
             role: '@Url.Action("Role")',
+            roleList: '@Url.Action("RoleList")',
             tambahRole: '@Url.Action("TambahRole")',
             hapusRole: '@Url.Action("HapusRole")'
         };

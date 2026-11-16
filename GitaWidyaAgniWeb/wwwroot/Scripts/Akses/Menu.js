@@ -1,118 +1,181 @@
-// Akses › Menu. URL dari window.MenuUrl (Views/Akses/Menu/Index.cshtml); helper di Scripts/Shared/Gwa.js.
+// Akses › Menu. URL dari window.MenuUrl (Views/Akses/Menu/Index.cshtml); helper global di js/site.js (AppUI).
+window.Menu = (function () {
+    const MODAL = 'staticBackdrop';
+    const MODAL_LARGE = 'staticBackdropLarge';
+    let detailItems = [];
 
-function fnRenderNamaIkon(container, options) {
-    if (options.data.Icon) $("<i>").addClass(options.data.Icon + " me-1").appendTo(container);
-    $("<span>").text(options.value).appendTo(container);
-}
-
-// ================================================================ Controller
-function TambahController() {
-    gwaModal(MenuUrl.addController, null, "Tambah Controller");
-}
-function fnUbahController(encKey) {
-    gwaModal(MenuUrl.editController, { encKey: encKey }, "Ubah Controller");
-}
-function fnSimpanController() {
-    var isEdit = $("#frmController").data("edit") == 1;
-    var data = { Name: gwaVal("CtlName"), IndexAction: gwaVal("CtlIndexAction"), Description: gwaValNull("CtlDescription") };
-    if (!data.Name) return gwaWarning("Nama controller harap diisi");
-    if (!data.IndexAction) return gwaWarning("Aksi halaman utama harap diisi");
-    if (isEdit) data.IsActive = gwaId("CtlIsActive");
-    gwaPost(isEdit ? MenuUrl.updateController : MenuUrl.simpanController, data, { grid: "tblController" });
-}
-function fnHapusController(encKey, nama) {
-    gwaHapus(MenuUrl.hapusController, encKey, "Nonaktifkan controller " + nama + "?", "tblController");
-}
-function fnAksi(encKey, nama) {
-    gwaModal(MenuUrl.aksi, { encKey: encKey }, "Daftar Aksi — " + gwaEsc(nama), "besar");
-}
-function fnSimpanAksi() {
-    var grid = DevExpress.ui.dxDataGrid.getInstance(document.getElementById("tblAksi"));
-    grid.saveEditData().then(function () {
-        var rows = grid.getVisibleRows().filter(function (r) { return r.rowType === "data"; }).map(function (r) {
-            return { Action: (r.data.Action || "").trim(), NeedAuth: r.data.NeedAuth, Description: r.data.Description || null };
-        }).filter(function (x) { return x.Action; });
-        if (!rows.length) return gwaWarning("Minimal satu aksi (aksi halaman utama wajib ada)");
-        gwaPost(MenuUrl.simpanAksi, { Key: $("#frmAksi").data("key"), Rows: rows }, { grid: "tblController" });
+    $(function () {
+        refreshController();
+        refreshHeader();
+        refreshSub();
     });
-}
 
-// ================================================================ Header menu
-function TambahHeader() {
-    gwaModal(MenuUrl.addHeader, null, "Tambah Header Menu", "besar");
-}
-function fnUbahHeader(encKey) {
-    gwaModal(MenuUrl.editHeader, { encKey: encKey }, "Ubah Header Menu", "besar");
-}
-function fnSimpanHeader() {
-    var isEdit = $("#frmHeader").data("edit") == 1;
-    var data = {
-        Name: gwaVal("HdrName"), Section: gwaValNull("HdrSection"), ControllerId: gwaId("HdrControllerId"),
-        Icon: gwaValNull("HdrIcon"), Seq: gwaAngka("HdrSeq") || 0, Description: gwaValNull("HdrDescription")
-    };
-    if (!data.Name) return gwaWarning("Nama header harap diisi");
-    if (isEdit) data.IsActive = gwaId("HdrIsActive");
-    gwaPost(isEdit ? MenuUrl.updateHeader : MenuUrl.simpanHeader, data, { grid: "tblHeader" });
-}
-function fnHapusHeader(encKey, nama) {
-    gwaHapus(MenuUrl.hapusHeader, encKey, "Nonaktifkan header " + nama + "?", "tblHeader");
-}
+    function refreshController() { AppUI.loadPartial('#targetController', MenuUrl.listController); }
+    function refreshHeader() { AppUI.loadPartial('#targetHeader', MenuUrl.listHeader); }
+    function refreshSub() { AppUI.loadPartial('#targetSub', MenuUrl.listSub); }
 
-// Sub menu dalam grup: grid berseleksi + seret untuk urutan.
-function fnDetail(encKey, nama) {
-    gwaModal(MenuUrl.detail, { encKey: encKey }, "Sub Menu — " + gwaEsc(nama), "besar");
-}
-function fnInitDetail() {
-    $("#tblDetail").dxDataGrid({
-        dataSource: window.detailItems,
-        keyExpr: "Id",
-        showBorders: true,
-        showRowLines: true,
-        height: 420,
-        scrolling: { mode: "standard" },
-        paging: { enabled: false },
-        selection: { mode: "multiple", showCheckBoxesMode: "always", allowSelectAll: false },
-        selectedRowKeys: window.detailItems.filter(function (x) { return x.Dipilih; }).map(function (x) { return x.Id; }),
-        rowDragging: {
-            allowReordering: true,
-            showDragIcons: true,
-            onReorder: function (e) {
-                var visible = e.component.getVisibleRows();
-                var toIndex = window.detailItems.findIndex(function (x) { return x.Id === visible[e.toIndex].data.Id; });
-                var fromIndex = window.detailItems.findIndex(function (x) { return x.Id === e.itemData.Id; });
-                window.detailItems.splice(fromIndex, 1);
-                window.detailItems.splice(toIndex, 0, e.itemData);
-                e.component.refresh();
+    /* ===== Controller ===== */
+
+    function addController() {
+        AppUI.openModal(MODAL, 'Tambah Controller', MenuUrl.addController, null, 'lg');
+    }
+    function editController(encKey) {
+        AppUI.openModal(MODAL, 'Ubah Controller', MenuUrl.editController, { encKey: encKey }, 'lg');
+    }
+    function saveController() {
+        AppUI.submitForm('#frmController', MenuUrl.simpanController, null, MODAL).done(refreshController);
+    }
+    function updateController() {
+        AppUI.submitForm('#frmController', MenuUrl.updateController, null, MODAL).done(refreshController);
+    }
+    function deleteController(row) {
+        AppUI.confirmPost('Nonaktifkan controller?', 'Controller ' + row.Name + ' dan hak aksesnya tidak berlaku lagi.', MenuUrl.hapusController, { Key: row.EncDecrKey }, 'Nonaktifkan', 'btn-danger')
+            .done(refreshController);
+    }
+
+    function actions(row) {
+        AppUI.openModal(MODAL_LARGE, 'Daftar Aksi — ' + row.Name, MenuUrl.aksi, { encKey: row.EncDecrKey });
+    }
+    function saveActions() {
+        const grid = $('#tblAksi').dxDataGrid('instance');
+        grid.saveEditData().then(function () {
+            const rows = AppUI.gridRows(grid).map(function (r) {
+                return { Action: $.trim(r.Action || ''), NeedAuth: r.NeedAuth, Description: r.Description || null };
+            }).filter(function (x) { return x.Action; });
+            if (!rows.length) {
+                AppUI.alertWarning('Minimal satu aksi (aksi halaman utama wajib ada).');
+                return;
             }
-        },
-        columns: [
-            { dataField: "Nama", caption: "Sub menu", cellTemplate: function (c, o) { if (o.data.Ikon) $("<i>").addClass(o.data.Ikon + " me-1").appendTo(c); $("<span>").text(o.value).appendTo(c); } },
-            { dataField: "Controller", caption: "Controller", cellTemplate: gwaRenderKode }
-        ]
-    });
-}
-function fnSimpanDetail() {
-    var grid = DevExpress.ui.dxDataGrid.getInstance(document.getElementById("tblDetail"));
-    var pilih = grid.getSelectedRowKeys();
-    var ids = window.detailItems.map(function (x) { return x.Id; }).filter(function (id) { return pilih.indexOf(id) >= 0; });
-    gwaPost(MenuUrl.simpanDetail, { Key: $("#frmDetail").data("key"), SubMenuIds: ids }, { grid: ["tblHeader", "tblSub"] });
-}
+            AppUI.postAndClose(MenuUrl.simpanAksi, { Key: $('#menuAksi').data('key'), Rows: rows }, MODAL_LARGE).done(refreshController);
+        });
+    }
 
-// ================================================================ Sub menu
-function TambahSub() {
-    gwaModal(MenuUrl.addSub, null, "Tambah Sub Menu", "besar");
-}
-function fnUbahSub(encKey) {
-    gwaModal(MenuUrl.editSub, { encKey: encKey }, "Ubah Sub Menu", "besar");
-}
-function fnSimpanSub() {
-    var isEdit = $("#frmSub").data("edit") == 1;
-    var data = { Name: gwaVal("SubName"), ControllerId: gwaId("SubControllerId"), Icon: gwaValNull("SubIcon"), Description: gwaValNull("SubDescription") };
-    if (!data.Name) return gwaWarning("Nama sub menu harap diisi");
-    if (!data.ControllerId) return gwaWarning("Pilih controller");
-    if (isEdit) data.IsActive = gwaId("SubIsActive");
-    gwaPost(isEdit ? MenuUrl.updateSub : MenuUrl.simpanSub, data, { grid: ["tblSub", "tblHeader"] });
-}
-function fnHapusSub(encKey, nama) {
-    gwaHapus(MenuUrl.hapusSub, encKey, "Nonaktifkan sub menu " + nama + "?", "tblSub");
-}
+    /* ===== Header menu ===== */
+
+    function addHeader() {
+        AppUI.openModal(MODAL, 'Tambah Header Menu', MenuUrl.addHeader, null, 'lg');
+    }
+    function editHeader(encKey) {
+        AppUI.openModal(MODAL, 'Ubah Header Menu', MenuUrl.editHeader, { encKey: encKey }, 'lg');
+    }
+    function saveHeader() {
+        AppUI.submitForm('#frmHeader', MenuUrl.simpanHeader, null, MODAL).done(refreshHeader);
+    }
+    function updateHeader() {
+        AppUI.submitForm('#frmHeader', MenuUrl.updateHeader, null, MODAL).done(refreshHeader);
+    }
+    function deleteHeader(row) {
+        AppUI.confirmPost('Nonaktifkan header?', 'Header ' + row.Name + ' tidak tampil lagi di sidebar.', MenuUrl.hapusHeader, { Key: row.EncDecrKey }, 'Nonaktifkan', 'btn-danger')
+            .done(refreshHeader);
+    }
+
+    // Sub menu dalam grup: grid berseleksi + seret untuk urutan.
+    function detail(row) {
+        AppUI.openModal(MODAL_LARGE, 'Sub Menu — ' + row.Name, MenuUrl.detail, { encKey: row.EncDecrKey });
+    }
+    function initDetail(items) {
+        detailItems = items || [];
+        $('#tblDetail').dxDataGrid({
+            dataSource: detailItems,
+            keyExpr: 'Id',
+            elementAttr: { class: 'gwa-list-grid' },
+            showBorders: false,
+            showRowLines: true,
+            showColumnLines: true,
+            height: 420,
+            scrolling: { mode: 'standard' },
+            paging: { enabled: false },
+            selection: { mode: 'multiple', showCheckBoxesMode: 'always', allowSelectAll: false },
+            selectedRowKeys: detailItems.filter(function (x) { return x.Dipilih; }).map(function (x) { return x.Id; }),
+            rowDragging: {
+                allowReordering: true,
+                showDragIcons: true,
+                onReorder: function (e) {
+                    const visible = e.component.getVisibleRows();
+                    const toIndex = detailItems.findIndex(function (x) { return x.Id === visible[e.toIndex].data.Id; });
+                    const fromIndex = detailItems.findIndex(function (x) { return x.Id === e.itemData.Id; });
+                    detailItems.splice(fromIndex, 1);
+                    detailItems.splice(toIndex, 0, e.itemData);
+                    e.component.refresh();
+                }
+            },
+            columns: [
+                { dataField: 'Nama', caption: 'Sub Menu', cellTemplate: function (c, o) { iconText(c, o.data.Ikon, o.value); } },
+                { dataField: 'Controller', caption: 'Controller', cellTemplate: AppUI.codeTemplate }
+            ]
+        });
+    }
+    function saveDetail() {
+        const chosen = $('#tblDetail').dxDataGrid('instance').getSelectedRowKeys();
+        const ids = detailItems.map(function (x) { return x.Id; }).filter(function (id) { return chosen.indexOf(id) >= 0; });
+        AppUI.postAndClose(MenuUrl.simpanDetail, { Key: $('#menuDetail').data('key'), SubMenuIds: ids }, MODAL_LARGE).done(function () {
+            refreshHeader();
+            refreshSub();
+        });
+    }
+
+    /* ===== Sub menu ===== */
+
+    function addSub() {
+        AppUI.openModal(MODAL, 'Tambah Sub Menu', MenuUrl.addSub, null, 'lg');
+    }
+    function editSub(encKey) {
+        AppUI.openModal(MODAL, 'Ubah Sub Menu', MenuUrl.editSub, { encKey: encKey }, 'lg');
+    }
+    function saveSub() {
+        AppUI.submitForm('#frmSub', MenuUrl.simpanSub, null, MODAL).done(refreshSub);
+    }
+    function updateSub() {
+        AppUI.submitForm('#frmSub', MenuUrl.updateSub, null, MODAL).done(function () { refreshSub(); refreshHeader(); });
+    }
+    function deleteSub(row) {
+        AppUI.confirmPost('Nonaktifkan sub menu?', 'Sub menu ' + row.Name + ' tidak tampil lagi di sidebar.', MenuUrl.hapusSub, { Key: row.EncDecrKey }, 'Nonaktifkan', 'btn-danger')
+            .done(function () { refreshSub(); refreshHeader(); });
+    }
+
+    /* ===== Grid (teks selalu lewat .text()) ===== */
+
+    function iconText(container, icon, text) {
+        if (icon) $('<i>').addClass(icon + ' me-1').attr('aria-hidden', 'true').appendTo(container);
+        $('<span>').text(text || '').appendTo(container);
+    }
+    function nameIconTemplate(container, options) {
+        iconText(container, options.data.Icon, options.value);
+    }
+
+    function controllerActionTemplate(container, options) {
+        const row = options.data;
+        container.append(AppUI.actionButton({ css: 'btn-outline-success', icon: 'ri-list-settings-line', title: 'Daftar aksi', onClick: function () { actions(row); } }));
+        container.append(AppUI.actionButton({ css: 'btn-outline-warning', icon: 'ri-edit-2-line', title: 'Ubah controller', onClick: function () { editController(row.EncDecrKey); } }));
+        if (row.Aktif) {
+            container.append(AppUI.actionButton({ css: 'btn-outline-danger', icon: 'ri-forbid-line', title: 'Nonaktifkan controller', onClick: function () { deleteController(row); } }));
+        }
+    }
+
+    function headerActionTemplate(container, options) {
+        const row = options.data;
+        if (!row.Controller) {
+            container.append(AppUI.actionButton({ css: 'btn-outline-success', icon: 'ri-list-ordered', title: 'Atur sub menu grup', onClick: function () { detail(row); } }));
+        }
+        container.append(AppUI.actionButton({ css: 'btn-outline-warning', icon: 'ri-edit-2-line', title: 'Ubah header', onClick: function () { editHeader(row.EncDecrKey); } }));
+        if (row.Aktif) {
+            container.append(AppUI.actionButton({ css: 'btn-outline-danger', icon: 'ri-forbid-line', title: 'Nonaktifkan header', onClick: function () { deleteHeader(row); } }));
+        }
+    }
+
+    function subActionTemplate(container, options) {
+        const row = options.data;
+        container.append(AppUI.actionButton({ css: 'btn-outline-warning', icon: 'ri-edit-2-line', title: 'Ubah sub menu', onClick: function () { editSub(row.EncDecrKey); } }));
+        if (row.Aktif) {
+            container.append(AppUI.actionButton({ css: 'btn-outline-danger', icon: 'ri-forbid-line', title: 'Nonaktifkan sub menu', onClick: function () { deleteSub(row); } }));
+        }
+    }
+
+    return {
+        addController: addController, saveController: saveController, updateController: updateController, saveActions: saveActions,
+        addHeader: addHeader, saveHeader: saveHeader, updateHeader: updateHeader, initDetail: initDetail, saveDetail: saveDetail,
+        addSub: addSub, saveSub: saveSub, updateSub: updateSub,
+        nameIconTemplate: nameIconTemplate,
+        controllerActionTemplate: controllerActionTemplate, headerActionTemplate: headerActionTemplate, subActionTemplate: subActionTemplate
+    };
+})();

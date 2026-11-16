@@ -24,7 +24,7 @@
 
             <div class="d-flex align-items-center">
                 <div class="ms-1 header-item d-none d-sm-flex">
-                    <a href="@Url.Action("Index", "Landing")" class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle" title="Lihat beranda publik" aria-label="Lihat beranda publik">
+                    <a href="@Url.Action("Index", "Landing", new { area = "" })" class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle" title="Lihat beranda publik" aria-label="Lihat beranda publik">
                         <i class="ri-global-line fs-22" aria-hidden="true"></i>
                     </a>
                 </div>
@@ -48,14 +48,14 @@
                         <h6 class="dropdown-header">Selamat datang, @displayName</h6>
                         <span class="dropdown-item-text fs-12 text-muted pt-0">@User.GetUsername() · @roleText</span>
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="@Url.Action("Index", "Home")">
+                        <a class="dropdown-item" href="@Url.Action("Index", "Home", new { area = "" })">
                             <i class="mdi mdi-view-dashboard-outline text-muted fs-16 align-middle me-1" aria-hidden="true"></i> <span class="align-middle">Dashboard</span>
                         </a>
-                        <a class="dropdown-item" href="@Url.Action("Index", "Landing")">
+                        <a class="dropdown-item" href="@Url.Action("Index", "Landing", new { area = "" })">
                             <i class="mdi mdi-earth text-muted fs-16 align-middle me-1" aria-hidden="true"></i> <span class="align-middle">Beranda Publik</span>
                         </a>
                         <div class="dropdown-divider"></div>
-                        <form method="post" action="@Url.Action("Logout", "Login")" class="m-0">
+                        <form method="post" action="@Url.Action("Logout", "Login", new { area = "" })" class="m-0">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="dropdown-item">
                                 <i class="mdi mdi-logout text-muted fs-16 align-middle me-1" aria-hidden="true"></i> <span class="align-middle">Logout</span>

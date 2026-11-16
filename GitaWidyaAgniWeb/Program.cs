@@ -81,8 +81,14 @@ builder.Services.AddControllersWithViews(options =>
     // JSON: PascalCase, Key (encKey) untuk objek GWALib, <Enum>Text, tanpa byte[] (lihat LibJson).
     .AddJsonOptions(options => LibJson.Configure(options.JsonSerializerOptions));
 builder.Services.AddAntiforgery(options => options.HeaderName = "RequestVerificationToken");
-// View per folder area: Controllers/Akses/UserController → Views/Akses/User/*.cshtml.
-builder.Services.Configure<Microsoft.AspNetCore.Mvc.Razor.RazorViewEngineOptions>(options => options.ViewLocationExpanders.Add(new FolderViewLocationExpander()));
+// View area tidak di /Areas: controller [Area("Akses")] UserController → Views/Akses/User/*.cshtml (pola BEGateSecuritySystemWeb).
+// BaseController memakai path absolut (URLView); format ini untuk partial bernama pendek (<partial name="_Form" />).
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.Razor.RazorViewEngineOptions>(options =>
+{
+    options.AreaViewLocationFormats.Clear();
+    options.AreaViewLocationFormats.Add("/Views/{2}/{1}/{0}.cshtml");
+    options.AreaViewLocationFormats.Add("/Views/Shared/{0}.cshtml");
+});
 
 var app = builder.Build();
 
@@ -101,6 +107,9 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapControllerRoute(
+    name: "areas",
+    pattern: "{area:exists}/{controller}/{action=Index}/{id?}");
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Landing}/{action=Index}/{id?}");

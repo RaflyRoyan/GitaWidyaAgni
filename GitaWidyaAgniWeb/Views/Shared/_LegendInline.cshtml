@@ -1,0 +1,27 @@
+@model IEnumerable<(string Css, string Icon, string Text)>
+
+@*
+    Legend inline (tanpa modal): panel collapse di bawah toolbar halaman.
+    Tombol pembuka ada di halaman: <button class="btn ... gwa-legend-toggle" data-bs-toggle="collapse" data-bs-target="#legendInline">
+    berisi <span class="gwa-when-closed">Tampilkan Legenda</span><span class="gwa-when-open">Sembunyikan Legenda</span>.
+*@
+<div class="collapse" id="@(ViewData["LegendId"] as string ?? "legendInline")">
+    <div class="gwa-legend">
+        <div class="gwa-legend-group">
+            <span class="gwa-legend-title">Tombol</span>
+            @foreach (var item in Model)
+            {
+                <span class="gwa-legend-item">
+                    <span class="btn btn-sm btn-icon @item.Css pe-none" aria-hidden="true"><i class="@item.Icon"></i></span>
+                    @item.Text
+                </span>
+            }
+        </div>
+        <div class="gwa-legend-group">
+            <span class="gwa-legend-title">Status</span>
+            <span class="gwa-legend-item"><i class="ri-checkbox-circle-fill text-success fs-18" aria-hidden="true"></i> Ya / Aktif</span>
+            <span class="gwa-legend-item"><i class="ri-close-circle-fill text-danger fs-18" aria-hidden="true"></i> Tidak</span>
+            <span class="gwa-legend-item"><span class="gwa-legend-swatch bg-soft-danger" aria-hidden="true"></span> Data tidak aktif</span>
+        </div>
+    </div>
+</div>

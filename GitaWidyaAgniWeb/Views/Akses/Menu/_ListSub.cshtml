@@ -1,0 +1,20 @@
+@model GitaWidyaAgniWeb.Models.Akses.MenuVM.ListSub
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Akses
+
+@(Html.DevExtreme().DataGrid<MenuVM.SubRow>()
+    .ID("tblSub")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Daftar Sub Menu")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Nama").CellTemplate(new JS("Menu.nameIconTemplate"));
+        columns.AddFor(m => m.Controller).Caption("Controller").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Header).Caption("Dalam Grup");
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Menu.subActionTemplate");
+    })
+)

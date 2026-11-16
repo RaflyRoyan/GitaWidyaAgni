@@ -1,0 +1,22 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.ListFlow
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Pengaturan
+
+@* Master-detail: langkah per alur (Pengaturan.stepTemplate). *@
+@(Html.DevExtreme().DataGrid<PengaturanVM.FlowRow>()
+    .ID("tblFlow")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Alur Persetujuan")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .MasterDetail(m => m.Enabled(true).Template(new JS("Pengaturan.stepTemplate")))
+    .Columns(columns =>
+    {
+        columns.AddFor(m => m.DocumentType).Caption("Jenis").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Name).Caption("Nama Alur").CssClass("fw-medium");
+        columns.AddFor(m => m.Description).Caption("Keterangan");
+        columns.AddFor(m => m.JumlahLangkah).Caption("Langkah").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Pengaturan.flowActionTemplate");
+    })
+)

@@ -207,6 +207,11 @@ Membuat kunci e-voting, misalnya dengan PowerShell:
   - Saat sidebar diciutkan, submenu muncul sebagai panel melayang berjudul.
   - Header berisi judul halaman, tautan ke situs publik, tombol fullscreen, dan dropdown user (avatar inisial emas, nama anggota, role aktif, logout).
 - **Detail lain** ada di `wwwroot/css/gwa-theme.css`: font Inter + Playfair Display, kartu, blok sambutan, loader, dan aksen plugin.
+- **Halaman pengelolaan** mengikuti struktur BEGateSecuritySystemWeb (detail lengkap di CLAUDE.md, "Management page pattern"):
+  - Satu area per header sidebar, misalnya `[Area("Akses")]` dengan URL `/Akses/User`. View tetap di `Views/<Area>/<Controller>/`.
+  - Setiap halaman terdiri atas `Index` (kartu + toolbar Tambah / Tampilkan Legenda), `_List` (grid), modal `_Add` / `_Edit` yang memakai `_Form` bersama, dan modul JS `wwwroot/Scripts/<Area>/<Controller>.js`.
+  - Semua grid memakai `ListGrid("Nama")`: filter, header filter, pager 10/20/50, dan **export Excel + PDF** (`wwwroot/js/grid-export.js`). Header grid dan PDF berwarna bronze.
+  - Judul halaman dan breadcrumb dibuat otomatis oleh `ViewComponents/PageTitle`. Helper JavaScript ada di `AppUI` (`wwwroot/js/site.js`).
 
 ## Halaman yang belum dibuat
 

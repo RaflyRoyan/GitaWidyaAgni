@@ -1,4 +1,3 @@
-using DevExtreme.AspNet.Mvc;
 using GitaWidyaAgniWeb.Infrastructure;
 using GitaWidyaAgniWeb.Models;
 using GitaWidyaAgniWeb.Models.Akses;
@@ -6,10 +5,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GitaWidyaAgniWeb.Controllers.Akses
 {
-    /// <summary>Akses › Role: data role + hak akses (aksi & menu). Setiap perubahan membersihkan cache akses web.</summary>
+    /// <summary>Akses › Role (/Akses/Role): data role + hak akses (aksi &amp; menu). Setiap perubahan membersihkan cache akses web.</summary>
+    [Area("Akses")]
     public class RoleController : BaseController
     {
-        const string KEY_EDIT = "Role_Edit_EncryptKey";
+        private const string KEY_EDIT = "Role_KEY_EDIT";
         private readonly AccessService _access;
 
         public RoleController(AccessService access)
@@ -17,38 +17,41 @@ namespace GitaWidyaAgniWeb.Controllers.Akses
             _access = access;
         }
 
-        public IActionResult Index() => HalamanIndex();
+        public IActionResult Index() => HalamanIndex(new RoleVM.Index());
 
-        [HttpGet, AccessAs(Acc.Index)]
-        public IActionResult GetData(DataSourceLoadOptions loadOptions) => Grid(RoleVM.Method.GetDataList, loadOptions);
+        // Grid Role (dimuat via AJAX, dimuat ulang setelah simpan).
+        [AccessAs(Acc.Index)]
+        public IActionResult List() => Bagian(() => new RoleVM.List());
 
+        // Modal Add Role.
         [AccessAs(Acc.Create)]
-        public IActionResult Add() => Modal(() => new RoleVM.Add(), "Form");
+        public IActionResult Add() => Bagian(() => new RoleVM.Add());
 
+        // Modal Edit Role.
         public IActionResult Edit(string encKey)
         {
             TempData[KEY_EDIT] = encKey;
-            return Modal(() => new RoleVM.Edit(encKey), "Form");
+            return Bagian(() => new RoleVM.Edit(encKey));
         }
 
         [HttpPost, AccessAs(Acc.Create)]
-        public IActionResult SimpanBaru([FromBody] RoleVM.Form input)
-            => Aksi(user => RoleVM.Method.Simpan(input, user), "Role tersimpan");
+        public IActionResult SimpanBaru([FromBody] RoleVM.NewRow model)
+            => Aksi(user => RoleVM.Method.Simpan(model, user), "Role berhasil disimpan.");
 
         [HttpPost, AccessAs(Acc.Edit)]
-        public IActionResult Update([FromBody] RoleVM.Form input)
-            => Aksi(user => { RoleVM.Method.Update(TempData[KEY_EDIT]?.ToString(), input, user); _access.ClearAll(); }, "Role berhasil diubah", KEY_EDIT);
+        public IActionResult Update([FromBody] RoleVM.NewRow model)
+            => Aksi(user => { RoleVM.Method.Update(EditKey(KEY_EDIT), model, user); _access.ClearAll(); }, "Role berhasil diubah.", KEY_EDIT);
 
         [HttpPost]
         public IActionResult Delete([FromBody] GwaVM.KeyInput input)
-            => Aksi(user => { RoleVM.Method.Nonaktifkan(input.Key, user); _access.ClearAll(); }, "Role dinonaktifkan");
+            => Aksi(user => { RoleVM.Method.Nonaktifkan(input.Key, user); _access.ClearAll(); }, "Role dinonaktifkan.");
 
-        // ---------- Hak akses
+        // ---------- Hak akses (modal _Akses: dua TreeList berseleksi rekursif)
         [AccessAs(Acc.Index)]
-        public IActionResult Akses(string encKey) => Modal(() => new RoleVM.Akses(encKey));
+        public IActionResult Akses(string encKey) => Bagian(() => new RoleVM.Akses(encKey));
 
         [HttpPost, AccessAs(Acc.Edit)]
-        public IActionResult SimpanAkses([FromBody] RoleVM.AksesInput input)
-            => Aksi(user => { RoleVM.Method.SimpanAkses(input, user); _access.ClearAll(); }, "Hak akses tersimpan");
+        public IActionResult SimpanAkses([FromBody] RoleVM.AksesInput model)
+            => Aksi(user => { RoleVM.Method.SimpanAkses(model, user); _access.ClearAll(); }, "Hak akses tersimpan.");
     }
 }

@@ -1,184 +1,283 @@
-// Pengaturan Sistem. URL dari window.PengaturanUrl (Views/Pengaturan/Pengaturan/Index.cshtml); helper di Scripts/Shared/Gwa.js.
-var P = window.PengaturanUrl;
+// Pengaturan Sistem. URL dari window.PengaturanUrl (Views/Pengaturan/Pengaturan/Index.cshtml); helper global di js/site.js (AppUI).
+// Tiap tab punya grid _List<Tab> di #target<Tab>, dimuat saat tab pertama kali dibuka dan dimuat ulang setelah simpan.
+window.Pengaturan = (function () {
+    const URL = window.PengaturanUrl;
+    const MODAL = 'staticBackdrop';
+    const MODAL_LARGE = 'staticBackdropLarge';
+    const OUTBOX_COLOR = { 1: 'warning', 2: 'success', 3: 'danger', 4: 'secondary' };
+    const JOB_COLOR = { Berjalan: 'info', Sukses: 'success', Selesai: 'success', Gagal: 'danger' };
+    const loaded = {};
 
-function fnRenderRingkas(container, options) {
-    var v = options.value || "";
-    $("<span>").attr("title", v).text(v.length > 90 ? v.substring(0, 90) + "…" : v).appendTo(container);
-}
+    $(function () {
+        refresh('Setting');
+        $('[data-tab]').on('shown.bs.tab', function () {
+            const tab = $(this).data('tab');
+            if (!loaded[tab]) refresh(tab);
+        });
+    });
 
-// ================================================================ Pengaturan situs
-function fnRenderNilaiSetting(container, options) {
-    var d = options.data;
-    if (d.HasImage) {
-        $("<a>").attr({ href: P.gambarSetting + "?encKey=" + encodeURIComponent(d.EncDecrKey), target: "_blank", title: "Lihat gambar" })
-            .addClass("me-1").append($("<i>").addClass("ri-image-line")).appendTo(container);
+    function refresh(tab) {
+        loaded[tab] = true;
+        return AppUI.loadPartial('#target' + tab, URL['list' + tab]);
     }
-    fnRenderRingkas(container, options);
-}
-function TambahSetting() {
-    gwaModal(P.addSetting, null, "Tambah Pengaturan", "besar");
-}
-function fnUbahSetting(encKey) {
-    gwaModal(P.editSetting, { encKey: encKey }, "Ubah Pengaturan", "besar");
-}
-function fnSimpanSetting() {
-    var isEdit = $("#frmSetting").data("edit") == 1;
-    var data = {
-        SettingGroup: gwaVal("SettingGroup").toUpperCase(), SettingKey: gwaVal("SettingKey"), SettingValue: gwaValNull("SettingValue"),
-        Description: gwaValNull("SettingDescription"), HapusGambar: isEdit && gwaWidget("HapusGambar") ? gwaCek("HapusGambar") : false,
-        image: gwaFile("SettingImage")
-    };
-    if (!data.SettingGroup) return gwaWarning("Grup harap diisi");
-    if (!data.SettingKey) return gwaWarning("Kunci harap diisi");
-    gwaPostForm(isEdit ? P.updateSetting : P.simpanSetting, gwaFormData(data), { grid: "tblSetting" });
-}
-function fnHapusSetting(encKey, kunci) {
-    gwaHapus(P.hapusSetting, encKey, "Hapus pengaturan " + kunci + "? Landing page yang memakainya kembali ke nilai bawaan.", "tblSetting");
-}
 
-// ================================================================ Format nomor
-function TambahFormat() {
-    gwaModal(P.addFormat, null, "Tambah Format Nomor", "besar");
-}
-function fnUbahFormat(encKey) {
-    gwaModal(P.editFormat, { encKey: encKey }, "Ubah Format Nomor", "besar");
-}
-function fnSimpanFormat() {
-    var isEdit = $("#frmFormat").data("edit") == 1;
-    var data = {
-        DocumentType: gwaVal("DocumentType"), NumberFormat: gwaVal("NumberFormat"), SeqPadding: gwaAngka("SeqPadding") || 0,
-        ResetPeriod: gwaId("ResetPeriod"), Description: gwaValNull("FormatDescription")
-    };
-    if (!data.DocumentType) return gwaWarning("Jenis dokumen harap diisi");
-    if (!data.NumberFormat) return gwaWarning("Format harap diisi");
-    if (data.NumberFormat.indexOf("{seq}") < 0) return gwaWarning("Format wajib memuat {seq}");
-    if (isEdit) data.IsActive = gwaId("FormatIsActive");
-    gwaPost(isEdit ? P.updateFormat : P.simpanFormat, data, { grid: "tblFormat" });
-}
-function fnHapusFormat(encKey, jenis) {
-    gwaHapus(P.hapusFormat, encKey, "Nonaktifkan format " + jenis + "? Dokumen jenis ini memakai nomor cadangan.", "tblFormat");
-}
+    function deleteRow(title, text, url, row, tab, confirmText) {
+        AppUI.confirmPost(title, text, url, { Key: row.EncDecrKey }, confirmText || 'Nonaktifkan', 'btn-danger').done(function () { refresh(tab); });
+    }
 
-// ================================================================ Alur persetujuan + langkah
-// Master-detail: tabel langkah per alur.
-function fnTemplateLangkah(container, options) {
-    var flow = options.data;
-    $("<div>").addClass("fw-semibold mb-2").text("Langkah " + flow.Name).appendTo(container);
-    $("<div>").dxDataGrid({
-        dataSource: flow.Steps,
-        showBorders: true,
-        showRowLines: true,
-        columnAutoWidth: true,
-        noDataText: "Belum ada langkah. Tambahkan lewat tombol + di baris alur.",
-        columns: [
-            { dataField: "StepLevel", caption: "Level", width: 70, alignment: "center", sortOrder: "asc" },
-            { dataField: "StepName", caption: "Nama langkah" },
-            { dataField: "Jenis", caption: "Berdasarkan" },
-            { dataField: "Penyetuju", caption: "Penyetuju" },
-            { dataField: "Revisi", caption: "Revisi" },
-            {
-                caption: "", width: 100, alignment: "center", cssClass: "gwa-grid-actions",
-                cellTemplate: function (c, o) {
-                    $("<button>").attr({ type: "button", title: "Ubah" }).addClass("btn btn-sm btn-soft-primary btn-icon")
-                        .append($("<i>").addClass("ri-edit-2-line")).on("click", function () { fnUbahStep(o.data.EncDecrKey); }).appendTo(c);
-                    $("<button>").attr({ type: "button", title: "Hapus" }).addClass("btn btn-sm btn-soft-danger btn-icon")
-                        .append($("<i>").addClass("ri-delete-bin-line")).on("click", function () { fnHapusStep(o.data.EncDecrKey, o.data.StepName); }).appendTo(c);
+    /* ===== Pengaturan situs (FormData karena ada gambar) ===== */
+
+    function addSetting() {
+        AppUI.openModal(MODAL, 'Tambah Pengaturan', URL.addSetting, null, 'lg');
+    }
+    function editSetting(encKey) {
+        AppUI.openModal(MODAL, 'Ubah Pengaturan', URL.editSetting, { encKey: encKey }, 'lg');
+    }
+    function saveSetting(isEdit) {
+        const form = $('#frmSetting').dxForm('instance');
+        if (!form.validate().isValid) return;
+        const data = $.extend({}, form.option('formData'));
+        data.SettingGroup = $.trim(data.SettingGroup || '').toUpperCase();
+        data.image = AppUI.dxFile('fileSettingImage');
+        AppUI.postForm(isEdit ? URL.updateSetting : URL.simpanSetting, AppUI.toFormData(data)).done(function (resp) {
+            AppUI.closeModal(MODAL);
+            AppUI.alertSuccess(resp.Message);
+            refresh('Setting');
+        });
+    }
+    function settingValueTemplate(container, options) {
+        const d = options.data;
+        if (d.HasImage) {
+            $('<a class="me-1" target="_blank" rel="noopener">')
+                .attr({ href: URL.gambarSetting + '?encKey=' + encodeURIComponent(d.EncDecrKey), title: 'Lihat gambar', 'aria-label': 'Lihat gambar' })
+                .append($('<i class="ri-image-line" aria-hidden="true">')).appendTo(container);
+        }
+        shortTemplate(container, options);
+    }
+    function settingActionTemplate(container, options) {
+        const row = options.data;
+        container.append(AppUI.actionButton({ css: 'btn-outline-warning', icon: 'ri-edit-2-line', title: 'Ubah pengaturan', onClick: function () { editSetting(row.EncDecrKey); } }));
+        container.append(AppUI.actionButton({
+            css: 'btn-outline-danger', icon: 'ri-delete-bin-line', title: 'Hapus pengaturan',
+            onClick: function () { deleteRow('Hapus pengaturan?', 'Landing page yang memakai ' + row.SettingKey + ' kembali ke nilai bawaan.', URL.hapusSetting, row, 'Setting', 'Hapus'); }
+        }));
+    }
+
+    /* ===== Format nomor ===== */
+
+    function addFormat() {
+        AppUI.openModal(MODAL, 'Tambah Format Nomor', URL.addFormat, null, 'lg');
+    }
+    function editFormat(encKey) {
+        AppUI.openModal(MODAL, 'Ubah Format Nomor', URL.editFormat, { encKey: encKey }, 'lg');
+    }
+    function saveFormat() {
+        AppUI.submitForm('#frmFormat', URL.simpanFormat, null, MODAL).done(function () { refresh('Format'); });
+    }
+    function updateFormat() {
+        AppUI.submitForm('#frmFormat', URL.updateFormat, null, MODAL).done(function () { refresh('Format'); });
+    }
+    function formatActionTemplate(container, options) {
+        const row = options.data;
+        container.append(AppUI.actionButton({ css: 'btn-outline-warning', icon: 'ri-edit-2-line', title: 'Ubah format', onClick: function () { editFormat(row.EncDecrKey); } }));
+        if (row.Aktif) {
+            container.append(AppUI.actionButton({
+                css: 'btn-outline-danger', icon: 'ri-forbid-line', title: 'Nonaktifkan format',
+                onClick: function () { deleteRow('Nonaktifkan format?', 'Dokumen ' + row.DocumentType + ' memakai nomor cadangan.', URL.hapusFormat, row, 'Format'); }
+            }));
+        }
+    }
+
+    /* ===== Alur persetujuan + langkah ===== */
+
+    function addFlow() {
+        AppUI.openModal(MODAL, 'Tambah Alur Persetujuan', URL.addFlow, null, 'lg');
+    }
+    function editFlow(encKey) {
+        AppUI.openModal(MODAL, 'Ubah Alur Persetujuan', URL.editFlow, { encKey: encKey }, 'lg');
+    }
+    function saveFlow() {
+        AppUI.submitForm('#frmFlow', URL.simpanFlow, null, MODAL).done(function () { refresh('Flow'); });
+    }
+    function updateFlow() {
+        AppUI.submitForm('#frmFlow', URL.updateFlow, null, MODAL).done(function () { refresh('Flow'); });
+    }
+
+    function addStep(flowKey) {
+        AppUI.openModal(MODAL_LARGE, 'Tambah Langkah', URL.addStep, { flowKey: flowKey });
+    }
+    function editStep(encKey) {
+        AppUI.openModal(MODAL_LARGE, 'Ubah Langkah', URL.editStep, { encKey: encKey });
+    }
+    // Hanya pilihan penyetuju sesuai jenis (1 Role, 2 Jabatan, 3 User tertentu) yang tampil dan wajib.
+    function stepFormChanged(e) {
+        if (e.dataField && e.dataField !== 'ApproverType') return;
+        const form = e.component;
+        const jenis = Number(form.option('formData').ApproverType);
+        form.itemOption('RoleId', 'visible', jenis === 1);
+        form.itemOption('PositionId', 'visible', jenis === 2);
+        form.itemOption('UserId', 'visible', jenis === 3);
+    }
+    function stepData() {
+        const form = $('#frmStep').dxForm('instance');
+        if (!form.validate().isValid) return null;
+        const data = $.extend({}, form.option('formData'));
+        const jenis = Number(data.ApproverType);
+        if (jenis !== 1) data.RoleId = null;
+        if (jenis !== 2) data.PositionId = null;
+        if (jenis !== 3) data.UserId = null;
+        if (!data.RoleId && !data.PositionId && !data.UserId) {
+            AppUI.alertWarning('Pilih penyetuju.');
+            return null;
+        }
+        return data;
+    }
+    function saveStep() {
+        const data = stepData();
+        if (data) AppUI.postAndClose(URL.simpanStep, data, MODAL_LARGE).done(function () { refresh('Flow'); });
+    }
+    function updateStep() {
+        const data = stepData();
+        if (data) AppUI.postAndClose(URL.updateStep, data, MODAL_LARGE).done(function () { refresh('Flow'); });
+    }
+
+    // Master-detail: grid langkah per alur.
+    function stepTemplate(container, options) {
+        const flow = options.data;
+        $('<div class="gwa-mform-section-title mb-2">').text('Langkah ' + flow.Name).appendTo(container);
+        $('<div>').dxDataGrid({
+            dataSource: flow.Steps,
+            keyExpr: 'EncDecrKey',
+            elementAttr: { class: 'gwa-list-grid' },
+            showBorders: true,
+            showRowLines: true,
+            showColumnLines: true,
+            columnAutoWidth: true,
+            noDataText: 'Belum ada langkah. Tambahkan lewat tombol + di baris alur.',
+            columns: [
+                { dataField: 'StepLevel', caption: 'Level', alignment: 'center', sortOrder: 'asc' },
+                { dataField: 'StepName', caption: 'Nama Langkah' },
+                { dataField: 'Jenis', caption: 'Berdasarkan' },
+                { dataField: 'Penyetuju', caption: 'Penyetuju' },
+                { dataField: 'Revisi', caption: 'Revisi' },
+                {
+                    caption: 'Aksi', alignment: 'center', cssClass: 'gwa-grid-actions',
+                    cellTemplate: function (c, o) {
+                        c.append(AppUI.actionButton({ css: 'btn-outline-warning', icon: 'ri-edit-2-line', title: 'Ubah langkah', onClick: function () { editStep(o.data.EncDecrKey); } }));
+                        c.append(AppUI.actionButton({
+                            css: 'btn-outline-danger', icon: 'ri-delete-bin-line', title: 'Hapus langkah',
+                            onClick: function () { deleteRow('Hapus langkah?', 'Langkah ' + o.data.StepName + ' dihapus dari alur.', URL.hapusStep, o.data, 'Flow', 'Hapus'); }
+                        }));
+                    }
                 }
-            }
-        ]
-    }).appendTo(container);
-}
-function TambahFlow() {
-    gwaModal(P.addFlow, null, "Tambah Alur Persetujuan", "besar");
-}
-function fnUbahFlow(encKey) {
-    gwaModal(P.editFlow, { encKey: encKey }, "Ubah Alur Persetujuan", "besar");
-}
-function fnSimpanFlow() {
-    var isEdit = $("#frmFlow").data("edit") == 1;
-    var data = { DocumentType: gwaVal("FlowDocumentType"), Name: gwaVal("FlowName"), Description: gwaValNull("FlowDescription"), IsActive: gwaId("FlowIsActive") };
-    if (!data.DocumentType) return gwaWarning("Jenis dokumen harap diisi");
-    if (!data.Name) return gwaWarning("Nama alur harap diisi");
-    gwaPost(isEdit ? P.updateFlow : P.simpanFlow, data, { grid: "tblFlow" });
-}
-function fnHapusFlow(encKey, nama) {
-    gwaHapus(P.hapusFlow, encKey, "Nonaktifkan alur " + nama + "? Dokumen jenis ini tidak bisa diajukan sampai ada alur aktif.", "tblFlow");
-}
-function fnTambahStep(flowKey) {
-    gwaModal(P.addStep, { flowKey: flowKey }, "Tambah Langkah", "besar");
-}
-function fnUbahStep(encKey) {
-    gwaModal(P.editStep, { encKey: encKey }, "Ubah Langkah", "besar");
-}
-// Tampilkan pilihan penyetuju sesuai jenis (1 Role, 2 Jabatan, 3 User tertentu).
-function fnTampilPenyetuju(jenis) {
-    $("#frmStep [data-penyetuju]").each(function () { $(this).toggle(Number($(this).data("penyetuju")) === Number(jenis)); });
-}
-function fnJenisPenyetuju(e) {
-    fnTampilPenyetuju(e.value);
-}
-function fnSimpanStep() {
-    var isEdit = $("#frmStep").data("edit") == 1;
-    var jenis = gwaId("ApproverType");
-    var data = {
-        StepLevel: gwaAngka("StepLevel") || 0, StepName: gwaVal("StepName"), ApproverType: jenis, AllowRevision: gwaId("AllowRevision"),
-        RoleId: jenis === 1 ? gwaId("StepRoleId") : null, PositionId: jenis === 2 ? gwaId("StepPositionId") : null, UserId: jenis === 3 ? gwaId("StepUserId") : null
+            ]
+        }).appendTo(container);
+    }
+    function flowActionTemplate(container, options) {
+        const row = options.data;
+        container.append(AppUI.actionButton({ css: 'btn-outline-success', icon: 'ri-add-circle-line', title: 'Tambah langkah', onClick: function () { addStep(row.EncDecrKey); } }));
+        container.append(AppUI.actionButton({ css: 'btn-outline-warning', icon: 'ri-edit-2-line', title: 'Ubah alur', onClick: function () { editFlow(row.EncDecrKey); } }));
+        if (row.Aktif) {
+            container.append(AppUI.actionButton({
+                css: 'btn-outline-danger', icon: 'ri-forbid-line', title: 'Nonaktifkan alur',
+                onClick: function () { deleteRow('Nonaktifkan alur?', 'Dokumen ' + row.DocumentType + ' tidak bisa diajukan sampai ada alur aktif.', URL.hapusFlow, row, 'Flow'); }
+            }));
+        }
+    }
+
+    /* ===== Template pesan ===== */
+
+    function addTemplate() {
+        AppUI.openModal(MODAL, 'Tambah Template Pesan', URL.addTemplate, null, 'lg');
+    }
+    function editTemplate(encKey) {
+        AppUI.openModal(MODAL, 'Ubah Template Pesan', URL.editTemplate, { encKey: encKey }, 'lg');
+    }
+    function saveTemplate() {
+        AppUI.submitForm('#frmTemplate', URL.simpanTemplate, null, MODAL).done(function () { refresh('Template'); });
+    }
+    function updateTemplate() {
+        AppUI.submitForm('#frmTemplate', URL.updateTemplate, null, MODAL).done(function () { refresh('Template'); });
+    }
+    function templateActionTemplate(container, options) {
+        const row = options.data;
+        container.append(AppUI.actionButton({ css: 'btn-outline-warning', icon: 'ri-edit-2-line', title: 'Ubah template', onClick: function () { editTemplate(row.EncDecrKey); } }));
+        if (row.Aktif) {
+            container.append(AppUI.actionButton({
+                css: 'btn-outline-danger', icon: 'ri-forbid-line', title: 'Nonaktifkan template',
+                onClick: function () { deleteRow('Nonaktifkan template?', 'Template ' + row.TemplateCode + ' (' + row.Kanal + ') tidak dipakai lagi.', URL.hapusTemplate, row, 'Template'); }
+            }));
+        }
+    }
+
+    /* ===== Antrian pesan ===== */
+
+    function outboxStatusTemplate(container, options) {
+        $('<span class="badge fs-12">').addClass('badge-soft-' + (OUTBOX_COLOR[options.data.Status] || 'info')).text(options.value).appendTo(container);
+        if (options.data.LastError) $('<span class="gwa-cell-sub text-danger">').text(options.data.LastError).appendTo(container);
+    }
+    function outboxActionTemplate(container, options) {
+        const row = options.data;
+        container.append(AppUI.actionButton({
+            css: 'btn-outline-secondary', icon: 'ri-eye-line', title: 'Lihat pesan',
+            onClick: function () { AppUI.openModal(MODAL_LARGE, 'Detail Pesan', URL.detailOutbox, { encKey: row.EncDecrKey }); }
+        }));
+        if (row.Status === 3) {
+            container.append(AppUI.actionButton({
+                css: 'btn-outline-warning', icon: 'ri-restart-line', title: 'Kirim ulang',
+                onClick: function () {
+                    AppUI.confirmPost('Kirim ulang pesan?', 'Pesan ke ' + row.Recipient + ' dijadwalkan ulang.', URL.retryOutbox, { Key: row.EncDecrKey }, 'Kirim ulang')
+                        .done(function () { refresh('Outbox'); });
+                }
+            }));
+        }
+        if (row.Status === 1 || row.Status === 3) {
+            container.append(AppUI.actionButton({
+                css: 'btn-outline-danger', icon: 'ri-close-circle-line', title: 'Batalkan pesan',
+                onClick: function () { deleteRow('Batalkan pesan?', 'Pesan ke ' + row.Recipient + ' tidak akan dikirim.', URL.cancelOutbox, row, 'Outbox', 'Batalkan'); }
+            }));
+        }
+    }
+
+    /* ===== Log & sequence ===== */
+
+    function jobStatusTemplate(container, options) {
+        if (!options.value) return;
+        $('<span class="badge fs-12">').addClass('badge-soft-' + (JOB_COLOR[options.value] || 'secondary')).text(options.value).appendTo(container);
+    }
+    function logActionTemplate(container, options) {
+        const row = options.data;
+        container.append(AppUI.actionButton({
+            css: 'btn-outline-secondary', icon: 'ri-eye-line', title: 'Detail log',
+            onClick: function () { AppUI.openModal(MODAL_LARGE, 'Detail Log', URL.detailLog, { encKey: row.EncDecrKey }); }
+        }));
+    }
+    function sequenceActionTemplate(container, options) {
+        const row = options.data;
+        container.append(AppUI.actionButton({
+            css: 'btn-outline-warning', icon: 'ri-edit-2-line', title: 'Ubah id terakhir',
+            onClick: function () { AppUI.openModal(MODAL, 'Ubah Sequence', URL.editSequence, { encKey: row.EncDecrKey }); }
+        }));
+    }
+    function updateSequence() {
+        AppUI.submitForm('#frmSequence', URL.updateSequence, null, MODAL).done(function () { refresh('Sequence'); });
+    }
+
+    // Teks panjang dipotong 90 karakter; teks lengkap di tooltip.
+    function shortTemplate(container, options) {
+        const v = options.value || '';
+        $('<span>').attr('title', v).text(v.length > 90 ? v.substring(0, 90) + '…' : v).appendTo(container);
+    }
+
+    return {
+        addSetting: addSetting, saveSetting: saveSetting, settingValueTemplate: settingValueTemplate, settingActionTemplate: settingActionTemplate,
+        addFormat: addFormat, saveFormat: saveFormat, updateFormat: updateFormat, formatActionTemplate: formatActionTemplate,
+        addFlow: addFlow, saveFlow: saveFlow, updateFlow: updateFlow, flowActionTemplate: flowActionTemplate,
+        stepTemplate: stepTemplate, stepFormChanged: stepFormChanged, saveStep: saveStep, updateStep: updateStep,
+        addTemplate: addTemplate, saveTemplate: saveTemplate, updateTemplate: updateTemplate, templateActionTemplate: templateActionTemplate,
+        outboxStatusTemplate: outboxStatusTemplate, outboxActionTemplate: outboxActionTemplate,
+        jobStatusTemplate: jobStatusTemplate, logActionTemplate: logActionTemplate,
+        sequenceActionTemplate: sequenceActionTemplate, updateSequence: updateSequence,
+        shortTemplate: shortTemplate
     };
-    if (!data.StepName) return gwaWarning("Nama langkah harap diisi");
-    if (!data.RoleId && !data.PositionId && !data.UserId) return gwaWarning("Pilih penyetuju");
-    gwaPost(isEdit ? P.updateStep : P.simpanStep, data, { grid: "tblFlow" });
-}
-function fnHapusStep(encKey, nama) {
-    gwaHapus(P.hapusStep, encKey, "Hapus langkah " + nama + "?", "tblFlow");
-}
-
-// ================================================================ Template pesan
-function TambahTemplate() {
-    gwaModal(P.addTemplate, null, "Tambah Template Pesan", "besar");
-}
-function fnUbahTemplate(encKey) {
-    gwaModal(P.editTemplate, { encKey: encKey }, "Ubah Template Pesan", "besar");
-}
-function fnSimpanTemplate() {
-    var isEdit = $("#frmTemplate").data("edit") == 1;
-    var data = {
-        TemplateCode: gwaVal("TemplateCode"), Channel: gwaId("Channel"), Subject: gwaValNull("Subject"),
-        Body: gwaVal("Body"), Description: gwaValNull("TemplateDescription")
-    };
-    if (!data.TemplateCode) return gwaWarning("Kode template harap diisi");
-    if (!data.Body) return gwaWarning("Isi template harap diisi");
-    if (isEdit) data.IsActive = gwaId("TemplateIsActive");
-    gwaPost(isEdit ? P.updateTemplate : P.simpanTemplate, data, { grid: "tblTemplate" });
-}
-function fnHapusTemplate(encKey, kode) {
-    gwaHapus(P.hapusTemplate, encKey, "Nonaktifkan template " + kode + "?", "tblTemplate");
-}
-
-// ================================================================ Antrian pesan
-var STATUS_PESAN = { 1: "warning", 2: "success", 3: "danger", 4: "secondary" };
-function fnRenderStatusPesan(container, options) {
-    $(gwaBadgeHtml(options.value, STATUS_PESAN[options.data.Status])).appendTo(container);
-    if (options.data.LastError) $("<div>").addClass("small text-danger").text(options.data.LastError).appendTo(container);
-}
-function fnDetailOutbox(encKey) {
-    gwaModal(P.detailOutbox, { encKey: encKey }, "Detail Pesan", "besar");
-}
-function fnRetryOutbox(encKey) {
-    gwaPost(P.retryOutbox, { Key: encKey }, { konfirmasi: "Kirim ulang pesan ini?", tutupModal: false, grid: "tblOutbox" });
-}
-function fnCancelOutbox(encKey) {
-    gwaPost(P.cancelOutbox, { Key: encKey }, { konfirmasi: "Batalkan pesan ini?", bahaya: true, tutupModal: false, grid: "tblOutbox" });
-}
-
-// ================================================================ Log & sequence
-function fnDetailLog(encKey) {
-    gwaModal(P.detailLog, { encKey: encKey }, "Detail Log", "besar");
-}
-function fnUbahSequence(encKey) {
-    gwaModal(P.editSequence, { encKey: encKey }, "Ubah Sequence");
-}
-function fnSimpanSequence() {
-    var v = gwaAngka("LastId");
-    if (v === null || v < 0) return gwaWarning("Id terakhir harap diisi");
-    gwaPost(P.updateSequence, { LastId: v }, { grid: "tblSequence" });
-}
+})();

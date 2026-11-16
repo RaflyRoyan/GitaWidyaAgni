@@ -1,0 +1,32 @@
+@model GitaWidyaAgniWeb.ViewComponents.PageTitleVMC
+
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
+            <h4 class="mb-sm-0">@Model.Title</h4>
+
+            <div class="page-title-right">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb m-0">
+                        @for (var i = 0; i < Model.Breadcrumbs.Count; i++)
+                        {
+                            var item = Model.Breadcrumbs[i];
+                            var isLast = i == Model.Breadcrumbs.Count - 1;
+
+                            <li class="breadcrumb-item @(isLast ? "active" : "")" aria-current="@(isLast ? "page" : null)">
+                                @if (!isLast && item.Url != null)
+                                {
+                                    <a href="@item.Url">@item.Text</a>
+                                }
+                                else
+                                {
+                                    @item.Text
+                                }
+                            </li>
+                        }
+                    </ol>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>

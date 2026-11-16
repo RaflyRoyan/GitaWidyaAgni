@@ -1,63 +1,80 @@
 @model GitaWidyaAgniWeb.Models.Akses.RoleVM.Akses
+@* Modal hak akses role: dua TreeList berseleksi rekursif (aksi per halaman, menu sidebar). *@
 
-<div id="frmAkses" data-key="@Model.Key">
+<div class="gwa-mform" id="roleAkses" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-shield-keyhole-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Nama</div>
+            <div class="gwa-mform-info-meta">
+                <span><b>@Model.ActionNodes.Count(x => x.ActionId != null && x.Checked)</b> aksi</span>
+                <span><b>@Model.MenuNodes.Count(x => x.MenuValue != null && x.Checked)</b> menu</span>
+            </div>
+        </div>
+    </div>
+
     <ul class="nav nav-tabs gwa-tabs mb-3" role="tablist">
-        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabAksi" type="button"><i class="ri-shield-check-line me-1"></i>Aksi per Halaman</button></li>
-        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabMenu" type="button"><i class="ri-menu-line me-1"></i>Menu Sidebar</button></li>
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabAksi" type="button" role="tab"><i class="ri-shield-check-line me-1"></i>Aksi per Halaman</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabMenu" type="button" role="tab"><i class="ri-menu-line me-1"></i>Menu Sidebar</button></li>
     </ul>
     <div class="tab-content">
-        <div class="tab-pane fade show active" id="tabAksi">
-            <p class="small text-muted mb-2">
+        <div class="tab-pane fade show active" id="tabAksi" role="tabpanel">
+            <p class="gwa-mform-note mt-0 mb-2">
                 <span class="gwa-code">Index</span> buka halaman &amp; baca data, <span class="gwa-code">Create/Edit/Delete</span> ubah data,
                 <span class="gwa-code">Submit</span> ajukan, <span class="gwa-code">Approve</span> setujui/tolak, <span class="gwa-code">Process</span> ubah status,
                 <span class="gwa-code">Payment</span> pembayaran. Centang controller untuk memilih semua aksinya.
             </p>
-            @(Html.DevExtreme().TreeList<GitaWidyaAgniWeb.Models.Akses.RoleVM.Node>()
-                .ID("treeAksi")
-                .DataSource(Model.ActionNodes, "Id")
-                .KeyExpr("Id")
-                .ParentIdExpr("ParentId")
-                .RootValue(null)
-                .Selection(s => s.Mode(SelectionMode.Multiple).Recursive(true))
-                .SelectedRowKeys(Model.ActionNodes.Where(x => x.Checked).Select(x => (object)x.Id).ToArray())
-                .SearchPanel(s => s.Visible(true).Width(260))
-                .ShowRowLines(true)
-                .ShowBorders(true)
-                .ColumnAutoWidth(true)
-                .Height(460)
-                .Scrolling(s => s.Mode(TreeListScrollingMode.Standard))
-                .Columns(c =>
-                {
-                    c.AddFor(m => m.Nama).Caption("Halaman / Aksi").CellTemplate(new JS("fnRenderNodeAksi"));
-                    c.AddFor(m => m.Keterangan).Caption("Keterangan");
-                })
-            )
+            <div class="gwa-mform-panel">
+                @(Html.DevExtreme().TreeList<GitaWidyaAgniWeb.Models.Akses.RoleVM.Node>()
+                    .ID("treeAksi")
+                    .DataSource(Model.ActionNodes, "Id")
+                    .KeyExpr("Id")
+                    .ParentIdExpr("ParentId")
+                    .RootValue(null)
+                    .Selection(s => s.Mode(SelectionMode.Multiple).Recursive(true))
+                    .SelectedRowKeys(Model.ActionNodes.Where(x => x.Checked).Select(x => (object)x.Id).ToArray())
+                    .SearchPanel(s => s.Visible(true).Width(260).Placeholder("Cari..."))
+                    .ShowRowLines(true)
+                    .ShowColumnLines(true)
+                    .ColumnAutoWidth(true)
+                    .Height(440)
+                    .Scrolling(s => s.Mode(TreeListScrollingMode.Standard))
+                    .Columns(c =>
+                    {
+                        c.AddFor(m => m.Nama).Caption("Halaman / Aksi").CellTemplate(new JS("Role.nodeActionTemplate"));
+                        c.AddFor(m => m.Keterangan).Caption("Keterangan");
+                    })
+                )
+            </div>
         </div>
-        <div class="tab-pane fade" id="tabMenu">
-            <p class="small text-muted mb-2">Header grup hanya tampil bila minimal satu sub menunya dicentang. Menu tidak memberi hak aksi; aksi diatur di tab sebelah.</p>
-            @(Html.DevExtreme().TreeList<GitaWidyaAgniWeb.Models.Akses.RoleVM.Node>()
-                .ID("treeMenu")
-                .DataSource(Model.MenuNodes, "Id")
-                .KeyExpr("Id")
-                .ParentIdExpr("ParentId")
-                .RootValue(null)
-                .AutoExpandAll(true)
-                .Selection(s => s.Mode(SelectionMode.Multiple).Recursive(true))
-                .SelectedRowKeys(Model.MenuNodes.Where(x => x.Checked).Select(x => (object)x.Id).ToArray())
-                .ShowRowLines(true)
-                .ShowBorders(true)
-                .ColumnAutoWidth(true)
-                .Height(460)
-                .Columns(c =>
-                {
-                    c.AddFor(m => m.Nama).Caption("Menu").CellTemplate(new JS("fnRenderNodeMenu"));
-                    c.AddFor(m => m.Keterangan).Caption("Keterangan");
-                })
-            )
+        <div class="tab-pane fade" id="tabMenu" role="tabpanel">
+            <p class="gwa-mform-note mt-0 mb-2">Header grup hanya tampil bila minimal satu sub menunya dicentang. Menu tidak memberi hak aksi; aksi diatur di tab sebelah.</p>
+            <div class="gwa-mform-panel">
+                @(Html.DevExtreme().TreeList<GitaWidyaAgniWeb.Models.Akses.RoleVM.Node>()
+                    .ID("treeMenu")
+                    .DataSource(Model.MenuNodes, "Id")
+                    .KeyExpr("Id")
+                    .ParentIdExpr("ParentId")
+                    .RootValue(null)
+                    .AutoExpandAll(true)
+                    .Selection(s => s.Mode(SelectionMode.Multiple).Recursive(true))
+                    .SelectedRowKeys(Model.MenuNodes.Where(x => x.Checked).Select(x => (object)x.Id).ToArray())
+                    .ShowRowLines(true)
+                    .ShowColumnLines(true)
+                    .ColumnAutoWidth(true)
+                    .Height(440)
+                    .Columns(c =>
+                    {
+                        c.AddFor(m => m.Nama).Caption("Menu").CellTemplate(new JS("Role.nodeMenuTemplate"));
+                        c.AddFor(m => m.Keterangan).Caption("Keterangan");
+                    })
+                )
+            </div>
         </div>
     </div>
-</div>
-<div class="hstack gap-2 justify-content-end mt-3">
-    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-    <button type="button" class="btn btn-primary" onclick="fnSimpanAkses()"><i class="ri-save-line me-1"></i>Simpan Hak Akses</button>
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Role.saveAccess()"><i class="ri-save-3-line align-bottom me-1"></i> Simpan Hak Akses</button>
+    </div>
 </div>

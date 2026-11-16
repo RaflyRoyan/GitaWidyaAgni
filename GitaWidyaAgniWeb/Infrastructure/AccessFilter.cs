@@ -64,7 +64,7 @@ namespace GitaWidyaAgniWeb.Infrastructure
             }
             context.Result = IsAjax(context.HttpContext.Request)
                 ? new StatusCodeResult(StatusCodes.Status403Forbidden)
-                : new RedirectToActionResult("Denied", "Login", null);
+                : new RedirectToActionResult("Denied", "Login", new { area = "" });
         }
         private static bool IsAjax(HttpRequest request)
         {

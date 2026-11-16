@@ -1,0 +1,29 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.EditSequence
+@using GitaWidyaAgniWeb.Models.Pengaturan
+
+<div class="gwa-mform">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-sort-number-asc"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.TableName</div>
+            <div class="gwa-mform-info-meta"><span>Tidak boleh di bawah MAX(id) tabel. Ubah hanya untuk perbaikan data.</span></div>
+        </div>
+    </div>
+
+    @(Html.DevExtreme().Form<PengaturanVM.NewSequence>()
+        .ID("frmSequence")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(1)
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.LastId).Editor(e => e.NumberBox().Min(0).ShowSpinButtons(true).Format("#0"));
+        })
+    )
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Pengaturan.updateSequence()"><i class="ri-save-3-line align-bottom me-1"></i> Simpan Perubahan</button>
+    </div>
+</div>

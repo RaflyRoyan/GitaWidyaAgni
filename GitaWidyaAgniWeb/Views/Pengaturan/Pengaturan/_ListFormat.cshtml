@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.ListFormat
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Pengaturan
+
+@(Html.DevExtreme().DataGrid<PengaturanVM.FormatRow>()
+    .ID("tblFormat")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Format Nomor Dokumen")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.DocumentType).Caption("Jenis").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.NumberFormat).Caption("Format");
+        columns.AddFor(m => m.Contoh).Caption("Contoh Hasil").CssClass("fw-semibold");
+        columns.AddFor(m => m.Reset).Caption("Reset Urut");
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Pengaturan.formatActionTemplate");
+    })
+)

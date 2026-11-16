@@ -1,45 +1,66 @@
-@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.FormSetting
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.AddSetting
+@using GitaWidyaAgniWeb.Models.Pengaturan
+@* Form bersama modal Add & Edit Pengaturan Situs. Dikirim FormData (Pengaturan.saveSetting) karena ada gambar. *@
 
-<form id="frmSetting" data-edit="@(Model.IsEdit ? "1" : "0")" onsubmit="return false">
-    <div class="row">
-        <div class="col-md-4 mb-3">
-            <label class="form-label gwa-required">Grup</label>
-            @(Html.DevExtreme().TextBox().ID("SettingGroup").Value(Model.SettingGroup).MaxLength(50).Placeholder("LANDING")
-                .InputAttr(new { style = "text-transform:uppercase" }))
-        </div>
-        <div class="col-md-8 mb-3">
-            <label class="form-label gwa-required">Kunci</label>
-            @(Html.DevExtreme().TextBox().ID("SettingKey").Value(Model.SettingKey).MaxLength(100).ReadOnly(Model.IsEdit).Placeholder("hero_title"))
-            @if (!Model.IsEdit)
+@{
+    var editModel = Model as PengaturanVM.EditSetting;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    <div class="gwa-mform-section">
+        <span class="gwa-mform-section-title">Pengaturan</span>
+        <span class="gwa-mform-section-hint">@(isEdit ? "Kunci tidak bisa diubah" : "Kunci disimpan sebagai snake_case")</span>
+    </div>
+    @(Html.DevExtreme().Form<PengaturanVM.NewSetting>()
+        .ID("frmSetting")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.SettingGroup)
+                .Editor(e => e.TextBox().MaxLength(50).Placeholder("LANDING").InputAttr(new { style = "text-transform:uppercase" }));
+            items.AddSimpleFor(m => m.SettingKey).ColSpan(2)
+                .Editor(e => e.TextBox().MaxLength(100).ReadOnly(isEdit).Placeholder("hero_title"));
+            items.AddSimpleFor(m => m.SettingValue).ColSpan(3)
+                .Editor(e => e.TextArea().Height(100));
+            items.AddSimpleFor(m => m.Description).ColSpan(3)
+                .Editor(e => e.TextBox().MaxLength(200));
+            if (editModel?.HasImage == true)
             {
-                <small class="text-muted">Disimpan sebagai snake_case. Tidak bisa diubah setelah disimpan.</small>
+                items.AddSimpleFor(m => m.HapusGambar).ColSpan(3).Label(l => l.Visible(false))
+                    .Editor(e => e.CheckBox().Text("Hapus gambar saat ini"));
             }
-        </div>
-        <div class="col-12 mb-3">
-            <label class="form-label">Nilai</label>
-            @(Html.DevExtreme().TextArea().ID("SettingValue").Value(Model.SettingValue).Height(90))
-        </div>
-        <div class="col-12 mb-3">
-            <label class="form-label">Keterangan</label>
-            @(Html.DevExtreme().TextBox().ID("SettingDescription").Value(Model.Description).MaxLength(200))
-        </div>
-        <div class="col-md-8 mb-3">
-            <label class="form-label">Gambar (opsional)</label>
-            @(Html.DevExtreme().FileUploader().ID("SettingImage").UploadMode(FileUploadMode.UseForm).Multiple(false)
+        })
+    )
+
+    <div class="gwa-mform-section">
+        <span class="gwa-mform-section-title">Gambar</span>
+        <span class="gwa-mform-section-hint">Opsional. JPG, PNG, atau WebP, maksimal 5 MB</span>
+    </div>
+    <div class="row g-3 align-items-start">
+        <div class="@(editModel?.HasImage == true ? "col-md-8" : "col-12")">
+            @(Html.DevExtreme().FileUploader().ID("fileSettingImage").UploadMode(FileUploadMode.UseForm).Multiple(false)
                 .Accept("image/*").AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".png", ".webp" }).MaxFileSize(5 * 1024 * 1024)
                 .SelectButtonText("Pilih gambar").LabelText("atau tarik gambar ke sini"))
         </div>
-        <div class="col-md-4 mb-3">
-            @if (Model.HasImage)
-            {
-                <label class="form-label">Gambar saat ini</label>
-                <a href="@Model.ImageUrl" target="_blank" class="d-block mb-2"><img src="@Model.ImageUrl" alt="Gambar pengaturan" class="img-fluid rounded border" style="max-height:90px" /></a>
-                @(Html.DevExtreme().CheckBox().ID("HapusGambar").Text("Hapus gambar"))
-            }
-        </div>
+        @if (editModel?.HasImage == true)
+        {
+            <div class="col-md-4">
+                <a href="@editModel.ImageUrl" target="_blank" rel="noopener" class="d-block">
+                    <img src="@editModel.ImageUrl" alt="Gambar pengaturan saat ini" class="img-fluid rounded border" style="max-height:110px" />
+                </a>
+            </div>
+        }
     </div>
-</form>
-<div class="hstack gap-2 justify-content-end">
-    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-    <button type="button" class="btn btn-primary" onclick="fnSimpanSetting()"><i class="ri-save-line me-1"></i>Simpan</button>
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Pengaturan.saveSetting(@(isEdit ? "true" : "false"))">
+            <i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")
+        </button>
+    </div>
 </div>

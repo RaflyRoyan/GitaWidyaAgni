@@ -1,40 +1,43 @@
-@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.FormTemplate
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.AddTemplate
+@using GitaWidyaAgniWeb.Models.Pengaturan
+@* Form bersama modal Add & Edit Template Pesan. Kode dan kanal tidak bisa diubah; status hanya di Edit. *@
 
-<form id="frmTemplate" data-edit="@(Model.IsEdit ? "1" : "0")" onsubmit="return false">
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <label class="form-label gwa-required">Kode</label>
-            @(Html.DevExtreme().TextBox().ID("TemplateCode").Value(Model.TemplateCode).MaxLength(50).ReadOnly(Model.IsEdit).Placeholder("RESET_PASSWORD"))
-        </div>
-        <div class="col-md-6 mb-3">
-            <label class="form-label gwa-required">Kanal</label>
-            @(Html.DevExtreme().SelectBox().ID("Channel").Value(Model.Channel).ReadOnly(Model.IsEdit)
-                .DataSource(GitaWidyaAgniWeb.Models.GwaVM.Opsi<GWAShared.Enums.NotificationChannel>()).ValueExpr("Value").DisplayExpr("Text"))
-        </div>
-        <div class="col-12 mb-3">
-            <label class="form-label">Subjek</label>
-            @(Html.DevExtreme().TextBox().ID("Subject").Value(Model.Subject).MaxLength(200))
-            <small class="text-muted">Wajib untuk email.</small>
-        </div>
-        <div class="col-12 mb-3">
-            <label class="form-label gwa-required">Isi</label>
-            @(Html.DevExtreme().TextArea().ID("Body").Value(Model.Body).Height(160))
-        </div>
-        <div class="col-md-8 mb-3">
-            <label class="form-label">Keterangan</label>
-            @(Html.DevExtreme().TextBox().ID("TemplateDescription").Value(Model.Description).MaxLength(200))
-        </div>
-        @if (Model.IsEdit)
-        {
-            <div class="col-md-4 mb-3">
-                <label class="form-label">Status</label>
-                @(Html.DevExtreme().SelectBox().ID("TemplateIsActive").Value(Model.IsActive)
-                    .DataSource(GitaWidyaAgniWeb.Models.GwaVM.OpsiAktif).ValueExpr("Value").DisplayExpr("Text"))
-            </div>
-        }
+@{
+    var isEdit = Model is PengaturanVM.EditTemplate;
+}
+
+<div class="gwa-mform">
+    <div class="gwa-mform-section">
+        <span class="gwa-mform-section-title">Template pesan</span>
+        <span class="gwa-mform-section-hint">Variabel ditulis {name}, {link}, dst.</span>
     </div>
-</form>
-<div class="hstack gap-2 justify-content-end">
-    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-    <button type="button" class="btn btn-primary" onclick="fnSimpanTemplate()"><i class="ri-save-line me-1"></i>Simpan</button>
+    @(Html.DevExtreme().Form<PengaturanVM.NewTemplate>()
+        .ID("frmTemplate")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.TemplateCode)
+                .Editor(e => e.TextBox().MaxLength(50).ReadOnly(isEdit).Placeholder("RESET_PASSWORD"));
+            items.AddSimpleFor(m => m.Channel)
+                .Editor(e => e.SelectBox().DataSource(Model.KanalList).ValueExpr("Value").DisplayExpr("Text").ReadOnly(isEdit));
+            items.AddSimpleFor(m => m.Subject).ColSpan(2).Editor(e => e.TextBox().MaxLength(200));
+            items.AddSimpleFor(m => m.Body).ColSpan(2).Editor(e => e.TextArea().Height(160));
+            items.AddSimpleFor(m => m.Description).ColSpan(isEdit ? 1 : 2).Editor(e => e.TextBox().MaxLength(200));
+            if (isEdit)
+            {
+                items.AddSimpleFor(m => m.IsActive).Editor(e => e.SelectBox().DataSource(Model.AktifList).ValueExpr("Value").DisplayExpr("Text"));
+            }
+        })
+    )
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Pengaturan.@(isEdit ? "updateTemplate" : "saveTemplate")()">
+            <i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")
+        </button>
+    </div>
 </div>

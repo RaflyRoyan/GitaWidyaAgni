@@ -1,0 +1,20 @@
+@model GitaWidyaAgniWeb.Models.Akses.MenuVM.ListHeader
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Akses
+
+@(Html.DevExtreme().DataGrid<MenuVM.HeaderRow>()
+    .ID("tblHeader")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Daftar Header Menu")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddFor(m => m.Seq).Caption("Urut").Alignment(HorizontalAlignment.Center).SortOrder(SortOrder.Asc);
+        columns.AddFor(m => m.Name).Caption("Nama").CellTemplate(new JS("Menu.nameIconTemplate"));
+        columns.AddFor(m => m.Section).Caption("Bagian");
+        columns.AddFor(m => m.Isi).Caption("Isi");
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Menu.headerActionTemplate");
+    })
+)

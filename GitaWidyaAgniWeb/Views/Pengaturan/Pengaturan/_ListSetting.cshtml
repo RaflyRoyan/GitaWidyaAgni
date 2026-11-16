@@ -1,0 +1,20 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.ListSetting
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Pengaturan
+
+@(Html.DevExtreme().DataGrid<PengaturanVM.SettingRow>()
+    .ID("tblSetting")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Pengaturan Situs")
+    .Grouping(g => g.AutoExpandAll(true))
+    .Columns(columns =>
+    {
+        columns.AddFor(m => m.SettingGroup).Caption("Grup").GroupIndex(0);
+        columns.AddFor(m => m.SettingKey).Caption("Kunci").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.SettingValue).Caption("Nilai").CellTemplate(new JS("Pengaturan.settingValueTemplate"));
+        columns.AddFor(m => m.Description).Caption("Keterangan");
+        columns.AddFor(m => m.HasImage).Caption("Gambar").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Pengaturan.settingActionTemplate");
+    })
+)

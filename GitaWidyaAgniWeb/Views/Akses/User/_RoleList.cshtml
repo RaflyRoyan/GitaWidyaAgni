@@ -1,0 +1,18 @@
+@model GitaWidyaAgniWeb.Models.Akses.UserVM.RoleList
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Akses
+
+@(Html.DevExtreme().DataGrid<UserVM.RoleRow>()
+    .ID("tblUserRole")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .DetailGrid("Belum ada role. User ini hanya bisa membuka dashboard.")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Nama).Caption("Role").CssClass("fw-medium");
+        columns.AddFor(m => m.Kode).Caption("Kode").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Periode).Caption("Periode").CellTemplate(new JS("User.periodTemplate"));
+        columns.AddAction("User.roleActionTemplate");
+    })
+)

@@ -1,28 +1,40 @@
 @model GitaWidyaAgniWeb.Models.Akses.MenuVM.Aksi
+@* Modal daftar aksi controller: grid edit sel, disimpan sekaligus (aksi yang dihapus dinonaktifkan beserta haknya). *@
 
-<div id="frmAksi" data-key="@Model.Key">
-    <p class="small text-muted">
+<div class="gwa-mform" id="menuAksi" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-list-settings-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Nama</div>
+            <div class="gwa-mform-info-meta"><span>Kosakata baku: Index, Create, Edit, Delete, Submit, Approve, Process, Payment</span></div>
+        </div>
+    </div>
+
+    <p class="gwa-mform-note mt-0 mb-2">
         Klik sel untuk mengubah, tombol <b>+</b> untuk menambah baris. "Wajib Login" dicek ke hak akses role; "Tanpa Login" cukup login.
-        Aksi yang dihapus dari daftar dinonaktifkan beserta haknya. Kosakata baku: Index, Create, Edit, Delete, Submit, Approve, Process, Payment.
+        Aksi yang dihapus dari daftar dinonaktifkan beserta haknya.
     </p>
     @(Html.DevExtreme().DataGrid<GitaWidyaAgniWeb.Models.Akses.MenuVM.AksiRow>()
         .ID("tblAksi")
         .DataSource(Model.Rows)
+        .ElementAttr("class", "gwa-list-grid")
         .ShowBorders(true)
         .ShowRowLines(true)
+        .ShowColumnLines(true)
         .ColumnAutoWidth(true)
         .Editing(e => e.Mode(GridEditMode.Cell).AllowAdding(true).AllowUpdating(true).AllowDeleting(true).ConfirmDelete(false).NewRowPosition(GridNewRowPosition.Last))
         .OnInitNewRow("function(e){ e.data.NeedAuth = 1; }")
         .Columns(c =>
         {
             c.AddFor(m => m.Action).Caption("Aksi").ValidationRules(v => v.AddRequired());
-            c.AddFor(m => m.NeedAuth).Caption("Cek akses").Width(170)
+            c.AddFor(m => m.NeedAuth).Caption("Cek Akses").Width(170)
                 .Lookup(l => l.DataSource(Model.AuthOpsi).ValueExpr("Value").DisplayExpr("Text"));
             c.AddFor(m => m.Description).Caption("Keterangan");
         })
     )
-</div>
-<div class="hstack gap-2 justify-content-end mt-3">
-    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
-    <button type="button" class="btn btn-primary" onclick="fnSimpanAksi()"><i class="ri-save-line me-1"></i>Simpan</button>
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Menu.saveActions()"><i class="ri-save-3-line align-bottom me-1"></i> Simpan</button>
+    </div>
 </div>
