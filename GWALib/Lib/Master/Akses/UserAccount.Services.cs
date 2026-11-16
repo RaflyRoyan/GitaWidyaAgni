@@ -84,6 +84,57 @@ namespace GWALib.Lib.Master.Akses
                 return new UserAccount(row);
             }, data => ResponseFactory.DataUpdated(data), msg => ResponseFactory.DataUpdateFailed<UserAccount>(msg));
         }
+        // Login dengan username + password. Username tidak ada, user nonaktif dan password salah memberi pesan yang sama.
+        // Berhasil: last_login_at diperbarui, dan hash lama di-rehash bila PasswordHasher memintanya.
+        public static Response<UserAccount> Login(string username, string password)
+        {
+            return ServiceHandler.Handle(() =>
+            {
+                using var context = DBClass.GetContext();
+                var row = SetLogin(context, username, password);
+                context.SaveChanges();
+                return new UserAccount(row);
+            }, data => ResponseFactory.Success("Login berhasil", data), msg => ResponseFactory.Error<UserAccount>(msg));
+        }
+        // Admin pertama untuk database kosong: membuat role SUPERADMIN (bila belum ada), user, dan m_user_role tanpa periode.
+        // Ditolak begitu m_user sudah berisi; tidak butuh login (belum ada user). Mengembalikan null bila dilewati.
+        public static UserAccount? BootstrapAdmin(string username, string password)
+        {
+            using var context = DBClass.GetContext();
+            if (context.MUsers.Any())
+            {
+                return null;
+            }
+            using var transaction = context.Database.BeginTransaction();
+            var now = DateTime.Now;
+            var role = context.MRoles.SingleOrDefault(x => x.Code == UserAccess.SUPERADMIN);
+            if (role == null)
+            {
+                role = new EF.MRole
+                {
+                    Id = SequenceUtility.GetNextId<EF.MRole>(context),
+                    Code = UserAccess.SUPERADMIN,
+                    Name = "Super Admin",
+                    Description = "Akses penuh ke semua menu dan aksi",
+                    IsActive = (int)ActiveStatus.Aktif,
+                    InsDate = now
+                };
+                context.MRoles.Add(role);
+            }
+            var user = CreateRow(context, new NewRow { Username = username, Password = password }, 0);
+            user.InsBy = null;
+            context.MUsers.Add(user);
+            context.MUserRoles.Add(new EF.MUserRole
+            {
+                Id = SequenceUtility.GetNextId<EF.MUserRole>(context),
+                UserId = user.Id,
+                RoleId = role.Id,
+                InsDate = now
+            });
+            context.SaveChanges();
+            transaction.Commit();
+            return new UserAccount(user);
+        }
         public bool VerifyPassword(string password)
         {
             using var context = DBClass.GetContext();
@@ -159,6 +210,16 @@ namespace GWALib.Lib.Master.Akses
                 return new UserAccount(row);
             }, data => ResponseFactory.DataUpdated(data), msg => ResponseFactory.DataUpdateFailed<UserAccount>(msg));
         }
+        public static async Task<Response<UserAccount>> LoginAsync(string username, string password)
+        {
+            return await ServiceHandler.HandleAsync(async () =>
+            {
+                using var context = DBClass.GetContext();
+                var row = SetLogin(context, username, password);
+                await context.SaveChangesAsync();
+                return new UserAccount(row);
+            }, data => ResponseFactory.Success("Login berhasil", data), msg => ResponseFactory.Error<UserAccount>(msg));
+        }
         public async Task<bool> VerifyPasswordAsync(string password)
         {
             using var context = DBClass.GetContext();
@@ -206,6 +267,26 @@ namespace GWALib.Lib.Master.Akses
                 throw new ArgumentException(string.Format(ExceptionMessage.FIELD_REQUIRED, "Password"));
             }
             return _passwordHasher.HashPassword(row, password);
+        }
+        private static EF.MUser SetLogin(EF.ModelContext context, string? username, string? password)
+        {
+            var name = username?.Trim() ?? string.Empty;
+            var row = string.IsNullOrEmpty(name) || string.IsNullOrEmpty(password) ? null : context.MUsers.SingleOrDefault(x => x.Username == name);
+            if (row == null || row.IsActive != (int)ActiveStatus.Aktif)
+            {
+                throw new ArgumentException(ExceptionMessage.LOGIN_INVALID);
+            }
+            var result = _passwordHasher.VerifyHashedPassword(row, row.Password, password!);
+            if (result == PasswordVerificationResult.Failed)
+            {
+                throw new ArgumentException(ExceptionMessage.LOGIN_INVALID);
+            }
+            if (result == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                row.Password = _passwordHasher.HashPassword(row, password!);
+            }
+            row.LastLoginAt = DateTime.Now;
+            return row;
         }
         private static bool IsPasswordValid(EF.MUser row, string password)
         {

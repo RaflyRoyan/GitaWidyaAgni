@@ -1,0 +1,386 @@
+@model GitaWidyaAgniWeb.Models.Landing.LandingVM
+@using System.Globalization
+@using GWAShared.Extensions
+@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = "Beranda";
+    ViewData["Site"] = Model.Site;
+    var id = new CultureInfo("id-ID");
+    var profile = Model.Profile;
+    var founded = profile?.FoundedDate ?? new DateOnly(1990, 7, 20);
+    var years = DateTime.Today.Year - founded.Year;
+    var description = string.IsNullOrWhiteSpace(profile?.Description)
+        ? "Unit Kegiatan Mahasiswa marching band Universitas Pembangunan Nasional \"Veteran\" Jawa Timur — wadah mahasiswa berlatih musik, colour guard, dan berprestasi bersama."
+        : profile!.Description!;
+    var missions = (profile?.Mission ?? string.Empty).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    var featured = Model.Achievements.FirstOrDefault();
+    var otherAchievements = Model.Achievements.Skip(1).Take(4).ToList();
+    var aboutImages = Model.OrganizationPhotos.Select(seq => Url.Action("OrganizationImage", "Landing", new { id = seq })!).ToList();
+    if (aboutImages.Count < 3)
+    {
+        aboutImages.AddRange(Model.Galleries.Select(g => Url.Action("GalleryCover", "Landing", new { id = g.Id })!));
+    }
+}
+
+@* ============ HERO ============ *@
+<section class="gwa-hero" id="beranda" aria-label="Beranda">
+    <div class="gwa-container">
+        <div class="hero-grid">
+            <div class="reveal in">
+                <span class="eyebrow">UKM Marching Band · UPN &quot;Veteran&quot; Jawa Timur</span>
+                <h1 class="hero-title">Gita Widya <span class="gold">Agni</span></h1>
+                <p class="hero-lead">Semangat yang berapi-api dalam belajar musik. @(Model.Site.HeroSubtitle is { Length: > 0 } s && s != "UKM Marching Band UPN \"Veteran\" Jawa Timur" ? s : "Brass, battery, front ensemble, dan colour guard dalam satu panggung kebanggaan Kampus Bela Negara.")</p>
+                <div class="hero-actions">
+                    <a href="#agenda" class="btn-gwa btn-gold"><i class="ri-calendar-event-line" aria-hidden="true"></i> Lihat Agenda</a>
+                    <a href="#tentang" class="btn-gwa btn-outline-ink">Kenali Kami <i class="ri-arrow-right-line" aria-hidden="true"></i></a>
+                </div>
+                <div class="hero-meta">
+                    <div><b>@founded.Year</b><span>Tahun berdiri</span></div>
+                    <div><b>@(years)+</b><span>Tahun berkarya</span></div>
+                    <div><b>4</b><span>Seksi musik</span></div>
+                </div>
+            </div>
+            @if (Model.Banners.Count > 0)
+            {
+                @* Banner tampil sebagai bingkai foto (bukan latar gelap), dengan lencana logo. *@
+                <div class="hero-visual reveal in d2">
+                    <div class="hero-badge" aria-hidden="true"><img src="@Url.Action("Logo", "Brand")" alt=""></div>
+                    <div class="hero-frame">
+                        @for (var i = 0; i < Model.Banners.Count; i++)
+                        {
+                            var banner = Model.Banners[i];
+                            <div class="slide @(i == 0 ? "is-active" : "")" role="img" aria-label="@banner.Title" data-title="@banner.Title" data-subtitle="@banner.Subtitle" style="background-image:url('@Url.Action("BannerImage", "Landing", new { key = banner.EncDecrKey })')"></div>
+                        }
+                        <div class="caption" aria-live="polite" id="heroCaption">
+                            @Model.Banners[0].Title
+                            @if (!string.IsNullOrWhiteSpace(Model.Banners[0].Subtitle)) { <small>@Model.Banners[0].Subtitle</small> }
+                        </div>
+                    </div>
+                    @if (featured != null)
+                    {
+                        <div class="hero-chip c1" aria-hidden="true"><i class="ri-trophy-line"></i><span>@(featured.RankTitle ?? featured.Title)</span></div>
+                    }
+                    <div class="hero-chip c2" aria-hidden="true"><i class="ri-music-2-line"></i><span>Sejak @founded.ToString("d MMMM yyyy", id)</span></div>
+                </div>
+            }
+            else
+            {
+                <div class="hero-emblem reveal in d2" aria-hidden="true">
+                    <span class="ring"></span>
+                    <span class="ring r2"></span>
+                    <img src="@Url.Action("Logo", "Brand")" alt="">
+                    @if (featured != null)
+                    {
+                        <div class="hero-chip c1"><i class="ri-trophy-line"></i><span>@(featured.RankTitle ?? featured.Title)</span></div>
+                    }
+                    <div class="hero-chip c2"><i class="ri-music-2-line"></i><span>Sejak @founded.ToString("d MMMM yyyy", id)</span></div>
+                </div>
+            }
+        </div>
+    </div>
+    <a href="#tentang" class="hero-scroll">Gulir</a>
+</section>
+
+<div class="gwa-marquee" aria-hidden="true">
+    <div class="track">
+        @for (var i = 0; i < 2; i++)
+        {
+            <span>Brass</span><span>Battery</span><span>Front Ensemble</span><span>Colour Guard</span><span>Gita Widya Agni</span><span>Kampus Bela Negara</span>
+        }
+    </div>
+</div>
+
+@* ============ TENTANG ============ *@
+<section class="gwa-section" id="tentang">
+    <div class="gwa-container">
+        <div class="about-grid">
+            <div class="reveal">
+                <span class="eyebrow">Tentang Kami</span>
+                <h2 class="section-title">Nyala nada dari <em>Kampus Bela Negara</em></h2>
+                <p class="muted section-lead">@description</p>
+                @if (!string.IsNullOrWhiteSpace(profile?.Vision))
+                {
+                    <div class="vision">
+                        <span class="eyebrow">Visi</span>
+                        <p>&ldquo;@profile!.Vision&rdquo;</p>
+                    </div>
+                }
+                @if (missions.Length > 0)
+                {
+                    <ul class="mission">
+                        @foreach (var mission in missions)
+                        {
+                            <li><i class="ri-checkbox-circle-fill" aria-hidden="true"></i><span>@mission</span></li>
+                        }
+                    </ul>
+                }
+            </div>
+            <div class="reveal d2">
+                <div class="about-collage">
+                    @if (aboutImages.Count == 0)
+                    {
+                        <img src="@Url.Action("Logo", "Brand")" alt="Logo @Model.AppName" style="object-fit:contain;background:var(--cream);padding:40px" />
+                    }
+                    @foreach (var src in aboutImages.Take(3))
+                    {
+                        <img src="@src" alt="Dokumentasi @Model.AppName" loading="lazy" />
+                    }
+                    <div class="about-badge"><b>@(years)+</b><span>tahun membawa nama<br />UPN &quot;Veteran&quot; Jawa Timur</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@* ============ SEKSI MUSIK ============ *@
+<section class="gwa-section gwa-cream" aria-labelledby="corps-title">
+    <div class="gwa-container">
+        <div class="section-head reveal">
+            <div>
+                <span class="eyebrow">Seksi Musik</span>
+                <h2 class="section-title" id="corps-title">Empat seksi, <em>satu harmoni</em></h2>
+            </div>
+            <p class="muted section-lead mb-0">Setiap anggota berlatih rutin dua kali sepekan bersama pelatih dan alumni.</p>
+        </div>
+        <div class="corps-grid">
+            @{
+                var corps = new[]
+                {
+                    ("ri-music-2-line", "Brass", "Trumpet, mellophone, baritone, dan tuba yang membawa melodi utama."),
+                    ("ri-disc-line", "Battery", "Snare, tenor, bass drum, dan cymbal — denyut ritme pertunjukan."),
+                    ("ri-keyboard-box-line", "Front Ensemble", "Marimba, vibraphone, dan synthesizer yang memperkaya warna musik."),
+                    ("ri-flag-2-line", "Colour Guard", "Bendera, rifle, sabre, dan tari yang menghidupkan visual panggung.")
+                };
+            }
+            @for (var i = 0; i < corps.Length; i++)
+            {
+                <article class="corps-card reveal d@(i % 3 + 1)">
+                    <span class="num" aria-hidden="true">0@(i + 1)</span>
+                    <div class="icon"><i class="@corps[i].Item1" aria-hidden="true"></i></div>
+                    <h3>@corps[i].Item2</h3>
+                    <p class="muted">@corps[i].Item3</p>
+                </article>
+            }
+        </div>
+    </div>
+</section>
+
+@* ============ AGENDA ============ *@
+<section class="gwa-section" id="agenda">
+    <div class="gwa-container">
+        <div class="section-head reveal">
+            <div>
+                <span class="eyebrow">Agenda</span>
+                <h2 class="section-title">Kegiatan <em>terbuka</em> untuk umum</h2>
+            </div>
+        </div>
+        @if (Model.Activities.Count == 0)
+        {
+            <div class="empty-state">Belum ada kegiatan yang dipublikasikan.</div>
+        }
+        else
+        {
+            <div class="agenda-list">
+                @foreach (var activity in Model.Activities.OrderByDescending(a => a.StartAt >= DateTime.Today).ThenBy(a => Math.Abs((a.StartAt - DateTime.Today).TotalDays)))
+                {
+                    var upcoming = activity.StartAt >= DateTime.Today;
+                    <article class="agenda-item reveal">
+                        <div class="agenda-date">
+                            <b>@activity.StartAt.ToString("dd")</b>
+                            <span>@activity.StartAt.ToString("MMM yyyy", id)</span>
+                        </div>
+                        <div>
+                            <h3>@activity.Title</h3>
+                            <div class="agenda-meta">
+                                <span><i class="ri-time-line" aria-hidden="true"></i>@activity.StartAt.ToString("dddd, HH:mm", id)</span>
+                                @if (!string.IsNullOrWhiteSpace(activity.Location))
+                                {
+                                    <span><i class="ri-map-pin-2-line" aria-hidden="true"></i>@activity.Location</span>
+                                }
+                            </div>
+                        </div>
+                        <span class="tag @(upcoming ? "upcoming" : "past")">@(upcoming ? "Akan datang" : "Telah berlangsung")</span>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@* ============ PRESTASI ============ *@
+<section class="gwa-section gwa-blush" id="prestasi">
+    <div class="gwa-container">
+        <div class="section-head reveal">
+            <div>
+                <span class="eyebrow">Prestasi</span>
+                <h2 class="section-title">Jejak <em>juara</em> kami</h2>
+            </div>
+            <p class="muted section-lead mb-0">Capaian tim dan anggota di berbagai kejuaraan marching band.</p>
+        </div>
+        @if (featured == null)
+        {
+            <div class="empty-state">Belum ada prestasi yang dipublikasikan.</div>
+        }
+        else
+        {
+            <div class="trophy-grid">
+                <article class="trophy-feature reveal">
+                    <span class="eyebrow">@featured.Level.GetDescription() · @featured.AchievedDate.Year</span>
+                    <div class="rank mt-3">@(featured.RankTitle ?? "Prestasi")</div>
+                    <h3>@featured.Title</h3>
+                    <p class="muted mb-0">@(featured.TeamName ?? featured.MemberName)</p>
+                </article>
+                <div class="trophy-list">
+                    @foreach (var a in otherAchievements)
+                    {
+                        <article class="trophy-item reveal">
+                            <div class="medal"><i class="ri-medal-line" aria-hidden="true"></i></div>
+                            <div>
+                                <h4>@(a.RankTitle ?? a.Title)</h4>
+                                <p class="muted">@a.Title · @(a.TeamName ?? a.MemberName) · @a.AchievedDate.Year</p>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+@* ============ GALERI ============ *@
+@if (Model.Galleries.Count > 0)
+{
+    <section class="gwa-section" id="galeri">
+        <div class="gwa-container">
+            <div class="section-head reveal">
+                <div>
+                    <span class="eyebrow">Galeri</span>
+                    <h2 class="section-title">Momen di <em>atas panggung</em></h2>
+                </div>
+            </div>
+            <div class="gallery-grid">
+                @foreach (var g in Model.Galleries.Take(5))
+                {
+                    <figure class="gallery-tile reveal m-0">
+                        <img src="@Url.Action("GalleryCover", "Landing", new { id = g.Id })" alt="@g.Title" loading="lazy" />
+                        <figcaption><b>@g.Title</b>@if (g.EventDate != null) {<span>@g.EventDate.Value.ToString("d MMMM yyyy", id)</span>}</figcaption>
+                    </figure>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@* ============ BERITA ============ *@
+<section class="gwa-section @(Model.Galleries.Count > 0 ? "pt-0" : "")" id="berita">
+    <div class="gwa-container">
+        <div class="section-head reveal">
+            <div>
+                <span class="eyebrow">Kabar Terbaru</span>
+                <h2 class="section-title">Berita &amp; <em>pengumuman</em></h2>
+            </div>
+            <a href="@Url.Action("Berita", "Landing")" class="btn-gwa btn-outline-ink">Semua berita <i class="ri-arrow-right-line" aria-hidden="true"></i></a>
+        </div>
+        @if (Model.News.Count == 0)
+        {
+            <div class="empty-state">Belum ada berita.</div>
+        }
+        else
+        {
+            <div class="news-grid">
+                @foreach (var news in Model.News)
+                {
+                    <div class="reveal"><partial name="_NewsCard" model="news" /></div>
+                }
+            </div>
+        }
+    </div>
+</section>
+
+@* ============ CTA ============ *@
+<section class="gwa-section pt-0">
+    <div class="gwa-container">
+        <div class="gwa-cta reveal">
+            <div class="row align-items-center g-4 position-relative">
+                <div class="col-lg-8">
+                    <span class="eyebrow">@(Model.OpenRecruitment != null ? "Pendaftaran dibuka" : "Bergabung bersama kami")</span>
+                    <h2>@(Model.OpenRecruitment?.Title ?? "Jadilah bagian dari keluarga Gita Widya Agni")</h2>
+                    <p class="mb-0">
+                        @if (Model.OpenRecruitment != null)
+                        {
+                            <text>Pendaftaran ditutup @Model.OpenRecruitment.CloseDate.ToString("d MMMM yyyy", id). Tidak perlu pengalaman — semangat belajar sudah cukup.</text>
+                        }
+                        else
+                        {
+                            <text>Tidak perlu pengalaman bermusik. Bawa semangatmu, kami siapkan pelatih dan kekeluargaannya.</text>
+                        }
+                    </p>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    @if (!string.IsNullOrWhiteSpace(Model.Site.WhatsApp))
+                    {
+                        <a href="https://wa.me/@Model.Site.WhatsApp" target="_blank" rel="noopener" class="btn-gwa btn-flame"><i class="ri-whatsapp-line" aria-hidden="true"></i> Hubungi Humas</a>
+                    }
+                    else
+                    {
+                        <a href="#kontak" class="btn-gwa btn-flame">Hubungi Kami</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@* ============ KONTAK ============ *@
+<section class="gwa-section pt-0" id="kontak">
+    <div class="gwa-container">
+        <div class="section-head reveal">
+            <div>
+                <span class="eyebrow">Kontak</span>
+                <h2 class="section-title">Mari <em>terhubung</em></h2>
+            </div>
+        </div>
+        <div class="contact-grid">
+            <a class="contact-card reveal" href="https://maps.google.com/?q=UPN+Veteran+Jawa+Timur" target="_blank" rel="noopener">
+                <i class="ri-map-pin-2-line" aria-hidden="true"></i><b>Sekretariat</b>
+                <span>@(Model.Site.Address ?? "Gedung Giri Loka, UPN \"Veteran\" Jawa Timur, Surabaya")</span>
+            </a>
+            @if (!string.IsNullOrWhiteSpace(profile?.Email))
+            {
+                <a class="contact-card reveal d1" href="mailto:@profile!.Email"><i class="ri-mail-line" aria-hidden="true"></i><b>Email</b><span>@profile.Email</span></a>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Site.WhatsApp) || !string.IsNullOrWhiteSpace(profile?.Phone))
+            {
+                <a class="contact-card reveal d2" href="https://wa.me/@(Model.Site.WhatsApp ?? profile!.Phone)" target="_blank" rel="noopener"><i class="ri-whatsapp-line" aria-hidden="true"></i><b>WhatsApp</b><span>@(profile?.Phone ?? Model.Site.WhatsApp)</span></a>
+            }
+            @{ var ig = string.IsNullOrWhiteSpace(profile?.Instagram) ? "mbgwaupn" : profile!.Instagram!.TrimStart('@'); }
+            <a class="contact-card reveal d3" href="https://instagram.com/@ig" target="_blank" rel="noopener"><i class="ri-instagram-line" aria-hidden="true"></i><b>Instagram</b><span>@@@ig</span></a>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    @if (Model.Banners.Count > 1)
+    {
+        <script>
+            (function () {
+                if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+                var slides = document.querySelectorAll('.hero-frame .slide');
+                var caption = document.getElementById('heroCaption');
+                var i = 0;
+                setInterval(function () {
+                    slides[i].classList.remove('is-active');
+                    i = (i + 1) % slides.length;
+                    slides[i].classList.add('is-active');
+                    // Caption ikut slide aktif (textContent, tanpa HTML).
+                    caption.textContent = slides[i].dataset.title || '';
+                    if (slides[i].dataset.subtitle) {
+                        var small = document.createElement('small');
+                        small.textContent = slides[i].dataset.subtitle;
+                        caption.appendChild(small);
+                    }
+                }, 7000);
+            })();
+        </script>
+    }
+}

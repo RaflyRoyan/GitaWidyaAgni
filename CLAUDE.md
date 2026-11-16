@@ -10,6 +10,8 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
 
 - **GWAShared**: dependency-free helpers (`Results/`, `Enums/`, `Extensions/`, `Utilities/`, `Models/`).
 - **GWALib**: data access and business layer, referencing GWAShared. `EF/` holds the database-first EF Core model (entities + `ModelContext`), scaffolded with Pomelo. Re-scaffolding overwrites these files: keep `OnConfiguring` commented out so the connection string is never committed.
+- **GitaWidyaAgniWeb**: ASP.NET Core 8 MVC app (Velzon template) for MB Gita Widya Agni UPN "Veteran" Jawa Timur. It has a public landing page, login and the dashboard shell; the management pages per module are still to be built (see "Web pages to build").
+- **GWASeeder**: console that fills every table with sample data through GWALib.
 
 ## GWALib
 
@@ -397,18 +399,178 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
 
 ### Status (2026-11-16)
 
-All 88 `t_*` tables have a service class. Every transaction module is done: `Approval`, `Akses`, `Anggota`, `Program`, `TimPelaksana`, `Presensi`, `Keuangan`, `Sponsorship`, `Pengadaan`, `Merchandise`, `Inventaris`, `Surat`, `Prestasi`, `Formulir`, `EVoting` and `Information`. Next comes testing against the database.
+- **Library:** all 88 `t_*` tables have a service class. Every transaction module is done: `Approval`, `Akses`, `Anggota`, `Program`, `TimPelaksana`, `Presensi`, `Keuangan`, `Sponsorship`, `Pengadaan`, `Merchandise`, `Inventaris`, `Surat`, `Prestasi`, `Formulir`, `EVoting` and `Information`.
+- **Database testing:** every module has run against MySQL through `GWASeeder`, and all 131 tables are filled. Earlier modules were also tested on the previous device. A Keuangan scenario program (`fintest`) existed in a scratchpad; it is not part of the repo.
+- **Web:** foundation, auth, landing page, login and dashboard shell are done. The management pages are not built yet (see "Web pages to build").
 
 Open items not tied to one folder:
 - **Pending user decisions:**
   - The DDL comment on `t_period_handover_item.ref_id` still names `t_partnership_agreement` for MOU_AKTIF. The code uses `t_sponsorship_mou`; fixing the comment awaits the user's OK.
   - There is no column for an email-verified flag (`UserToken.VerifyEmail` only consumes the token) and none for report revision notes (`ActivityReport`). Adding them is up to the user.
-- **Not committed:** commit `631695d` holds everything up to Presensi. Keuangan, Sponsorship, Pengadaan, Merchandise, Inventaris, Surat, Prestasi, Formulir, EVoting and Information are not committed yet. The user wants one commit now that the transactions are done; commit only when asked.
-- **Testing:**
-  - Keuangan, Sponsorship, Pengadaan, Merchandise, Inventaris, Surat, Prestasi, Formulir, EVoting and Information have only been built, not run against a database. The user wants to test them now that all transactions are done.
-  - A Keuangan scenario program exists in the scratchpad (`fintest`, connection string from env `GWA_DB`). It refuses to run on non-empty tables and resets `m_sequence` to 0 afterwards. Scratchpad files can disappear; they are not part of the repo.
-  - Earlier modules were tested on the previous device. Every test cleaned up its data and reset `m_sequence` to 0.
+- **Commits:** `861fd70` holds the library. The web app, the seeder and the docs were committed and pushed after it. Commit only when asked.
+- **Security:** `GWALib/EF/ModelContext.cs:282` has a commented DB root password that is already in git history. Rotate that password and remove the line.
 - **Local database (this device):** `C:\Users\hisya\Documents\gitawidyaagni-sql\gitawidyaagni_create.sql` was generated from the EF model with Pomelo `GenerateCreateScript`. It has no seed data, CHECK constraints, triggers or views. MySQL 8 is in `C:\Program Files\MySQL\MySQL Server 8.0\bin` and is not on PATH.
+
+## GitaWidyaAgniWeb
+
+ASP.NET Core 8 MVC. The template is Velzon (`wwwroot/assets`), plus DevExtreme 23.2 from a local NuGet feed (`NuGet.config` points to `C:\Program Files\DevExpress 23.2\...`).
+
+- **Configuration:**
+  - `ConnectionStrings:Default` is passed to `DBClass.Configure`, and startup fails when it is empty.
+  - The real value lives in `appsettings.Development.json`, which is git-ignored. `appsettings.json` holds only a placeholder; never put a real password in it.
+  - `GWASeeder` reads the connection string from env `GWA_DB`, then `appsettings.Development.json`, then `appsettings.json`.
+  - The other values below come from user-secrets (`UserSecretsId` in the csproj) or environment variables.
+  - `EVoting:Key` is passed to `ElectionVote.ConfigureKey`. When it is empty, e-voting is refused.
+  - `Bootstrap:AdminUsername` / `Bootstrap:AdminPassword` call `UserAccount.BootstrapAdmin`, which creates role SUPERADMIN, the user and a `m_user_role` row, and only does so while `m_user` is empty.
+- **Auth:** cookie authentication (`gwa.auth`, 8 hours sliding).
+  - Claims: `NameIdentifier` = `m_user.id`, which is the `user` string GWALib expects (`User.GetLibUser()` / `BaseController.LibUser`). Also `Name` = username and `Role` = role codes.
+  - `LoginController` uses `UserAccount.LoginAsync`. It gives one message for a wrong username, wrong password or inactive user, updates `last_login_at` and rehashes the password when needed. It logs LOGIN / LOGIN_FAILED / LOGOUT through `ActivityLog`. Logout is a POST.
+- **Authorization:** global filters, in this order:
+  1. `AuthorizeFilter` requires login.
+  2. `AccessFilter` checks the action against the user's roles.
+  3. `AutoValidateAntiforgeryToken` checks the antiforgery token.
+
+  `AccessFilter` decides per action:
+  - `[AllowAnonymous]`: open to everyone.
+  - `[LoginOnly]`: any logged-in user.
+  - An action registered in `m_controller_action` with `need_auth = 1`: requires `m_role_action` on one of the user's roles.
+  - `need_auth = 0`: any logged-in user.
+  - **Not registered: SUPERADMIN only**, so every new page must be registered in the Controller Action master.
+  - SUPERADMIN bypasses all of these checks.
+  - When refused, AJAX requests get 403 and other requests are redirected to `/Login/Denied`.
+- **`UserAccess` (GWALib, `Lib/Master/Akses`):** roles count when the role is active and the `m_user_role` row has no period or an Active one. It provides `GetRoleCodes`, `GetAllowedActions` (null means everything), `GetRegisteredActions` and `GetMenu`.
+  - `GetMenu`: a header with a controller is a direct link and needs a `m_role_menu` row for the header. A header without a controller is a group showing only granted sub menus; empty groups are hidden.
+- **`AccessService` (web):** caches actions, menu and app name for 5 minutes. `Clear(userId)` runs on login and logout.
+- **Layout:**
+  - The sidebar (`_Navbar`) is built from `GetMenu`, with a `Section` title shown as a menu title.
+  - The app name comes from `m_organization.name`, falling back to "Gita Widya Agni".
+  - The logo is served by `/Brand/Logo` from the organization profile, falling back to `assets/images/gwa-logo.png` (the official MB GWA logo, made transparent; `gwa-logo-sm.png` and `favicon.ico` come from the same image).
+- **Public site:** the default route is `Landing/Index`. `LandingController` is `[AllowAnonymous]` and uses `_LayoutLanding`, which has a top navbar with a Login button (Dashboard when logged in).
+  - Sections: hero (active banners in a swiper, else logo + description), Tentang (profile description, vision, mission lines), Kegiatan (`Activity.GetPublicList`), Berita (3 latest public), Prestasi (`Achievement.GetPublicList`) and Kontak. The Instagram / YouTube fallback is `mbgwaupn`.
+  - `/Landing/Berita?page=` and `/berita/{slug}`. Banner images and news covers are served by `BannerImage` / `NewsCover` with the item's encKey.
+  - Each section is loaded in its own try/catch, so a failing table does not break the page.
+  - **Design:** a warm **light** theme taken from the logo colours. The user does not want any dark section on the landing page.
+    - Styles live in `wwwroot/css/landing.css`, not in Velzon's `app.css`, and the layout loads only Bootstrap grid + Remix icons from Velzon.
+    - Tokens on `:root`: ivory `#fbf8f2`, cream tint `#fdf3d6`, blush tint `#fcebe6`, gold `#e8b52a`, gold text `#8a6100` (for contrast on light backgrounds), flame `#c8202a`, leaf `#1f7a45`.
+    - Alternate sections use `gwa-cream` / `gwa-blush`. The hero shows banners in a framed photo slideshow with a logo badge, or the logo emblem when there are no banners.
+    - Fonts: Playfair Display (headings) + Inter (body) from Google Fonts.
+    - Sections: hero with banner slideshow, emblem and stats, gold marquee, Tentang (collage from `m_organization_photo`, else gallery covers), Seksi Musik, Agenda, Prestasi, Galeri, Berita, a CTA (open recruitment + WhatsApp from `m_site_setting`) and Kontak.
+    - Reveal-on-scroll, `prefers-reduced-motion` respected, focus rings, 44px targets.
+  - Images that use an encKey (`BannerImage`, `NewsCover`) take it as query `?key=`, because an encKey can contain `/` (`%2F`), which 404s as a route segment. `GalleryCover/{id}` (public galleries only) and `OrganizationImage/{seq}` use the int id.
+  - Logout returns to the landing page.
+- **Login page:** `_LayoutLogin` uses the landing tokens (`landing.css`) plus `wwwroot/css/login.css`, and no longer uses Velzon `app.css`.
+  - Layout is a split screen: a cream showcase on the left (first `m_organization_photo` in a tilted frame, a floating logo emblem and a quote) and the form on the right. Below 992px it collapses to a compact header.
+  - The form has visible labels with icons, a show/hide password button (`aria-pressed`), a Caps Lock hint, a `role="alert"` error linked through `aria-describedby`, focus on the first empty field instead of an alert, and a loading state on submit that resets on `pageshow`.
+  - `Denied` uses the same layout with the `.auth-state` block.
+- **Dashboard theme (Velzon):** the same palette as landing and login.
+  - `_Layout` loads `assets/css/bootstrap.gwa.min.css`, `app.gwa.min.css` and `custom.gwa.min.css` instead of Velzon's originals, which stay untouched.
+  - The `.gwa` copies are made with sed from the originals, replacing primary navy `#405189` and its shades/rgb with bronze `#9a6b00`, secondary `#3577f1` with flame `#c8202a`, success `#0ab39c` with leaf `#1f7a45`, warning `#f7b84b` with gold `#e8b52a`, and body `#f3f3f9` with `#f8f4ec`. Hover shades are mapped too.
+  - If Velzon is updated, regenerate the copies with the same mapping.
+  - Gold itself is too light for text on white, so bronze is the primary.
+  - `wwwroot/css/gwa-theme.css` adds Inter / Playfair, cards, loader colours and plugin accents (sweetalert, flatpickr, pagination). `.gwa-welcome` is the dashboard greeting block.
+  - **Sidebar & header follow the SurabayaTaxWeb model** (`C:\Users\hisya\source\repos\surabayataxnextgen\SurabayaTaxWeb`: `theme.css`, `sidebar-submenu-fix.css`, `Components/Header`, `Components/NavBar`). Styles live in `wwwroot/css/gwa-sidebar.css`, loaded last.
+    - Sidebar: a brand gradient (`--sidebar-1..3`, flame `#9e1720` → `#c0212a` → burnt orange `#cf4a1d`, so white text stays readable). Inactive links are dimmed, the active item is a translucent white pill with a gold left bar, and the active group gets a darker background.
+    - Sidebar brand box: a big logo with "GITA WIDYA AGNI / BACK OFFICE" beneath it, and a faint logo illustration at the bottom.
+    - Collapsed sidebar (`data-sidebar-size=sm`): flyout panels titled from `data-menu-title`, set by `fnInitSidebarMenu` in `_Layout`, which also shifts low panels up.
+    - `data-sidebar="dark"` is kept only so Velzon uses white text and `logo-light`.
+    - Header: hamburger, page title (Playfair), a link to the public site, fullscreen, and a user dropdown (gold initials avatar, member full name, active role names, Dashboard / Beranda Publik / POST Logout). Its data comes from `UserAccess.GetProfile` (cached in `AccessService.GetProfile`, cleared on login/logout). There is no dark-mode toggle (the user does not want dark styling).
+  - `_DevExtremeLayout` still uses DevExtreme's own `dx.light.css` and is not themed.
+  - `assets/css/spinner.css` referenced by `_Layout` does not exist (404 from the original template).
+- Controllers for logged-in pages inherit `BaseController`. `LibResult(response)` returns JSON, with HTTP 400 when the status is Error.
+- Stop a running web process before building from the IDE. Otherwise the build fails with `MSB3027 ... locked by "GitaWidyaAgniWeb"`.
+- The `Secure` auth cookie is not sent over plain `http://` by non-browser clients. To test logged-in pages with curl, run the app on `https://localhost:<port>` and use `curl -k` with a cookie jar.
+
+### Web pages to build
+
+The sidebar menu and the Controller Action rows already exist in the database (seeded by `GWASeeder`), but none of these controllers exist in the web project yet, so every link below is a 404 today.
+
+**Rules for each page:**
+- Use the controller name exactly as seeded.
+- Actions are `Index`, `Create`, `Edit` and `Delete`. Any extra action, such as `Approve` or `Checkout`, must be added to `m_controller_action` and granted in `m_role_action`; otherwise only SUPERADMIN can open it.
+- Inherit `BaseController` and pass `LibUser` to GWALib.
+- Use `_Layout` and follow the dashboard theme.
+
+Suggested order: Akses & Pengaturan first, so admins can manage roles and menus from the UI, then the modules in the order below.
+
+| # | Sidebar header / sub menu | Controller | Main GWALib classes |
+|---|---|---|---|
+| 1 | Akses › User | `User` | `UserAccount`, `UserRole` (assign roles per period), reset password via `UserToken` |
+| 2 | Akses › Role | `Role` | `Role`, `RoleAction` (`SaveRoleActions`), `RoleMenu` (`SaveRoleMenus`) |
+| 3 | Akses › Menu | `Menu` | `ControllerMenu` (+ `SaveControllerActions`), `ControllerAction`, `HeaderMenu` (+ `SaveHeaderMenuDetails`), `SubMenu` |
+| 4 | Pengaturan Sistem | `Pengaturan` | `SiteSetting`, `DocumentNumberFormat`, `ApprovalFlow` / `ApprovalFlowStep`, `MessageTemplate`, `Sequence`, `ScheduledJobLog`, `MessageOutbox`, `ActivityLog` (read-only) |
+| 5 | Organisasi › Profil Organisasi | `Organisasi` | `OrganizationProfile` (logo, SK pembina), `OrganizationPhoto` |
+| 6 | Organisasi › Periode | `Periode` | `ManagementPeriod`, `PeriodHandover` / `PeriodHandoverItem` (submit / approve) |
+| 7 | Organisasi › Divisi | `Divisi` | `Division`, `DivisionMember` |
+| 8 | Organisasi › Jabatan | `Jabatan` | `Position` |
+| 9 | Organisasi › Kepengurusan | `Kepengurusan` | `ManagementAssignment` (assign / end) |
+| 10 | Anggota › Data Anggota | `Anggota` | `Member`, `MemberPhoto`, link to `UserAccount` |
+| 11 | Anggota › Alumni | `Alumni` | `AlumniProfile` |
+| 12 | Anggota › Rekrutmen | `Rekrutmen` | `Recruitment` (open / close), `RecruitmentApplicant` (review), `Form` for extra questions; public apply page (`Apply` + `FormResponse.SubmitApplicant`) |
+| 13 | Program Kerja | `ProgramKerja` | `WorkProgram`, `ProgramTask`, `TimelinePlan` |
+| 14 | Kegiatan › Daftar Kegiatan | `Kegiatan` | `Activity`, `ActivityParticipant`, `ActivityCollaborator`, `ActivityReport` |
+| 15 | Kegiatan › Tim Pelaksana | `TimPelaksana` | `CommitteeSection`, `CommitteeMember`, `CommitteeRecruitment` / `CommitteeApplication`, `ActivityRundown`, `ActivityChecklist` (+ `GenerateFromTemplate`, `ChecklistTemplate` master), `ActivityTripMember` |
+| 16 | Kegiatan › Presensi | `Presensi` | `ActivitySchedule` (+ `GenerateSessions`), `AttendanceSession` (open with QR / close / cancel), `AttendanceRecord` (`CheckIn` / `CheckOut` with camera + location, `SetManual`), `MeetingMinutes` |
+| 17 | Kegiatan › Galeri | `Galeri` | `Gallery`, `GalleryPhoto` (cover, publish) |
+| 18 | Keuangan › Transaksi | `Transaksi` | `FinancialAccount`, `FinancialCategory`, `FinancialTransaction` (post / void), `FinancialAttachment`, `PeriodBalance` |
+| 19 | Keuangan › Anggaran | `Anggaran` | `Budget`, `BudgetItem`, `BudgetDocument` (submit / approve) |
+| 20 | Keuangan › Pengajuan Dana | `PengajuanDana` | `FundingRequest` (approval flow, disburse, settle), `FundingRealization`, `FundingApproval` (history) |
+| 21 | Keuangan › Iuran | `Iuran` | `DuesSetting`, `DuesBill` (generate / pay / waive) |
+| 22 | Keuangan › Hutang | `Hutang` | `Debt`, `DebtPayment`, `DebtAttachment` |
+| 23 | Inventaris › Aset | `Aset` | `AssetCategory`, `Asset`, `AssetUnit` (QR labels), `AssetPhoto`, `AssetMovement`, `AssetInspection`, `MaintenanceLog` |
+| 24 | Inventaris › Peminjaman | `Peminjaman` | `BorrowRequest` (approve / checkout by QR scan / payment), `BorrowItem` (`ReturnQuantity`), `BorrowItemUnit` (`ReturnUnit`) |
+| 25 | Pengadaan | `Pengadaan` | `ProcurementRequest` (approval flow / purchase / payment), `ProcurementItem`, `ProcurementQuotation`, `ProcurementReceipt` (+ asset creation) |
+| 26 | Merchandise | `Merchandise` | `Product`, `ProductVariant`, `ProductStockMovement`, `SalesOrder` (payment / ready / finish / cancel) |
+| 27 | Kemitraan › Mitra | `Mitra` | `ExternalParty`, `ExternalPartyContact` |
+| 28 | Kemitraan › Sponsorship | `Sponsorship` | `SponsorshipPackage` / `PackageBenefit`, `SponsorshipDeal`, `SponsorshipBenefit`, `SponsorshipMou` |
+| 29 | Persuratan › Surat | `Surat` | `LetterTemplate`, `Letter` (approval flow / sent / archive), `LetterApproval`, `LetterDisposition` |
+| 30 | Persuratan › Arsip Dokumen | `Dokumen` | `DocumentCategory`, `Document` |
+| 31 | Prestasi › Lomba & Prestasi | `Prestasi` | `Competition`, `CompetitionMaterial`, `CompetitionParticipant`, `Achievement`, `PointRule`, `MemberPoint` (+ leaderboard) |
+| 32 | Prestasi › Sertifikat | `Sertifikat` | `Certificate` (revoke / restore); public verify page (`Certificate.Verify`) |
+| 33 | Formulir › Formulir | `Formulir` | `Form`, `FormQuestion` (builder), `FormResponse` / `FormAnswer`, `GetSummary` |
+| 34 | Formulir › Aspirasi | `Aspirasi` | `Aspiration` (respond) |
+| 35 | E-Voting | `EVoting` | `Election` (registration / open / close / finalize), `ElectionCandidate`, `ElectionEligibleVoter`, `ElectionResult`, `ElectionAuditEvent`; voter page `ElectionVote.Cast` + `VerifyReceipt` |
+| 36 | Informasi › Berita | `Berita` | `Announcement` (publish / archive, cover) |
+| 37 | Informasi › Banner | `Banner` | `Banner` (image, schedule) |
+
+**Member self-service pages** (`[LoginOnly]`, not in the seeded menu yet; add menu rows when built):
+- Profil saya.
+- Presensi scan QR.
+- Iuran saya.
+- Kegiatan dan daftar peserta.
+- Lamaran tim pelaksana.
+- Peminjaman dan pesan merchandise.
+- Isi formulir dan kirim aspirasi.
+- Memilih di e-voting.
+- Prestasi, poin dan sertifikat saya.
+- Disposisi untuk saya.
+- Notifikasi (`Notification.GetMyList` / `MarkRead`, plus a bell in the header).
+
+**Other web work:**
+- Wire `Notification.Add` / `ActivityLog.Add` into the modules.
+- A hosted service for the scheduled jobs (README "Job terjadwal") and a `MessageOutbox` sender.
+- Pass `ip_address` to election audit events.
+- Theme `_DevExtremeLayout` if DevExtreme pages are used.
+- Add the missing `assets/css/spinner.css` or drop the reference.
+
+## GWASeeder
+
+A console project, part of the solution, that fills every table (131 of 131) with sample data for MB Gita Widya Agni through the GWALib services, so the validation rules run too.
+
+- **Run:** `dotnet run --project GWASeeder [-- --evoting-key <base64>]`.
+  - The connection string comes from `GitaWidyaAgniWeb/appsettings.json` or env `GWA_DB`.
+  - The e-voting key comes from the argument, env `GWA_EVOTING_KEY` or `EVoting:Key`. When none is given, a random key is generated and printed. The web must use the same key to finalize elections.
+- **Preconditions:** user `admin` must exist (web bootstrap). It refuses to run when `m_organization` already has a row.
+- **Users:** sample users have the NIM as username and password `gwa12345`.
+- **Code layout:** files are split per module (`Seed.Master.cs`, `Seed.Anggota.cs`, `Seed.Program.cs`, `Seed.Keuangan.cs`, `Seed.Lain.cs`), and `Seed.Run.cs` holds the order.
+- **Workflow:** approvals, check-in, votes and form responses are done by the right member's user (`UserOf(member)`); the rest by admin.
+- **Order matters:**
+  - The old period's data goes in before the handover is approved, because a Closed period is locked.
+  - Activities with status Done are only finished at the end of `SeedCommittee`, because Done locks their child data.
+- Running the seeder end to end is the first test against a database for Keuangan … Information. It passed on 2026-11-16 after these fixes in the seeder itself (no library changes):
+  - Alumni cannot be participants.
+  - Incoming letters need a letter type.
+  - Letter templates need a real `.docx` (zip).
+  - `AttendanceSession.Close` returns `Response<int>`.
 
 ## Schema sources
 

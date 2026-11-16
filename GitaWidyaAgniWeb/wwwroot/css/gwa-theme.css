@@ -1,0 +1,68 @@
+/* Tema dashboard (Velzon) MB Gita Widya Agni — senada landing & login.
+   Warna dasar Velzon sudah diganti di assets/css/*.gwa.min.css (primary navy → bronze emas, secondary → merah api,
+   success → hijau pita, warning → emas, body → gading). File ini hanya menambah detail: font, sidebar terang, kartu, loader. */
+:root {
+    --gwa-ivory: #f8f4ec;
+    --gwa-cream: #fdf3d6;
+    --gwa-blush: #fcebe6;
+    --gwa-gold: #e8b52a;
+    --gwa-gold-soft: #f6d77a;
+    --gwa-bronze: #9a6b00;
+    --gwa-flame: #c8202a;
+    --gwa-leaf: #1f7a45;
+    --gwa-text: #1f1b16;
+    --gwa-muted: #5f5849;
+    --gwa-line: #ece4d3;
+    --vz-font-sans-serif: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --vz-body-font-family: var(--vz-font-sans-serif);
+    --vz-body-color: #2a251e;
+    --vz-border-color: #ece4d3;
+    --vz-vertical-menu-bg: #fffdf8;
+    --vz-vertical-menu-item-color: #5f5849;
+    --vz-vertical-menu-item-hover-color: #9a6b00;
+    --vz-vertical-menu-item-active-color: #9a6b00;
+    --vz-vertical-menu-sub-item-color: #6b6455;
+    --vz-vertical-menu-sub-item-hover-color: #9a6b00;
+    --vz-vertical-menu-sub-item-active-color: #9a6b00;
+    --vz-vertical-menu-title-color: #a3161f;
+    --vz-header-bg: #ffffff;
+    --vz-footer-bg: #fffdf8;
+    --vz-footer-color: #5f5849;
+}
+
+body { font-family: var(--vz-font-sans-serif); }
+.page-title-box h4, .gwa-page-title { font-family: "Playfair Display", Georgia, serif; font-weight: 700; font-size: 1.35rem !important; text-transform: none; letter-spacing: -.01em; color: var(--gwa-text); }
+
+/* Sidebar & topbar: lihat css/gwa-sidebar.css (model SurabayaTaxWeb). */
+
+/* ---------- Konten ---------- */
+.page-content { background: var(--gwa-ivory); }
+.card { border: 1px solid var(--gwa-line); border-radius: 14px; box-shadow: 0 10px 30px -26px rgba(90, 60, 10, .45); }
+.card-header { background: transparent; border-bottom-color: var(--gwa-line); }
+.btn { border-radius: 10px; font-weight: 500; }
+.btn-primary { color: #fff; }
+.btn-warning { color: #2a1f04; }
+.form-control:focus, .form-select:focus { border-color: var(--gwa-gold); box-shadow: 0 0 0 .2rem rgba(232, 181, 42, .25); }
+.form-check-input:checked { background-color: var(--gwa-bronze); border-color: var(--gwa-bronze); }
+a { text-underline-offset: 3px; }
+.footer { border-top: 1px solid var(--gwa-line); }
+
+/* Hero sambutan dashboard */
+.gwa-welcome { position: relative; overflow: hidden; border-radius: 18px; padding: 28px 30px; background: linear-gradient(120deg, #fff4d4 0%, #fde3c4 55%, #fbd2c6 100%); border: 1px solid rgba(232, 181, 42, .5); }
+.gwa-welcome::after { content: ""; position: absolute; width: 300px; height: 300px; right: -80px; top: -140px; border-radius: 50%; background: radial-gradient(circle, rgba(232, 181, 42, .45), transparent 65%); }
+.gwa-welcome h2 { font-family: "Playfair Display", Georgia, serif; font-weight: 700; margin: 6px 0 6px; color: var(--gwa-text); }
+.gwa-welcome h2 em { color: var(--gwa-bronze); }
+.gwa-welcome p { color: var(--gwa-muted); margin: 0; position: relative; }
+.gwa-eyebrow { font-size: .72rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--gwa-flame); }
+
+/* ---------- Loader & plugin ---------- */
+#loading1 { background-color: rgba(251, 248, 242, .82) !important; opacity: 1 !important; backdrop-filter: blur(2px); }
+.spinner { border-top-color: var(--gwa-gold) !important; }
+.spinner::before { border-top-color: var(--gwa-flame) !important; }
+.spinner::after { border-top-color: var(--gwa-leaf) !important; }
+.teks h2 { color: var(--gwa-bronze) !important; font-family: "Playfair Display", Georgia, serif !important; }
+#loader { background: var(--gwa-ivory); }
+.swal2-styled.swal2-confirm { background-color: var(--gwa-bronze) !important; }
+.swal2-styled.swal2-cancel { background-color: #8a8476 !important; }
+.flatpickr-day.selected, .flatpickr-day.selected:hover { background: var(--gwa-bronze) !important; border-color: var(--gwa-bronze) !important; }
+.page-item.active .page-link { background-color: var(--gwa-bronze); border-color: var(--gwa-bronze); }

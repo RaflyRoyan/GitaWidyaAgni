@@ -1,0 +1,11 @@
+@{
+    Layout = "~/Views/Shared/_LayoutLogin.cshtml";
+    ViewData["Title"] = "Akses Ditolak";
+}
+<div class="auth-state">
+    <div class="state-icon"><i class="ri-lock-2-line" aria-hidden="true"></i></div>
+    <span class="eyebrow">Akses Ditolak</span>
+    <h1>Halaman ini <em>terkunci</em></h1>
+    <p class="lead-text">Akun Anda tidak memiliki hak akses ke halaman tersebut. Hubungi admin bila Anda merasa seharusnya bisa membukanya.</p>
+    <a href="@Url.Action("Index", "Home")" class="btn-gwa btn-gold"><i class="ri-dashboard-2-line" aria-hidden="true"></i> Kembali ke Dashboard</a>
+</div>

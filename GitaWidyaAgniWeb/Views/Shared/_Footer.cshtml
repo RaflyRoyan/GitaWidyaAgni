@@ -1,0 +1,10 @@
+﻿@inject GitaWidyaAgniWeb.Infrastructure.AccessService Access
+<footer class="footer">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-6">
+                @DateTime.Now.Year © @Access.GetAppName()
+            </div>
+        </div>
+    </div>
+</footer>

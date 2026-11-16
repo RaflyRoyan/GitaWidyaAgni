@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Konfigurasi lokal berisi connection string asli
+GitaWidyaAgniWeb/appsettings.Development.json
+# Demo Velzon berisi Mapbox token, tidak dipakai aplikasi
+GitaWidyaAgniWeb/wwwroot/assets/js/pages/leaflet-map.init.js

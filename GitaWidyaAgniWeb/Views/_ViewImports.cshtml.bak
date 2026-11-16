@@ -1,0 +1,3 @@
+﻿@using GitaWidyaAgniWeb
+@using GitaWidyaAgniWeb.Models
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers

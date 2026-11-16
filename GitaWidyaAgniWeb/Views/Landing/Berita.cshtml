@@ -1,0 +1,41 @@
+@model GitaWidyaAgniWeb.Models.Landing.NewsListVM
+@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = "Berita";
+    ViewData["SolidNav"] = true;
+}
+<section class="page-hero">
+    <div class="gwa-container">
+        <span class="eyebrow">Kabar Terbaru</span>
+        <h1 class="section-title mb-2">Berita &amp; <em>Pengumuman</em></h1>
+        <p class="muted mb-0">Cerita, agenda, dan pengumuman dari Marching Band Gita Widya Agni.</p>
+    </div>
+</section>
+<section class="gwa-section">
+    <div class="gwa-container">
+        @if (Model.Items.Count == 0)
+        {
+            <div class="empty-state">Belum ada berita.</div>
+        }
+        else
+        {
+            <div class="news-grid">
+                @foreach (var news in Model.Items)
+                {
+                    <div class="reveal"><partial name="_NewsCard" model="news" /></div>
+                }
+            </div>
+        }
+        <nav class="d-flex justify-content-between mt-5" aria-label="Halaman berita">
+            @if (Model.Page > 1)
+            {
+                <a class="btn-gwa btn-outline-ink" href="@Url.Action("Berita", new { page = Model.Page - 1 })"><i class="ri-arrow-left-line" aria-hidden="true"></i> Sebelumnya</a>
+            }
+            else { <span></span> }
+            @if (Model.HasNext)
+            {
+                <a class="btn-gwa btn-outline-ink" href="@Url.Action("Berita", new { page = Model.Page + 1 })">Berikutnya <i class="ri-arrow-right-line" aria-hidden="true"></i></a>
+            }
+        </nav>
+    </div>
+</section>

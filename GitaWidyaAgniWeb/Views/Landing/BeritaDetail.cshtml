@@ -1,0 +1,29 @@
+@model GWALib.Lib.Transaksi.Information.Announcement
+@using GWAShared.Extensions
+@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = Model.Title;
+    ViewData["SolidNav"] = true;
+}
+<section class="page-hero">
+    <div class="gwa-container" style="max-width:860px">
+        <a href="@Url.Action("Berita", "Landing")" class="d-inline-flex align-items-center gap-1" style="color:var(--text-muted);min-height:44px"><i class="ri-arrow-left-line" aria-hidden="true"></i> Semua berita</a>
+        <div class="mt-2"><span class="tag">@Model.Category.GetDescription()</span></div>
+        <h1 class="section-title">@Model.Title</h1>
+        <p class="mb-0 sub">
+            <i class="ri-calendar-line" aria-hidden="true"></i> @Model.PublishedAt?.ToString("dddd, d MMMM yyyy", new System.Globalization.CultureInfo("id-ID"))
+            &middot; @Model.AuthorName
+        </p>
+    </div>
+</section>
+<section class="pb-5">
+    <div class="gwa-container">
+        <article class="article">
+            <div class="cover">
+                <img src="@Url.Action("NewsCover", "Landing", new { key = Model.EncDecrKey })" class="w-100" alt="" onerror="this.parentElement.remove()">
+            </div>
+            @* Konten ditampilkan sebagai teks (baris baru dipertahankan); HTML dari editor tidak dirender demi keamanan. *@
+            <div class="content">@Model.Content</div>
+        </article>
+    </div>
+</section>

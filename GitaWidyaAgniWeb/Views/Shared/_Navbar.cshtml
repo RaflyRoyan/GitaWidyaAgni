@@ -1,0 +1,86 @@
+﻿@using GitaWidyaAgniWeb.Infrastructure
+@inject AccessService Access
+@{
+    // Model sidebar mengikuti SurabayaTaxWeb: gradasi warna brand, logo besar + judul di atas, ilustrasi samar di bawah,
+    // panel melayang berjudul saat sidebar diciutkan (css/gwa-sidebar.css). Warna gradasi diatur di gwa-sidebar.css.
+    var menu = Access.GetMenu(User.GetUserId());
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    string? lastSection = null;
+}
+<div class="app-menu navbar-menu">
+    <div style="z-index:1004;" class="navbar-brand-box">
+        <a href="@Url.Action("Index", "Home")" class="logo logo-light">
+            <span class="logo-sm">
+                <img src="@Url.Action("Logo", "Brand")" alt="Gita Widya Agni" height="44">
+            </span>
+            <span class="logo-lg">
+                <img src="@Url.Action("Logo", "Brand")" alt="" height="70">
+                <span class="gwa-brand-title">GITA WIDYA AGNI <span>BACK OFFICE</span></span>
+            </span>
+        </a>
+        <button type="button" class="btn btn-sm p-0 fs-20 header-item float-end btn-vertical-sm-hover" id="vertical-hover" aria-label="Kunci sidebar">
+            <i class="ri-record-circle-line" aria-hidden="true"></i>
+        </button>
+    </div>
+
+    <div id="scrollbar" data-simplebar="init" class="h-100" style="padding-bottom:150px;">
+        <div class="container-fluid">
+            <div id="two-column-menu"></div>
+            <ul class="navbar-nav" id="navbar-nav">
+                <li class="menu-title"><span>Menu</span></li>
+                <li class="nav-item">
+                    <a href="@Url.Action("Index", "Home")" class="nav-link menu-link @(currentController == "Home" ? "active" : "")">
+                        <i class="ri-dashboard-2-line"></i> <span>Dashboard</span>
+                    </a>
+                </li>
+                @for (var i = 0; i < menu.Count; i++)
+                {
+                    var item = menu[i];
+                    if (!string.IsNullOrWhiteSpace(item.Section) && item.Section != lastSection)
+                    {
+                        lastSection = item.Section;
+                        <li class="menu-title"><span>@item.Section</span></li>
+                    }
+                    var icon = string.IsNullOrWhiteSpace(item.Icon) ? "ri-folder-2-line" : item.Icon;
+                    if (item.Children.Count == 0)
+                    {
+                        <li class="nav-item">
+                            <a href="@Url.Action(item.Action, item.Controller)" class="nav-link menu-link @(currentController == item.Controller ? "active" : "")">
+                                <i class="@icon"></i> <span>@item.Name</span>
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        var collapseId = $"menu-{i}";
+                        var open = item.Children.Any(c => c.Controller == currentController);
+                        <li class="nav-item">
+                            <a class="nav-link menu-link @(open ? "active" : "collapsed")" href="#@collapseId" data-bs-toggle="collapse" role="button" aria-expanded="@(open ? "true" : "false")" aria-controls="@collapseId">
+                                <i class="@icon"></i> <span>@item.Name</span>
+                            </a>
+                            <div class="collapse menu-dropdown @(open ? "show" : "")" id="@collapseId">
+                                <ul class="nav nav-sm flex-column">
+                                    @foreach (var child in item.Children)
+                                    {
+                                        <li class="nav-item">
+                                            <a href="@Url.Action(child.Action, child.Controller)" class="nav-link @(currentController == child.Controller ? "active" : "")">
+                                                @if (!string.IsNullOrWhiteSpace(child.Icon))
+                                                {
+                                                    <i class="@child.Icon"></i>
+                                                }
+                                                <span>@child.Name</span>
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </li>
+                    }
+                }
+            </ul>
+        </div>
+    </div>
+    @* Ilustrasi samar di bawah sidebar (seperti SurabayaTaxWeb), di luar #scrollbar supaya diam saat menu digulir. *@
+    <div class="sidebar-ilustrasi" aria-hidden="true"></div>
+</div>
+<div class="vertical-overlay"></div>

@@ -1,0 +1,117 @@
+﻿@model GitaWidyaAgniWeb.Models.Login.LoginVM
+@{
+    Layout = "~/Views/Shared/_LayoutLogin.cshtml";
+    ViewData["Title"] = "Masuk";
+    var hasError = !string.IsNullOrEmpty(Model.PesanError);
+}
+<span class="eyebrow">Masuk</span>
+<h1>Selamat datang <em>kembali</em></h1>
+<p class="lead-text">Masuk dengan akun anggota atau pengurus untuk melanjutkan.</p>
+
+@using (Html.BeginForm("Index", "Login", FormMethod.Post, new { id = "frmLogin", novalidate = "novalidate" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ReturnUrl)
+    @if (hasError)
+    {
+        <div class="auth-alert" role="alert" id="loginError">
+            <i class="ri-error-warning-line" aria-hidden="true"></i>
+            <span>@Model.PesanError</span>
+        </div>
+    }
+
+    <div class="field">
+        <label for="Username">Username / NIM</label>
+        <div class="field-control">
+            <i class="ri-user-3-line" aria-hidden="true"></i>
+            @Html.TextBoxFor(m => m.Username, new
+            {
+                placeholder = "contoh: 23011010000",
+                autocomplete = "username",
+                autocapitalize = "none",
+                spellcheck = "false",
+                autofocus = "autofocus",
+                required = "required",
+                aria_invalid = hasError ? "true" : "false",
+                aria_describedby = hasError ? "loginError" : null
+            })
+        </div>
+    </div>
+
+    <div class="field">
+        <label for="Password">Password</label>
+        <div class="field-control">
+            <i class="ri-lock-2-line" aria-hidden="true"></i>
+            @Html.PasswordFor(m => m.Password, new
+            {
+                placeholder = "Masukkan password",
+                autocomplete = "current-password",
+                required = "required",
+                aria_invalid = hasError ? "true" : "false",
+                aria_describedby = "capsHint"
+            })
+            <button class="toggle-pass" type="button" id="togglePass" aria-label="Tampilkan password" aria-pressed="false" aria-controls="Password">
+                <i class="ri-eye-line" aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="field-hint" id="capsHint" role="status"><i class="ri-information-line" aria-hidden="true"></i>Caps Lock aktif</div>
+    </div>
+
+    <button class="btn-gwa btn-gold btn-submit" type="submit" id="btnLogin">
+        <span class="spinner" aria-hidden="true"></span>
+        <i class="ri-login-circle-line label-icon" aria-hidden="true"></i>
+        <span class="btn-text">Masuk</span>
+    </button>
+
+    <div class="auth-note">
+        <i class="ri-shield-check-line" aria-hidden="true"></i>
+        <span>Lupa password? Hubungi sekretaris atau admin GWA untuk mengatur ulang akun Anda.</span>
+    </div>
+}
+
+@section scripts {
+    <script>
+        (function () {
+            var form = document.getElementById('frmLogin');
+            var pass = document.getElementById('Password');
+            var toggle = document.getElementById('togglePass');
+            var caps = document.getElementById('capsHint');
+            var btn = document.getElementById('btnLogin');
+
+            toggle.addEventListener('click', function () {
+                var show = pass.type === 'password';
+                pass.type = show ? 'text' : 'password';
+                toggle.setAttribute('aria-pressed', show);
+                toggle.setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password');
+                toggle.querySelector('i').className = show ? 'ri-eye-off-line' : 'ri-eye-line';
+                pass.focus();
+            });
+
+            pass.addEventListener('keyup', function (e) {
+                caps.classList.toggle('show', !!(e.getModifierState && e.getModifierState('CapsLock')));
+            });
+
+            form.addEventListener('submit', function (e) {
+                // Validasi ringan: fokus ke field kosong pertama, bukan alert.
+                var user = document.getElementById('Username');
+                var empty = !user.value.trim() ? user : (!pass.value ? pass : null);
+                if (empty) {
+                    e.preventDefault();
+                    empty.setAttribute('aria-invalid', 'true');
+                    empty.focus();
+                    return;
+                }
+                btn.disabled = true;
+                btn.classList.add('is-loading');
+                btn.querySelector('.btn-text').textContent = 'Memproses…';
+            });
+
+            // Kembali dari bfcache: aktifkan lagi tombol.
+            window.addEventListener('pageshow', function () {
+                btn.disabled = false;
+                btn.classList.remove('is-loading');
+                btn.querySelector('.btn-text').textContent = 'Masuk';
+            });
+        })();
+    </script>
+}

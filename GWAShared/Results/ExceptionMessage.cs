@@ -120,6 +120,7 @@ namespace GWAShared.Results
         public const string ATTENDANCE_NOT_CHECKED_IN = "Anda belum check-in pada sesi ini";
         public const string ATTENDANCE_ALREADY_CHECKED_OUT = "Anda sudah check-out pada sesi ini";
         public const string USER_NOT_MEMBER = "Akun ini belum terhubung ke data anggota";
+        public const string LOGIN_INVALID = "Username atau password salah";
 
         // Keuangan
         public const string FINANCIAL_CATEGORY_IN_USE = "Kategori keuangan masih dipakai pengaturan iuran aktif";

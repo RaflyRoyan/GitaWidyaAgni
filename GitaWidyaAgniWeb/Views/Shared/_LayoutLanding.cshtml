@@ -1,0 +1,146 @@
+@inject GitaWidyaAgniWeb.Infrastructure.AccessService Access
+@{
+    var appName = Access.GetAppName();
+    var loggedIn = User.Identity?.IsAuthenticated == true;
+    var home = Url.Action("Index", "Landing");
+    var solidNav = ViewData["SolidNav"] as bool? == true;
+    var site = ViewData["Site"] as GitaWidyaAgniWeb.Models.Landing.SiteInfo;
+    var instagram = site?.Instagram ?? "https://instagram.com/mbgwaupn";
+    var youtube = site?.YouTube ?? "https://youtube.com/@mbgwaupn";
+}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <title>@(ViewData["Title"] is string t ? t + " · " : "")@appName</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="@appName — UKM Marching Band UPN &quot;Veteran&quot; Jawa Timur. Brass, battery, front ensemble, dan colour guard." />
+    <meta name="theme-color" content="#fbf8f2" />
+    <link rel="shortcut icon" href="~/favicon.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600;1,700&display=swap" rel="stylesheet">
+    <link href="~/assets/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/assets/css/icons.min.css" rel="stylesheet" />
+    <link href="~/css/landing.css" rel="stylesheet" asp-append-version="true" />
+</head>
+<body class="gwa">
+    <a class="skip-link" href="#konten">Lewati ke konten</a>
+
+    <header class="gwa-nav @(solidNav ? "is-light" : "")" id="gwaNav">
+        <div class="gwa-container">
+            <a class="gwa-brand" href="@home" aria-label="@appName — beranda">
+                <img src="@Url.Action("Logo", "Brand")" alt="" width="44" height="44">
+                <span>
+                    <b>Gita Widya Agni</b>
+                    <small>Marching Band UPN Jatim</small>
+                </span>
+            </a>
+            <button class="gwa-burger" type="button" aria-label="Buka menu" aria-expanded="false" aria-controls="gwaCollapse" id="gwaBurger">
+                <i class="ri-menu-3-line" aria-hidden="true"></i>
+            </button>
+            <div class="gwa-collapse" id="gwaCollapse">
+                <ul class="gwa-menu">
+                    <li><a href="@home#beranda">Beranda</a></li>
+                    <li><a href="@home#tentang">Tentang</a></li>
+                    <li><a href="@home#agenda">Agenda</a></li>
+                    <li><a href="@home#prestasi">Prestasi</a></li>
+                    <li><a href="@home#galeri">Galeri</a></li>
+                    <li><a href="@Url.Action("Berita", "Landing")">Berita</a></li>
+                    <li><a href="@home#kontak">Kontak</a></li>
+                </ul>
+                @if (loggedIn)
+                {
+                    <a href="@Url.Action("Index", "Home")" class="btn-gwa btn-gold"><i class="ri-dashboard-2-line" aria-hidden="true"></i> Dashboard</a>
+                }
+                else
+                {
+                    <a href="@Url.Action("Index", "Login")" class="btn-gwa btn-gold"><i class="ri-login-circle-line" aria-hidden="true"></i> Login</a>
+                }
+            </div>
+        </div>
+    </header>
+
+    <main id="konten">
+        @RenderBody()
+    </main>
+
+    <footer class="gwa-footer-wrap">
+        <div class="stripe" aria-hidden="true"></div>
+        <div class="gwa-footer">
+            <div class="gwa-container">
+                <div class="footer-grid">
+                    <div>
+                        <a class="gwa-brand" href="@home">
+                            <img src="@Url.Action("Logo", "Brand")" alt="" width="44" height="44">
+                            <span><b>Gita Widya Agni</b><small>Marching Band UPN Jatim</small></span>
+                        </a>
+                        <p class="mt-3 mb-0" style="max-width:380px">Semangat yang berapi-api dalam belajar musik. Unit Kegiatan Mahasiswa marching band UPN &quot;Veteran&quot; Jawa Timur sejak 1990.</p>
+                        <div class="socials">
+                            <a href="@instagram" target="_blank" rel="noopener" aria-label="Instagram"><i class="ri-instagram-line" aria-hidden="true"></i></a>
+                            <a href="@youtube" target="_blank" rel="noopener" aria-label="YouTube"><i class="ri-youtube-line" aria-hidden="true"></i></a>
+                            @if (!string.IsNullOrWhiteSpace(site?.TikTok))
+                            {
+                                <a href="@site.TikTok" target="_blank" rel="noopener" aria-label="TikTok"><i class="ri-tiktok-line" aria-hidden="true"></i></a>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(site?.WhatsApp))
+                            {
+                                <a href="https://wa.me/@site.WhatsApp" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="ri-whatsapp-line" aria-hidden="true"></i></a>
+                            }
+                        </div>
+                    </div>
+                    <div>
+                        <h5>Jelajahi</h5>
+                        <ul>
+                            <li><a href="@home#tentang">Tentang Kami</a></li>
+                            <li><a href="@home#agenda">Agenda</a></li>
+                            <li><a href="@home#prestasi">Prestasi</a></li>
+                            <li><a href="@Url.Action("Berita", "Landing")">Berita</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h5>Sekretariat</h5>
+                        <p class="mb-0">@(site?.Address ?? "Gedung Serba Guna Giri Loka, UPN \"Veteran\" Jawa Timur, Jl. Raya Rungkut Madya, Gunung Anyar, Surabaya 60294")</p>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <span>&copy; @DateTime.Now.Year @appName</span>
+                    <span>UPN &quot;Veteran&quot; Jawa Timur · Kampus Bela Negara</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function () {
+            var nav = document.getElementById('gwaNav');
+            var onScroll = function () { nav.classList.toggle('is-solid', window.scrollY > 40); };
+            onScroll();
+            window.addEventListener('scroll', onScroll, { passive: true });
+
+            var burger = document.getElementById('gwaBurger');
+            var collapse = document.getElementById('gwaCollapse');
+            burger.addEventListener('click', function () {
+                var open = collapse.classList.toggle('open');
+                burger.setAttribute('aria-expanded', open);
+                burger.querySelector('i').className = open ? 'ri-close-line' : 'ri-menu-3-line';
+                if (open) { nav.classList.add('is-solid'); }
+            });
+            collapse.querySelectorAll('a').forEach(function (a) {
+                a.addEventListener('click', function () { collapse.classList.remove('open'); burger.setAttribute('aria-expanded', false); burger.querySelector('i').className = 'ri-menu-3-line'; });
+            });
+
+            var items = document.querySelectorAll('.reveal');
+            if ('IntersectionObserver' in window) {
+                var io = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+                }, { threshold: 0.12 });
+                items.forEach(function (el) { io.observe(el); });
+            } else {
+                items.forEach(function (el) { el.classList.add('in'); });
+            }
+        })();
+    </script>
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
