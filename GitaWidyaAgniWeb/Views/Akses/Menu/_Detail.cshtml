@@ -1,0 +1,15 @@
+@model GitaWidyaAgniWeb.Models.Akses.MenuVM.Detail
+
+<div id="frmDetail" data-key="@Model.Key">
+    <p class="small text-muted">Centang sub menu untuk grup <b>@Model.Nama</b>. Urutan di sidebar mengikuti urutan daftar; seret baris lewat ikon di kiri untuk mengubah urutan.</p>
+    <div id="tblDetail"></div>
+</div>
+<div class="hstack gap-2 justify-content-end mt-3">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    <button type="button" class="btn btn-primary" onclick="fnSimpanDetail()"><i class="ri-save-line me-1"></i>Simpan</button>
+</div>
+<script>
+    // Grid dibuat lewat JS supaya urutan seret mengubah array detailItems (pola demo DevExtreme "Row Drag & Drop").
+    window.detailItems = @Json.Serialize(Model.Items);
+    fnInitDetail();
+</script>

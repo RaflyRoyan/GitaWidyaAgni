@@ -1,0 +1,35 @@
+@model GitaWidyaAgniWeb.Models.Akses.MenuVM.FormController
+
+<form id="frmController" data-edit="@(Model.IsEdit ? "1" : "0")" onsubmit="return false">
+    <div class="row">
+        <div class="col-md-7 mb-3">
+            <label class="form-label gwa-required">Nama controller</label>
+            @(Html.DevExtreme().TextBox().ID("CtlName").Value(Model.Name).MaxLength(100).Placeholder("mis. Kegiatan"))
+            <small class="text-muted">Sama persis dengan nama class tanpa "Controller".</small>
+        </div>
+        <div class="col-md-5 mb-3">
+            <label class="form-label gwa-required">Aksi halaman utama</label>
+            @(Html.DevExtreme().TextBox().ID("CtlIndexAction").Value(Model.IndexAction).MaxLength(100))
+        </div>
+        <div class="col-12 mb-3">
+            <label class="form-label">Keterangan</label>
+            @(Html.DevExtreme().TextBox().ID("CtlDescription").Value(Model.Description).MaxLength(200))
+        </div>
+        @if (Model.IsEdit)
+        {
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Status</label>
+                @(Html.DevExtreme().SelectBox().ID("CtlIsActive").Value(Model.IsActive)
+                    .DataSource(GitaWidyaAgniWeb.Models.GwaVM.OpsiAktif).ValueExpr("Value").DisplayExpr("Text"))
+            </div>
+        }
+        else
+        {
+            <div class="col-12"><div class="alert alert-light border small mb-3">Aksi halaman utama otomatis didaftarkan. Tambahkan aksi lain lewat tombol Daftar aksi.</div></div>
+        }
+    </div>
+</form>
+<div class="hstack gap-2 justify-content-end">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    <button type="button" class="btn btn-primary" onclick="fnSimpanController()"><i class="ri-save-line me-1"></i>Simpan</button>
+</div>

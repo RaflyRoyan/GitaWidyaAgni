@@ -1,0 +1,10 @@
+/* Tambahan kecil untuk halaman DevExtreme. Tampilan widget sengaja TIDAK ditimpa: tema yang dipakai sama dengan
+   SurabayaTaxWeb (css/devextreme/dx.material.blue.light.compact.css). */
+
+/* Label wajib di form modal. */
+.gwa-required::after { content: " *"; color: var(--gwa-flame, #c8202a); }
+
+/* Tombol aksi di sel grid. */
+.gwa-grid-actions .btn-icon { width: 30px; height: 30px; }
+.gwa-grid-actions .btn + .btn { margin-left: 4px; }
+.dx-datagrid .dx-row > td.gwa-grid-actions, .dx-treelist .dx-row > td.gwa-grid-actions { vertical-align: middle; }

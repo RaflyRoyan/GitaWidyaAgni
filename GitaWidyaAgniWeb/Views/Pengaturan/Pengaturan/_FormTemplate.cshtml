@@ -1,0 +1,40 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.FormTemplate
+
+<form id="frmTemplate" data-edit="@(Model.IsEdit ? "1" : "0")" onsubmit="return false">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label gwa-required">Kode</label>
+            @(Html.DevExtreme().TextBox().ID("TemplateCode").Value(Model.TemplateCode).MaxLength(50).ReadOnly(Model.IsEdit).Placeholder("RESET_PASSWORD"))
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label gwa-required">Kanal</label>
+            @(Html.DevExtreme().SelectBox().ID("Channel").Value(Model.Channel).ReadOnly(Model.IsEdit)
+                .DataSource(GitaWidyaAgniWeb.Models.GwaVM.Opsi<GWAShared.Enums.NotificationChannel>()).ValueExpr("Value").DisplayExpr("Text"))
+        </div>
+        <div class="col-12 mb-3">
+            <label class="form-label">Subjek</label>
+            @(Html.DevExtreme().TextBox().ID("Subject").Value(Model.Subject).MaxLength(200))
+            <small class="text-muted">Wajib untuk email.</small>
+        </div>
+        <div class="col-12 mb-3">
+            <label class="form-label gwa-required">Isi</label>
+            @(Html.DevExtreme().TextArea().ID("Body").Value(Model.Body).Height(160))
+        </div>
+        <div class="col-md-8 mb-3">
+            <label class="form-label">Keterangan</label>
+            @(Html.DevExtreme().TextBox().ID("TemplateDescription").Value(Model.Description).MaxLength(200))
+        </div>
+        @if (Model.IsEdit)
+        {
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Status</label>
+                @(Html.DevExtreme().SelectBox().ID("TemplateIsActive").Value(Model.IsActive)
+                    .DataSource(GitaWidyaAgniWeb.Models.GwaVM.OpsiAktif).ValueExpr("Value").DisplayExpr("Text"))
+            </div>
+        }
+    </div>
+</form>
+<div class="hstack gap-2 justify-content-end">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    <button type="button" class="btn btn-primary" onclick="fnSimpanTemplate()"><i class="ri-save-line me-1"></i>Simpan</button>
+</div>

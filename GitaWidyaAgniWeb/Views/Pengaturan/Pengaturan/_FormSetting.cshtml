@@ -1,0 +1,45 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.FormSetting
+
+<form id="frmSetting" data-edit="@(Model.IsEdit ? "1" : "0")" onsubmit="return false">
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label gwa-required">Grup</label>
+            @(Html.DevExtreme().TextBox().ID("SettingGroup").Value(Model.SettingGroup).MaxLength(50).Placeholder("LANDING")
+                .InputAttr(new { style = "text-transform:uppercase" }))
+        </div>
+        <div class="col-md-8 mb-3">
+            <label class="form-label gwa-required">Kunci</label>
+            @(Html.DevExtreme().TextBox().ID("SettingKey").Value(Model.SettingKey).MaxLength(100).ReadOnly(Model.IsEdit).Placeholder("hero_title"))
+            @if (!Model.IsEdit)
+            {
+                <small class="text-muted">Disimpan sebagai snake_case. Tidak bisa diubah setelah disimpan.</small>
+            }
+        </div>
+        <div class="col-12 mb-3">
+            <label class="form-label">Nilai</label>
+            @(Html.DevExtreme().TextArea().ID("SettingValue").Value(Model.SettingValue).Height(90))
+        </div>
+        <div class="col-12 mb-3">
+            <label class="form-label">Keterangan</label>
+            @(Html.DevExtreme().TextBox().ID("SettingDescription").Value(Model.Description).MaxLength(200))
+        </div>
+        <div class="col-md-8 mb-3">
+            <label class="form-label">Gambar (opsional)</label>
+            @(Html.DevExtreme().FileUploader().ID("SettingImage").UploadMode(FileUploadMode.UseForm).Multiple(false)
+                .Accept("image/*").AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".png", ".webp" }).MaxFileSize(5 * 1024 * 1024)
+                .SelectButtonText("Pilih gambar").LabelText("atau tarik gambar ke sini"))
+        </div>
+        <div class="col-md-4 mb-3">
+            @if (Model.HasImage)
+            {
+                <label class="form-label">Gambar saat ini</label>
+                <a href="@Model.ImageUrl" target="_blank" class="d-block mb-2"><img src="@Model.ImageUrl" alt="Gambar pengaturan" class="img-fluid rounded border" style="max-height:90px" /></a>
+                @(Html.DevExtreme().CheckBox().ID("HapusGambar").Text("Hapus gambar"))
+            }
+        </div>
+    </div>
+</form>
+<div class="hstack gap-2 justify-content-end">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    <button type="button" class="btn btn-primary" onclick="fnSimpanSetting()"><i class="ri-save-line me-1"></i>Simpan</button>
+</div>

@@ -20,6 +20,7 @@ namespace GitaWidyaAgniWeb.Infrastructure
     /// 3. Aksi terdaftar di m_controller_action dengan need_auth = 1 → harus ada di m_role_action salah satu role user.
     /// 4. Aksi terdaftar dengan need_auth = 0 → cukup login.
     /// 5. Aksi belum terdaftar → hanya SUPERADMIN (aman secara bawaan; daftarkan aksi baru di master Controller Action).
+    /// Nama aksi yang dicek bisa dipetakan dengan [AccessAs("Index")] dsb. (endpoint data memakai hak aksi baku).
     /// Ditolak: request AJAX mendapat 403, selain itu diarahkan ke /Login/Denied.
     /// </summary>
     public class AccessFilter : IAuthorizationFilter
@@ -52,7 +53,10 @@ namespace GitaWidyaAgniWeb.Infrastructure
             {
                 return;
             }
-            var key = $"{action.ControllerName}/{action.ActionName}".ToLowerInvariant();
+            // [AccessAs] di aksi menang atas [AccessAs] di controller.
+            var accessAs = action.MethodInfo.GetCustomAttributes(typeof(AccessAsAttribute), true).OfType<AccessAsAttribute>().FirstOrDefault()
+                ?? action.ControllerTypeInfo.GetCustomAttributes(typeof(AccessAsAttribute), true).OfType<AccessAsAttribute>().FirstOrDefault();
+            var key = $"{action.ControllerName}/{accessAs?.Action ?? action.ActionName}".ToLowerInvariant();
             var registered = _access.GetRegisteredActions();
             if (registered.TryGetValue(key, out var needAuth) && (!needAuth || allowed.Contains(key)))
             {

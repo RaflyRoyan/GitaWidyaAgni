@@ -55,14 +55,23 @@ a { text-underline-offset: 3px; }
 .gwa-welcome p { color: var(--gwa-muted); margin: 0; position: relative; }
 .gwa-eyebrow { font-size: .72rem; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--gwa-flame); }
 
-/* ---------- Loader & plugin ---------- */
-#loading1 { background-color: rgba(251, 248, 242, .82) !important; opacity: 1 !important; backdrop-filter: blur(2px); }
-.spinner { border-top-color: var(--gwa-gold) !important; }
-.spinner::before { border-top-color: var(--gwa-flame) !important; }
-.spinner::after { border-top-color: var(--gwa-leaf) !important; }
-.teks h2 { color: var(--gwa-bronze) !important; font-family: "Playfair Display", Georgia, serif !important; }
-#loader { background: var(--gwa-ivory); }
+/* ---------- Plugin (loader halaman & loading AJAX memakai assets/css/spinner.css + gaya bawaan _Layout, sama dengan SurabayaTaxWeb) ---------- */
 .swal2-styled.swal2-confirm { background-color: var(--gwa-bronze) !important; }
 .swal2-styled.swal2-cancel { background-color: #8a8476 !important; }
 .flatpickr-day.selected, .flatpickr-day.selected:hover { background: var(--gwa-bronze) !important; border-color: var(--gwa-bronze) !important; }
 .page-item.active .page-link { background-color: var(--gwa-bronze); border-color: var(--gwa-bronze); }
+
+/* ---------- Halaman pengelolaan ---------- */
+.gwa-page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.gwa-page-head h4 { font-family: "Playfair Display", Georgia, serif; font-weight: 700; margin: 2px 0 2px; color: var(--gwa-text); }
+.gwa-page-head p { margin: 0; color: var(--gwa-muted); font-size: .875rem; max-width: 72ch; }
+.gwa-page-head .gwa-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.modal-header.bg-soft-info, .modal .modal-header { background: linear-gradient(120deg, #fff4d4, #fdeedd) !important; border-bottom: 1px solid var(--gwa-line); }
+.modal .modal-title { font-family: "Playfair Display", Georgia, serif; font-weight: 700; }
+.modal-content { border-radius: 16px; }
+.gwa-form-section { font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--gwa-bronze); border-bottom: 1px dashed var(--gwa-line); padding-bottom: 6px; margin: 4px 0 12px; }
+.gwa-detail th { width: 38%; font-size: .825rem; color: var(--gwa-muted); font-weight: 500; }
+.gwa-tabs .nav-link { color: var(--gwa-muted); font-weight: 500; }
+.gwa-tabs .nav-link.active { color: var(--gwa-bronze); border-bottom: 2px solid var(--gwa-bronze); background: transparent; }
+.gwa-code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .8rem; background: #fbf7ef; border: 1px solid var(--gwa-line); border-radius: 6px; padding: 1px 6px; }
+.gwa-empty { text-align: center; color: var(--gwa-muted); padding: 32px 12px; }

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,7 +45,23 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
+        // Request AJAX (jQuery / DevExtreme) mendapat 401 / 403, bukan HTML halaman login; Gwa.js yang mengarahkan ke login.
+        options.Events.OnRedirectToLogin = ctx => AjaxOrRedirect(ctx, StatusCodes.Status401Unauthorized);
+        options.Events.OnRedirectToAccessDenied = ctx => AjaxOrRedirect(ctx, StatusCodes.Status403Forbidden);
     });
+
+static Task AjaxOrRedirect(Microsoft.AspNetCore.Authentication.RedirectContext<CookieAuthenticationOptions> ctx, int status)
+{
+    if (ctx.Request.Headers.XRequestedWith == "XMLHttpRequest")
+    {
+        ctx.Response.StatusCode = status;
+    }
+    else
+    {
+        ctx.Response.Redirect(ctx.RedirectUri);
+    }
+    return Task.CompletedTask;
+}
 
 builder.Services.AddControllersWithViews(options =>
     {
@@ -52,8 +69,20 @@ builder.Services.AddControllersWithViews(options =>
         options.Filters.Add(new AuthorizeFilter(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build()));
         options.Filters.Add<AccessFilter>();
         options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+        // Validasi data ada di GWALib; string non-nullable jangan dianggap [Required] oleh model binding.
+        options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+        // Form dibaca dengan InvariantCulture (desimal titik, tanggal ISO).
+        var formFactory = options.ValueProviderFactories.OfType<FormValueProviderFactory>().FirstOrDefault();
+        if (formFactory != null)
+        {
+            options.ValueProviderFactories[options.ValueProviderFactories.IndexOf(formFactory)] = new InvariantFormValueProviderFactory();
+        }
     })
-    .AddJsonOptions(options => options.JsonSerializerOptions.PropertyNamingPolicy = null);
+    // JSON: PascalCase, Key (encKey) untuk objek GWALib, <Enum>Text, tanpa byte[] (lihat LibJson).
+    .AddJsonOptions(options => LibJson.Configure(options.JsonSerializerOptions));
+builder.Services.AddAntiforgery(options => options.HeaderName = "RequestVerificationToken");
+// View per folder area: Controllers/Akses/UserController → Views/Akses/User/*.cshtml.
+builder.Services.Configure<Microsoft.AspNetCore.Mvc.Razor.RazorViewEngineOptions>(options => options.ViewLocationExpanders.Add(new FolderViewLocationExpander()));
 
 var app = builder.Build();
 

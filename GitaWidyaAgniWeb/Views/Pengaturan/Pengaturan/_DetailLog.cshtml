@@ -1,0 +1,32 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.DetailLog
+@{
+    var d = Model.Data;
+    string Rapi(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return "-";
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            return System.Text.Json.JsonSerializer.Serialize(doc.RootElement, new System.Text.Json.JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+        }
+        catch
+        {
+            return json;
+        }
+    }
+}
+<table class="table table-sm gwa-detail mb-0">
+    <tbody>
+        <tr><th>Waktu</th><td>@d.InsDate.ToString("dd-MM-yyyy HH:mm:ss")</td></tr>
+        <tr><th>User</th><td>@(d.Username ?? "-")</td></tr>
+        <tr><th>Modul / Aksi</th><td><span class="gwa-code">@d.Module</span> <span class="gwa-code">@d.Action</span></td></tr>
+        <tr><th>Data</th><td>@(d.EntityName ?? "-")@(d.EntityId != null ? " #" + d.EntityId : "")</td></tr>
+        <tr><th>Nilai lama</th><td><pre class="small mb-0">@Rapi(d.OldValue)</pre></td></tr>
+        <tr><th>Nilai baru</th><td><pre class="small mb-0">@Rapi(d.NewValue)</pre></td></tr>
+        <tr><th>IP</th><td>@(d.IpAddress ?? "-")</td></tr>
+        <tr><th>Browser</th><td class="small">@(d.UserAgent ?? "-")</td></tr>
+    </tbody>
+</table>
+<div class="hstack gap-2 justify-content-end mt-3">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+</div>

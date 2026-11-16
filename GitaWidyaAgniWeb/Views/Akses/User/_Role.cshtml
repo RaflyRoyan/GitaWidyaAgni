@@ -1,0 +1,40 @@
+@model GitaWidyaAgniWeb.Models.Akses.UserVM.RoleIndex
+
+<div id="frmRole" data-key="@Model.Key">
+    <div class="row g-2 align-items-end mb-3">
+        <div class="col-md-5">
+            <label class="form-label gwa-required">Role</label>
+            @(Html.DevExtreme().SelectBox().ID("RoleId").DataSource(Model.RoleOpsi).ValueExpr("Value").DisplayExpr("Text")
+                .SearchEnabled(true).Placeholder("Pilih role..."))
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">Periode</label>
+            @(Html.DevExtreme().SelectBox().ID("PeriodId").DataSource(Model.PeriodeOpsi).ValueExpr("Value").DisplayExpr("Text")
+                .ShowClearButton(true).Placeholder("Tanpa periode (selalu berlaku)"))
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn btn-primary w-100" onclick="fnTambahRole()"><i class="ri-add-line"></i> Tambah</button>
+        </div>
+    </div>
+
+    @(Html.DevExtreme().DataGrid<GitaWidyaAgniWeb.Models.Akses.UserVM.ViewModel.RoleRow>()
+        .ID("tblRole")
+        .DataSource(d => d.Mvc().Controller("User").LoadAction("GetRoles").LoadParams(new { key = Model.Key }).Key("EncDecrKey"))
+        .ShowBorders(true)
+        .ShowRowLines(true)
+        .ColumnAutoWidth(true)
+        .NoDataText("Belum ada role. User ini hanya bisa membuka dashboard.")
+        .Columns(c =>
+        {
+            c.AddFor(m => m.Nama).Caption("Role");
+            c.AddFor(m => m.Kode).Caption("Kode").CellTemplate(new JS("gwaRenderKode"));
+            c.AddFor(m => m.Periode).Caption("Periode").CellTemplate(new JS("fnRenderPeriode"));
+            c.Add().Caption("").Width(70).Alignment(HorizontalAlignment.Center).CssClass("gwa-grid-actions").CellTemplate(@<text>
+                <button type="button" class="btn btn-sm btn-soft-danger btn-icon" title="Cabut role" onclick='fnHapusRole("<%- data.EncDecrKey %>", "<%- data.Nama %>")'><i class="ri-delete-bin-line"></i></button>
+            </text>);
+        })
+    )
+</div>
+<div class="hstack gap-2 justify-content-end mt-3">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+</div>

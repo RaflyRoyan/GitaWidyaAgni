@@ -1,0 +1,28 @@
+@model GitaWidyaAgniWeb.Models.Akses.MenuVM.Aksi
+
+<div id="frmAksi" data-key="@Model.Key">
+    <p class="small text-muted">
+        Klik sel untuk mengubah, tombol <b>+</b> untuk menambah baris. "Wajib Login" dicek ke hak akses role; "Tanpa Login" cukup login.
+        Aksi yang dihapus dari daftar dinonaktifkan beserta haknya. Kosakata baku: Index, Create, Edit, Delete, Submit, Approve, Process, Payment.
+    </p>
+    @(Html.DevExtreme().DataGrid<GitaWidyaAgniWeb.Models.Akses.MenuVM.AksiRow>()
+        .ID("tblAksi")
+        .DataSource(Model.Rows)
+        .ShowBorders(true)
+        .ShowRowLines(true)
+        .ColumnAutoWidth(true)
+        .Editing(e => e.Mode(GridEditMode.Cell).AllowAdding(true).AllowUpdating(true).AllowDeleting(true).ConfirmDelete(false).NewRowPosition(GridNewRowPosition.Last))
+        .OnInitNewRow("function(e){ e.data.NeedAuth = 1; }")
+        .Columns(c =>
+        {
+            c.AddFor(m => m.Action).Caption("Aksi").ValidationRules(v => v.AddRequired());
+            c.AddFor(m => m.NeedAuth).Caption("Cek akses").Width(170)
+                .Lookup(l => l.DataSource(Model.AuthOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            c.AddFor(m => m.Description).Caption("Keterangan");
+        })
+    )
+</div>
+<div class="hstack gap-2 justify-content-end mt-3">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    <button type="button" class="btn btn-primary" onclick="fnSimpanAksi()"><i class="ri-save-line me-1"></i>Simpan</button>
+</div>

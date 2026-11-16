@@ -1,0 +1,46 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.FormStep
+
+<form id="frmStep" data-edit="@(Model.IsEdit ? "1" : "0")" onsubmit="return false">
+    <div class="alert alert-light border small mb-3">
+        Alur <b>@Model.NamaAlur</b>. Isi penyetuju sesuai jenisnya: <b>Role</b> (user dengan role itu), <b>Jabatan</b> (pemegang jabatan di periode aktif), atau <b>User tertentu</b>.
+    </div>
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <label class="form-label">Level</label>
+            @(Html.DevExtreme().NumberBox().ID("StepLevel").Value(Model.StepLevel).Min(0).ShowSpinButtons(true).Format("#0"))
+            <small class="text-muted">0 = berikutnya</small>
+        </div>
+        <div class="col-md-9 mb-3">
+            <label class="form-label gwa-required">Nama langkah</label>
+            @(Html.DevExtreme().TextBox().ID("StepName").Value(Model.StepName).MaxLength(100).Placeholder("mis. Verifikasi Bendahara"))
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label gwa-required">Penyetuju berdasarkan</label>
+            @(Html.DevExtreme().SelectBox().ID("ApproverType").Value(Model.ApproverType)
+                .DataSource(GitaWidyaAgniWeb.Models.GwaVM.Opsi<GWAShared.Enums.ApproverType>()).ValueExpr("Value").DisplayExpr("Text")
+                .OnValueChanged("fnJenisPenyetuju"))
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label gwa-required">Boleh minta revisi</label>
+            @(Html.DevExtreme().SelectBox().ID("AllowRevision").Value(Model.AllowRevision)
+                .DataSource(GitaWidyaAgniWeb.Models.GwaVM.Opsi<GWAShared.Enums.RevisionPermission>()).ValueExpr("Value").DisplayExpr("Text"))
+        </div>
+        <div class="col-12 mb-3" data-penyetuju="1">
+            <label class="form-label gwa-required">Role</label>
+            @(Html.DevExtreme().SelectBox().ID("StepRoleId").Value(Model.RoleId).DataSource(Model.RoleList).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true))
+        </div>
+        <div class="col-12 mb-3" data-penyetuju="2">
+            <label class="form-label gwa-required">Jabatan</label>
+            @(Html.DevExtreme().SelectBox().ID("StepPositionId").Value(Model.PositionId).DataSource(Model.PositionList).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true))
+        </div>
+        <div class="col-12 mb-3" data-penyetuju="3">
+            <label class="form-label gwa-required">User</label>
+            @(Html.DevExtreme().SelectBox().ID("StepUserId").Value(Model.UserId).DataSource(Model.UserList).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true))
+        </div>
+    </div>
+</form>
+<div class="hstack gap-2 justify-content-end">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    <button type="button" class="btn btn-primary" onclick="fnSimpanStep()"><i class="ri-save-line me-1"></i>Simpan</button>
+</div>
+<script>fnTampilPenyetuju(@Model.ApproverType);</script>

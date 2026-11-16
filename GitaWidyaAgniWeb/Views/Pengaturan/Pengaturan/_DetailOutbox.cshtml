@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.DetailOutbox
+@{
+    var d = Model.Data;
+}
+<table class="table table-sm gwa-detail mb-0">
+    <tbody>
+        <tr><th>Penerima</th><td>@d.Recipient</td></tr>
+        <tr><th>Kanal</th><td>@d.ChannelNama</td></tr>
+        <tr><th>Template</th><td>@(d.TemplateCode ?? "-")</td></tr>
+        <tr><th>Subjek</th><td>@(d.Subject ?? "-")</td></tr>
+        <tr><th>Isi</th><td style="white-space:pre-wrap">@d.Body</td></tr>
+        <tr><th>Status</th><td>@d.StatusNama (dicoba @d.AttemptCount kali)</td></tr>
+        <tr><th>Error terakhir</th><td class="text-danger">@(d.LastError ?? "-")</td></tr>
+        <tr><th>Jadwal kirim</th><td>@d.ScheduledAt.ToString("dd-MM-yyyy HH:mm")</td></tr>
+        <tr><th>Terkirim</th><td>@(d.SentAt?.ToString("dd-MM-yyyy HH:mm") ?? "-")</td></tr>
+        <tr><th>Referensi</th><td>@(d.RefType == null ? "-" : d.RefType + (d.RefId != null ? " #" + d.RefId : ""))</td></tr>
+    </tbody>
+</table>
+<div class="hstack gap-2 justify-content-end mt-3">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+</div>

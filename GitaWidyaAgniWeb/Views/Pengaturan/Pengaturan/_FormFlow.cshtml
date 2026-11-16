@@ -1,0 +1,32 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.FormFlow
+
+<form id="frmFlow" data-edit="@(Model.IsEdit ? "1" : "0")" onsubmit="return false">
+    @if (!Model.IsEdit)
+    {
+        <div class="alert alert-light border small mb-3">Simpan dulu sebagai <b>Tidak Aktif</b>, tambahkan langkahnya, lalu aktifkan. Alur aktif wajib punya minimal satu langkah.</div>
+    }
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label gwa-required">Jenis dokumen</label>
+            @(Html.DevExtreme().SelectBox().ID("FlowDocumentType").Value(Model.DocumentType).ReadOnly(Model.IsEdit)
+                .DataSource(new[] { "FUNDING_REQUEST", "PROCUREMENT", "LETTER" }).AcceptCustomValue(true).Placeholder("Pilih atau ketik..."))
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label gwa-required">Nama alur</label>
+            @(Html.DevExtreme().TextBox().ID("FlowName").Value(Model.Name).MaxLength(100))
+        </div>
+        <div class="col-12 mb-3">
+            <label class="form-label">Keterangan</label>
+            @(Html.DevExtreme().TextBox().ID("FlowDescription").Value(Model.Description).MaxLength(200))
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Status</label>
+            @(Html.DevExtreme().SelectBox().ID("FlowIsActive").Value(Model.IsActive)
+                .DataSource(GitaWidyaAgniWeb.Models.GwaVM.OpsiAktif).ValueExpr("Value").DisplayExpr("Text"))
+        </div>
+    </div>
+</form>
+<div class="hstack gap-2 justify-content-end">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    <button type="button" class="btn btn-primary" onclick="fnSimpanFlow()"><i class="ri-save-line me-1"></i>Simpan</button>
+</div>

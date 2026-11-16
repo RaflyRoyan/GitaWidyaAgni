@@ -462,7 +462,7 @@ ASP.NET Core 8 MVC. The template is Velzon (`wwwroot/assets`), plus DevExtreme 2
   - Layout is a split screen: a cream showcase on the left (first `m_organization_photo` in a tilted frame, a floating logo emblem and a quote) and the form on the right. Below 992px it collapses to a compact header.
   - The form has visible labels with icons, a show/hide password button (`aria-pressed`), a Caps Lock hint, a `role="alert"` error linked through `aria-describedby`, focus on the first empty field instead of an alert, and a loading state on submit that resets on `pageshow`.
   - `Denied` uses the same layout with the `.auth-state` block.
-- **Dashboard theme (Velzon):** the same palette as landing and login.
+- **Dashboard theme (Velzon):** the same palette as landing and login (DevExtreme widgets use the SurabayaTaxWeb Material theme, see above).
   - `_Layout` loads `assets/css/bootstrap.gwa.min.css`, `app.gwa.min.css` and `custom.gwa.min.css` instead of Velzon's originals, which stay untouched.
   - The `.gwa` copies are made with sed from the originals, replacing primary navy `#405189` and its shades/rgb with bronze `#9a6b00`, secondary `#3577f1` with flame `#c8202a`, success `#0ab39c` with leaf `#1f7a45`, warning `#f7b84b` with gold `#e8b52a`, and body `#f3f3f9` with `#f8f4ec`. Hover shades are mapped too.
   - If Velzon is updated, regenerate the copies with the same mapping.
@@ -474,21 +474,36 @@ ASP.NET Core 8 MVC. The template is Velzon (`wwwroot/assets`), plus DevExtreme 2
     - Collapsed sidebar (`data-sidebar-size=sm`): flyout panels titled from `data-menu-title`, set by `fnInitSidebarMenu` in `_Layout`, which also shifts low panels up.
     - `data-sidebar="dark"` is kept only so Velzon uses white text and `logo-light`.
     - Header: hamburger, page title (Playfair), a link to the public site, fullscreen, and a user dropdown (gold initials avatar, member full name, active role names, Dashboard / Beranda Publik / POST Logout). Its data comes from `UserAccess.GetProfile` (cached in `AccessService.GetProfile`, cleared on login/logout). There is no dark-mode toggle (the user does not want dark styling).
-  - `_DevExtremeLayout` still uses DevExtreme's own `dx.light.css` and is not themed.
-  - `assets/css/spinner.css` referenced by `_Layout` does not exist (404 from the original template).
-- Controllers for logged-in pages inherit `BaseController`. `LibResult(response)` returns JSON, with HTTP 400 when the status is Error.
+  - `_DevExtremeLayout` is unused; `_Layout` loads DevExtreme itself.
+- **Management page pattern** (copied from SurabayaTaxWeb, area Kantor; reference pages: `Akses/User`, `Akses/Role`, `Akses/Menu`, `Pengaturan/Pengaturan`):
+  - **Folders follow the sidebar header**: a header with sub menus is one folder holding all its controllers, e.g. header Akses → `Controllers/Akses/{User,Role,Menu}Controller.cs` (namespace `GitaWidyaAgniWeb.Controllers.Akses`). A header that links directly gets its own folder (`Controllers/Pengaturan/PengaturanController.cs`, later `Controllers/ProgramKerja/...`). The same folder appears in `Models/<Folder>/<Name>VM.cs`, `Views/<Folder>/<Name>/*.cshtml` and `wwwroot/Scripts/<Folder>/<Name>.js`. `FolderViewLocationExpander` resolves views from the controller namespace, so controllers just call `View("Index")` / `PartialView("_Form")`. Landing, Login, Home and Brand stay at the root.
+  - **Model `<Name>VM`** (nested classes): `Form` (input posted as JSON, also the partial's model with `IsEdit`), `Add` / `Edit(encKey)` (fill the form), `ViewModel.Row` (grid row DTO with `EncDecrKey`), extra inputs/partial models, and static `Method` holding every GWALib call. Controllers stay thin.
+  - **Controller** (`Infrastructure/BaseController`): `Index() => HalamanIndex()`; `GetData(DataSourceLoadOptions)` → `Grid(VM.Method.GetDataList, loadOptions)` (DevExtreme `DataSourceLoader`); `Add()` / `Edit(encKey)` → `Modal(() => new VM.Add(), "Form")` (partial `_Form.cshtml`; Edit stores the encKey in `TempData[KEY_EDIT]`); POST `SimpanBaru` / `Update([FromBody] VM.Form)` / other actions → `Aksi(user => ..., "pesan", KEY_EDIT)`, which always returns `Json(Response)` `{ Status (1 ok / 0 error), Message, Data }` and turns `ArgumentException` into the message. Row actions post `GwaVM.KeyInput { Key }`. Files go as FormData (`[FromForm]` + `IFormFile`, `BacaBerkasAsync`).
+  - **GWALib calls**: `response.Ok()` (`Infrastructure/LibExtensions`) returns Data or throws `ArgumentException(message)`; `LibExtensions.Load<T>(encKey, "Nama")` loads a row through its encKey constructor and throws a friendly message when the key is missing, invalid, expired (encKeys change daily) or the row is gone. Nested references are set from ids (`obj.ControllerMenu = new ControllerMenu { Id = id }`).
+  - **Access**: action names that are not seeded vocabulary carry `[AccessAs(Acc.Index)]` (reads, GET partials) or `Acc.Create/Edit/Delete/Submit/Approve/Process/Payment` (writes). `AccessFilter` checks `controller/<AccessAs action>`; the attribute on the action wins over one on the controller. AJAX requests without a session get 401 (cookie events in `Program.cs`).
+  - **Views**: DevExtreme 23.2 everywhere. `Index.cshtml` = `.gwa-page-head` + `.card` with `Html.DevExtreme().DataGrid<VM.ViewModel.Row>()` bound to `d.Mvc().Controller(..).LoadAction("GetData")`, action buttons in a `CellTemplate` (`<%- data.EncDecrKey %>`, `<% if %>`), `window.<Name>Url = {...}` then `<script src="~/Scripts/<Folder>/<Name>.js">`. Partials use DevExtreme editors (`TextBox`, `TextArea`, `SelectBox` bound to `List<GwaVM.OpsiItem>`, `NumberBox`, `DateBox`, `CheckBox`, `FileUploader` with `UploadMode(UseForm)`), `TreeList` for trees (Role access), `MasterDetail` for child rows, editable grids (`Editing(Cell)`) for small child lists. Enum options: `GwaVM.Opsi<TEnum>()`, `GwaVM.OpsiAktif`.
+  - **JS** (`wwwroot/Scripts/Shared/Gwa.js`, loaded by `_Layout`): `gwaModal(url, data, title, "kecil"|"besar"|"penuh")`, `gwaPost(url, data, { konfirmasi, bahaya, grid, tutupModal, sukses })`, `gwaPostForm(url, FormData, opsi)`, `gwaHapus`, `gwaPostAlasan`, `gwaRefresh(gridId)`, value readers `gwaVal/gwaValNull/gwaId/gwaAngka/gwaCek/gwaFile/gwaDx`, renderers `gwaRenderAktif/gwaRenderBadge/gwaRenderKode`, `gwaBadgeHtml`, `gwaExportExcel`. It adds the antiforgery header to every non-GET jQuery request, redirects to login on 401, and resizes grids when a tab or modal opens. Indonesian DevExtreme texts are in `Scripts/Shared/dx.messages.id.js` (23.2.5 ships no `id` locale).
+  - **Layout**: `_Layout` loads the DevExtreme scripts (DevExtreme jQuery, `dx.all.js`, `dx.aspnet.mvc/data.js`) in `<head>`, because Razor helpers emit inline scripts. There is only one jQuery; do not add another after it, or the dx plugins are lost. DataTables is no longer loaded.
+  - **Look = SurabayaTaxWeb**: DevExtreme theme `css/devextreme/dx.material.blue.light.compact.css`, linked after the Velzon CSS (SurabayaTaxWeb adds the same file from `assets/js/app.js` `loadCSSDevExtreme`). Widgets are not restyled; `gwa-devextreme.css` only holds small helpers (`.gwa-required`, `.gwa-grid-actions`). The page loader (`#loader` + `assets/css/spinner.css`, copied from SurabayaTaxWeb, hidden by `assets/js/spinner.js`) and the AJAX overlay (`#loading1`, styles inline in `_Layout`, toggled by `gwaLoading`) are also the same as SurabayaTaxWeb; only the logo differs.
+  - Changes to roles, menus or users call `AccessService.ClearAll()` / `Clear(userId)` so the sidebar and access checks update immediately.
+  - JSON uses PascalCase (`LibJson`); `EnumHelper.Text(enum)` gives an enum's `[Description]`.
 - Stop a running web process before building from the IDE. Otherwise the build fails with `MSB3027 ... locked by "GitaWidyaAgniWeb"`.
 - The `Secure` auth cookie is not sent over plain `http://` by non-browser clients. To test logged-in pages with curl, run the app on `https://localhost:<port>` and use `curl -k` with a cookie jar.
 
 ### Web pages to build
 
-The sidebar menu and the Controller Action rows already exist in the database (seeded by `GWASeeder`), but none of these controllers exist in the web project yet, so every link below is a 404 today.
+The sidebar menu and the Controller Action rows already exist in the database (seeded by `GWASeeder`). Done (DevExtreme pattern): `Akses/User`, `Akses/Role`, `Akses/Menu`, `Pengaturan/Pengaturan` (2026-11-16). Every other link below is still a 404.
 
 **Rules for each page:**
-- Use the controller name exactly as seeded.
-- Actions are `Index`, `Create`, `Edit` and `Delete`. Any extra action, such as `Approve` or `Checkout`, must be added to `m_controller_action` and granted in `m_role_action`; otherwise only SUPERADMIN can open it.
+- Use the controller name exactly as seeded. The access catalog (controllers, actions, menu, roles) is `GWASeeder/Seed.Akses.cs`.
+- Action vocabulary (seeded per controller; any other action name is unregistered, so only SUPERADMIN can open it):
+  - `Index`: the page and every read endpoint (lists, details, file downloads).
+  - `Create` / `Edit` / `Delete`: the main data and child data on that page.
+  - `Submit` (send to approval), `Approve` (approve / reject / request revision), `Process` (status changes such as open/close, publish, checkout, return), `Payment` (receive / record / cancel payments that create transactions). Only the controllers listed in the catalog have them.
+  - Endpoints with other method names must be mapped onto one of these names (the web needs an attribute for that, since `AccessFilter` checks `controller/action`).
+- After adding a controller or action to the catalog, run `dotnet run --project GWASeeder -- --sync-akses`.
 - Inherit `BaseController` and pass `LibUser` to GWALib.
-- Use `_Layout` and follow the dashboard theme.
+- Use `_Layout`, DevExtreme widgets and the folder structure of the management page pattern above.
 
 Suggested order: Akses & Pengaturan first, so admins can manage roles and menus from the UI, then the modules in the order below.
 
@@ -532,7 +547,7 @@ Suggested order: Akses & Pengaturan first, so admins can manage roles and menus 
 | 36 | Informasi › Berita | `Berita` | `Announcement` (publish / archive, cover) |
 | 37 | Informasi › Banner | `Banner` | `Banner` (image, schedule) |
 
-**Member self-service pages** (`[LoginOnly]`, not in the seeded menu yet; add menu rows when built):
+**Member self-service pages** (`[LoginOnly]`). The menu header "Area Anggota" is seeded for every role, with controllers `ProfilSaya`, `PresensiSaya`, `KegiatanSaya`, `IuranSaya`, `PeminjamanSaya`, `Toko`, `FormulirSaya`, `Pemilihan`, `PrestasiSaya`, `DisposisiSaya` and `Notifikasi` (only `Index` registered, need_auth 0). `Toko` must also allow merchandise orders without login (guest buyer name + phone), which needs a new public `SalesOrder` method because `Save` requires a user.
 - Profil saya.
 - Presensi scan QR.
 - Iuran saya.
@@ -550,18 +565,19 @@ Suggested order: Akses & Pengaturan first, so admins can manage roles and menus 
 - A hosted service for the scheduled jobs (README "Job terjadwal") and a `MessageOutbox` sender.
 - Pass `ip_address` to election audit events.
 - Theme `_DevExtremeLayout` if DevExtreme pages are used.
-- Add the missing `assets/css/spinner.css` or drop the reference.
 
 ## GWASeeder
 
 A console project, part of the solution, that fills every table (131 of 131) with sample data for MB Gita Widya Agni through the GWALib services, so the validation rules run too.
 
-- **Run:** `dotnet run --project GWASeeder [-- --evoting-key <base64>]`.
-  - The connection string comes from `GitaWidyaAgniWeb/appsettings.json` or env `GWA_DB`.
+- **Run:** `dotnet run --project GWASeeder` (empty database), `-- --reset` (deletes every row of every model table with FOREIGN_KEY_CHECKS off, after typing RESET or `--yes`, then seeds) or `-- --sync-akses` (access catalog only, on a seeded database). Other options: `--evoting-key <base64>`, `--admin-password <pw>`.
+  - The connection string comes from env `GWA_DB`, then `GitaWidyaAgniWeb/appsettings.Development.json`, then `appsettings.json`.
   - The e-voting key comes from the argument, env `GWA_EVOTING_KEY` or `EVoting:Key`. When none is given, a random key is generated and printed. The web must use the same key to finalize elections.
-- **Preconditions:** user `admin` must exist (web bootstrap). It refuses to run when `m_organization` already has a row.
-- **Users:** sample users have the NIM as username and password `gwa12345`.
-- **Code layout:** files are split per module (`Seed.Master.cs`, `Seed.Anggota.cs`, `Seed.Program.cs`, `Seed.Keuangan.cs`, `Seed.Lain.cs`), and `Seed.Run.cs` holds the order.
+- **Admin:** when `m_user` is empty, the seeder creates `admin` (SUPERADMIN) through `UserAccount.BootstrapAdmin`, with the password from `--admin-password`, env `GWA_ADMIN_PASSWORD` or `admin12345`. Without `--reset` it refuses to run when `m_organization` already has a row.
+- **Access catalog (`Seed.Akses.cs`):** `SyncAccess` is idempotent. It creates or updates controllers, header menus (matched by name), sub menus (matched by controller) and the catalog roles, and replaces the action list, menu details, role actions and role menus of catalog roles with the catalog. Roles outside the catalog are left alone. A catalog role gets every action of its controllers plus the Area Anggota menu.
+- **Roles:** KETUA and WAKIL (all operational modules), SEKRETARIS, BENDAHARA, KADIV (Kepala Divisi), ANGGOTA (Area Anggota only). Akses and Pengaturan Sistem stay SUPERADMIN only.
+- **Users:** memorable usernames, password `gwa12345`: `ketua`, `wakil`, `sekretaris`, `bendahara`, `kadiv.brass` / `.battery` / `.guard` / `.front` / `.logistik` / `.humas`, `ketua.lama`, `anggota01`…`anggota11`, `alumni01`, `alumni02`. Positions are Ketua Umum, Wakil Ketua Umum, Sekretaris, Bendahara, Kepala Divisi and Staf Divisi. The seeder prints the account table at the end, and README lists it.
+- **Code layout:** files are split per module (`Seed.Akses.cs`, `Seed.Reset.cs`, `Seed.Master.cs`, `Seed.Anggota.cs`, `Seed.Program.cs`, `Seed.Keuangan.cs`, `Seed.Lain.cs`), and `Seed.Run.cs` holds the order.
 - **Workflow:** approvals, check-in, votes and form responses are done by the right member's user (`UserOf(member)`); the rest by admin.
 - **Order matters:**
   - The old period's data goes in before the handover is approved, because a Closed period is locked.

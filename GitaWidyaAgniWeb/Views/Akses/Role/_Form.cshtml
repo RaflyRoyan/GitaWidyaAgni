@@ -1,0 +1,31 @@
+@model GitaWidyaAgniWeb.Models.Akses.RoleVM.Form
+
+<form id="frmRole" data-edit="@(Model.IsEdit ? "1" : "0")" onsubmit="return false">
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label gwa-required">Kode</label>
+            @(Html.DevExtreme().TextBox().ID("Code").Value(Model.Code).MaxLength(50).Placeholder("mis. BENDAHARA")
+                .InputAttr(new { style = "text-transform:uppercase" }))
+        </div>
+        <div class="col-md-8 mb-3">
+            <label class="form-label gwa-required">Nama</label>
+            @(Html.DevExtreme().TextBox().ID("Name").Value(Model.Name).MaxLength(100))
+        </div>
+        <div class="col-12 mb-3">
+            <label class="form-label">Keterangan</label>
+            @(Html.DevExtreme().TextArea().ID("Description").Value(Model.Description).Height(70))
+        </div>
+        @if (Model.IsEdit)
+        {
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Status</label>
+                @(Html.DevExtreme().SelectBox().ID("IsActive").Value(Model.IsActive)
+                    .DataSource(GitaWidyaAgniWeb.Models.GwaVM.OpsiAktif).ValueExpr("Value").DisplayExpr("Text"))
+            </div>
+        }
+    </div>
+</form>
+<div class="hstack gap-2 justify-content-end">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    <button type="button" class="btn btn-primary" onclick="fnSimpan()"><i class="ri-save-line me-1"></i>Simpan</button>
+</div>

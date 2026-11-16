@@ -1,0 +1,123 @@
+@{
+    ViewData["Title"] = "Menu & Controller";
+}
+<div class="gwa-page-head">
+    <div>
+        <span class="gwa-eyebrow">Akses</span>
+        <h4>Menu &amp; Controller</h4>
+        <p>Controller = halaman web, aksi = tombol/endpoint yang hak aksesnya dicek. Header menu tampil di sidebar: dengan controller menjadi link langsung, tanpa controller menjadi grup berisi sub menu.</p>
+    </div>
+</div>
+
+<ul class="nav nav-tabs gwa-tabs mb-3" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabController" type="button"><i class="ri-code-box-line me-1"></i>Controller &amp; Aksi</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabHeader" type="button"><i class="ri-layout-left-line me-1"></i>Header Menu</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabSub" type="button"><i class="ri-list-check me-1"></i>Sub Menu</button></li>
+</ul>
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="tabController">
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-2"><button class="btn btn-primary" onclick="TambahController()"><i class="ri-add-line me-1"></i>Tambah Controller</button></div>
+                @(Html.DevExtreme().DataGrid<GitaWidyaAgniWeb.Models.Akses.MenuVM.ViewModel.ControllerRow>()
+                    .ID("tblController")
+                    .DataSource(d => d.Mvc().Controller("Menu").LoadAction("GetController").Key("Id"))
+                    .ShowBorders(true).ShowRowLines(true).ColumnAutoWidth(true).WordWrapEnabled(true)
+                    .SearchPanel(s => s.Visible(true).Width(260))
+                    .FilterRow(f => f.Visible(true))
+                    .Paging(p => p.PageSize(20))
+                    .Columns(c =>
+                    {
+                        c.AddFor(m => m.Name).Caption("Controller").CellTemplate(new JS("gwaRenderKode")).SortOrder(SortOrder.Asc);
+                        c.AddFor(m => m.Description).Caption("Keterangan");
+                        c.AddFor(m => m.Aksi).Caption("Aksi terdaftar");
+                        c.AddFor(m => m.IsActive).Caption("Status").CellTemplate(new JS("gwaRenderAktif")).Alignment(HorizontalAlignment.Center).Width(110)
+                            .Lookup(l => l.DataSource(GitaWidyaAgniWeb.Models.GwaVM.OpsiAktif).ValueExpr("Value").DisplayExpr("Text"));
+                        c.Add().Caption("Aksi").Width(140).Alignment(HorizontalAlignment.Center).AllowFiltering(false).CssClass("gwa-grid-actions").CellTemplate(@<text>
+                            <button type="button" class="btn btn-sm btn-soft-success btn-icon" title="Daftar aksi" onclick='fnAksi("<%- data.EncDecrKey %>", "<%- data.Name %>")'><i class="ri-list-settings-line"></i></button>
+                            <button type="button" class="btn btn-sm btn-soft-primary btn-icon" title="Ubah" onclick='fnUbahController("<%- data.EncDecrKey %>")'><i class="ri-edit-2-line"></i></button>
+                            <% if (data.IsActive === 1) { %>
+                            <button type="button" class="btn btn-sm btn-soft-danger btn-icon" title="Nonaktifkan" onclick='fnHapusController("<%- data.EncDecrKey %>", "<%- data.Name %>")'><i class="ri-forbid-line"></i></button>
+                            <% } %>
+                        </text>);
+                    })
+                )
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade" id="tabHeader">
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-2"><button class="btn btn-primary" onclick="TambahHeader()"><i class="ri-add-line me-1"></i>Tambah Header</button></div>
+                @(Html.DevExtreme().DataGrid<GitaWidyaAgniWeb.Models.Akses.MenuVM.ViewModel.HeaderRow>()
+                    .ID("tblHeader")
+                    .DataSource(d => d.Mvc().Controller("Menu").LoadAction("GetHeader").Key("Id"))
+                    .ShowBorders(true).ShowRowLines(true).ColumnAutoWidth(true).WordWrapEnabled(true)
+                    .SearchPanel(s => s.Visible(true).Width(260))
+                    .Paging(p => p.PageSize(20))
+                    .Columns(c =>
+                    {
+                        c.AddFor(m => m.Seq).Caption("Urut").Width(70).Alignment(HorizontalAlignment.Center).SortOrder(SortOrder.Asc);
+                        c.AddFor(m => m.Name).Caption("Nama").CellTemplate(new JS("fnRenderNamaIkon"));
+                        c.AddFor(m => m.Section).Caption("Bagian");
+                        c.AddFor(m => m.Isi).Caption("Isi");
+                        c.AddFor(m => m.IsActive).Caption("Status").CellTemplate(new JS("gwaRenderAktif")).Alignment(HorizontalAlignment.Center).Width(110);
+                        c.Add().Caption("Aksi").Width(140).Alignment(HorizontalAlignment.Center).AllowFiltering(false).CssClass("gwa-grid-actions").CellTemplate(@<text>
+                            <% if (!data.Controller) { %>
+                            <button type="button" class="btn btn-sm btn-soft-success btn-icon" title="Sub menu" onclick='fnDetail("<%- data.EncDecrKey %>", "<%- data.Name %>")'><i class="ri-list-ordered"></i></button>
+                            <% } %>
+                            <button type="button" class="btn btn-sm btn-soft-primary btn-icon" title="Ubah" onclick='fnUbahHeader("<%- data.EncDecrKey %>")'><i class="ri-edit-2-line"></i></button>
+                            <% if (data.IsActive === 1) { %>
+                            <button type="button" class="btn btn-sm btn-soft-danger btn-icon" title="Nonaktifkan" onclick='fnHapusHeader("<%- data.EncDecrKey %>", "<%- data.Name %>")'><i class="ri-forbid-line"></i></button>
+                            <% } %>
+                        </text>);
+                    })
+                )
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade" id="tabSub">
+        <div class="card">
+            <div class="card-body">
+                <div class="mb-2"><button class="btn btn-primary" onclick="TambahSub()"><i class="ri-add-line me-1"></i>Tambah Sub Menu</button></div>
+                @(Html.DevExtreme().DataGrid<GitaWidyaAgniWeb.Models.Akses.MenuVM.ViewModel.SubRow>()
+                    .ID("tblSub")
+                    .DataSource(d => d.Mvc().Controller("Menu").LoadAction("GetSub").Key("Id"))
+                    .ShowBorders(true).ShowRowLines(true).ColumnAutoWidth(true).WordWrapEnabled(true)
+                    .SearchPanel(s => s.Visible(true).Width(260))
+                    .FilterRow(f => f.Visible(true))
+                    .Paging(p => p.PageSize(20))
+                    .Columns(c =>
+                    {
+                        c.AddFor(m => m.Name).Caption("Nama").CellTemplate(new JS("fnRenderNamaIkon")).SortOrder(SortOrder.Asc);
+                        c.AddFor(m => m.Controller).Caption("Controller").CellTemplate(new JS("gwaRenderKode"));
+                        c.AddFor(m => m.Header).Caption("Dalam grup");
+                        c.AddFor(m => m.IsActive).Caption("Status").CellTemplate(new JS("gwaRenderAktif")).Alignment(HorizontalAlignment.Center).Width(110);
+                        c.Add().Caption("Aksi").Width(110).Alignment(HorizontalAlignment.Center).AllowFiltering(false).CssClass("gwa-grid-actions").CellTemplate(@<text>
+                            <button type="button" class="btn btn-sm btn-soft-primary btn-icon" title="Ubah" onclick='fnUbahSub("<%- data.EncDecrKey %>")'><i class="ri-edit-2-line"></i></button>
+                            <% if (data.IsActive === 1) { %>
+                            <button type="button" class="btn btn-sm btn-soft-danger btn-icon" title="Nonaktifkan" onclick='fnHapusSub("<%- data.EncDecrKey %>", "<%- data.Name %>")'><i class="ri-forbid-line"></i></button>
+                            <% } %>
+                        </text>);
+                    })
+                )
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.MenuUrl = {
+            addController: '@Url.Action("AddController")', editController: '@Url.Action("EditController")',
+            simpanController: '@Url.Action("SimpanController")', updateController: '@Url.Action("UpdateController")', hapusController: '@Url.Action("DeleteController")',
+            aksi: '@Url.Action("DaftarAksi")', simpanAksi: '@Url.Action("SimpanAksi")',
+            addHeader: '@Url.Action("AddHeader")', editHeader: '@Url.Action("EditHeader")',
+            simpanHeader: '@Url.Action("SimpanHeader")', updateHeader: '@Url.Action("UpdateHeader")', hapusHeader: '@Url.Action("DeleteHeader")',
+            detail: '@Url.Action("Detail")', simpanDetail: '@Url.Action("SimpanDetail")',
+            addSub: '@Url.Action("AddSub")', editSub: '@Url.Action("EditSub")',
+            simpanSub: '@Url.Action("SimpanSub")', updateSub: '@Url.Action("UpdateSub")', hapusSub: '@Url.Action("DeleteSub")'
+        };
+    </script>
+    <script src="~/Scripts/Akses/Menu.js" asp-append-version="true"></script>
+}

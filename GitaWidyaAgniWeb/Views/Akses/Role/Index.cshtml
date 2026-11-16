@@ -1,0 +1,62 @@
+@{
+    ViewData["Title"] = "Role & Hak Akses";
+}
+<div class="gwa-page-head">
+    <div>
+        <span class="gwa-eyebrow">Akses</span>
+        <h4>Role &amp; Hak Akses</h4>
+        <p>Role menentukan menu sidebar dan aksi yang boleh dipakai user. Aksi yang belum diberikan ke role mana pun hanya bisa dibuka SUPERADMIN.</p>
+    </div>
+    <div class="gwa-head-actions">
+        <button type="button" class="btn btn-primary" onclick="Tambah()"><i class="ri-add-line me-1"></i>Tambah Role</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        @(Html.DevExtreme().DataGrid<GitaWidyaAgniWeb.Models.Akses.RoleVM.ViewModel.Row>()
+            .ID("tblGrid")
+            .DataSource(d => d.Mvc().Controller("Role").LoadAction("GetData").Key("Id"))
+            .ShowBorders(true)
+            .ShowRowLines(true)
+            .ColumnAutoWidth(true)
+            .WordWrapEnabled(true)
+            .SearchPanel(s => s.Visible(true).Width(260))
+            .FilterRow(f => f.Visible(true))
+            .Paging(p => p.PageSize(20))
+            .Columns(c =>
+            {
+                c.AddFor(m => m.Code).Caption("Kode").CellTemplate(new JS("gwaRenderKode")).Width(140).SortOrder(SortOrder.Asc);
+                c.AddFor(m => m.Name).Caption("Nama").CssClass("fw-medium");
+                c.AddFor(m => m.Description).Caption("Keterangan");
+                c.AddFor(m => m.JumlahUser).Caption("User").Alignment(HorizontalAlignment.Center).Width(80);
+                c.AddFor(m => m.IsActive).Caption("Status").CellTemplate(new JS("gwaRenderAktif")).Alignment(HorizontalAlignment.Center).Width(110)
+                    .Lookup(l => l.DataSource(GitaWidyaAgniWeb.Models.GwaVM.OpsiAktif).ValueExpr("Value").DisplayExpr("Text"));
+                c.Add().Caption("Aksi").Width(140).Alignment(HorizontalAlignment.Center).AllowFiltering(false).AllowSorting(false).CssClass("gwa-grid-actions").CellTemplate(@<text>
+                    <% if (data.Code !== "SUPERADMIN") { %>
+                    <button type="button" class="btn btn-sm btn-soft-success btn-icon" title="Hak akses" onclick='fnAkses("<%- data.EncDecrKey %>", "<%- data.Name %>")'><i class="ri-shield-keyhole-line"></i></button>
+                    <% } %>
+                    <button type="button" class="btn btn-sm btn-soft-primary btn-icon" title="Ubah" onclick='fnUbah("<%- data.EncDecrKey %>")'><i class="ri-edit-2-line"></i></button>
+                    <% if (data.IsActive === 1 && data.Code !== "SUPERADMIN") { %>
+                    <button type="button" class="btn btn-sm btn-soft-danger btn-icon" title="Nonaktifkan" onclick='fnNonaktif("<%- data.EncDecrKey %>", "<%- data.Name %>")'><i class="ri-forbid-line"></i></button>
+                    <% } %>
+                </text>);
+            })
+        )
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.RoleUrl = {
+            add: '@Url.Action("Add")',
+            edit: '@Url.Action("Edit")',
+            simpan: '@Url.Action("SimpanBaru")',
+            update: '@Url.Action("Update")',
+            hapus: '@Url.Action("Delete")',
+            akses: '@Url.Action("Akses")',
+            simpanAkses: '@Url.Action("SimpanAkses")'
+        };
+    </script>
+    <script src="~/Scripts/Akses/Role.js" asp-append-version="true"></script>
+}

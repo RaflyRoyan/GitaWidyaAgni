@@ -1,4 +1,5 @@
-﻿@inject GitaWidyaAgniWeb.Infrastructure.AccessService Access
+@inject GitaWidyaAgniWeb.Infrastructure.AccessService Access
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     var appName = Access.GetAppName();
 }
@@ -10,12 +11,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta content="@appName" name="description" />
     <meta content="@appName" name="author" />
+    @* Token antiforgery untuk request AJAX (gwa-crud.js mengirimnya di header RequestVerificationToken). *@
+    <meta name="csrf-token" content="@Antiforgery.GetAndStoreTokens(Context).RequestToken" />
     <!-- App favicon -->
     <link rel="shortcut icon" href="~/favicon.ico">
     <meta name="theme-color" content="#fbf8f2" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    @*DEVEXTREME 23.2 — dimuat di head karena helper Razor (DataGrid, TextBox, ...) menulis script inline di body.
+      Hanya ada satu jQuery (milik DevExtreme); jangan memuat jQuery lain sesudahnya, plugin dx* terdaftar di jQuery ini.*@
+    <script src="~/js/devextreme/jquery.js"></script>
+    <script src="~/js/devextreme/dx.all.js"></script>
+    <script src="~/js/devextreme/aspnet/dx.aspnet.mvc.js"></script>
+    <script src="~/js/devextreme/aspnet/dx.aspnet.data.js"></script>
+    <script src="~/Scripts/Shared/dx.messages.id.js" asp-append-version="true"></script>
     @*VELZON CSS — versi warna GWA (*.gwa.min.css dibuat dari file asli dengan warna diganti)*@
     <script src="~/assets/js/layout.js"></script>
     <link href="~/assets/css/bootstrap.gwa.min.css" rel="stylesheet" />
@@ -25,7 +35,6 @@
 
     @*PLUGIN CSS*@
     <link href="~/assets/js/jquery-ui.css" rel="stylesheet" />
-    <link href="~/assets/DataTables/datatables.min.css" id="app-style" rel="stylesheet" type="text/css" />
     <link href="~/assets/css/spinner.css" id="app-style" rel="stylesheet" type="text/css" />
     <link href="~/assets/libs/filepond/filepond.min.css" rel="stylesheet" />
     <link href="~/assets/libs/filepond-plugin-image-preview/filepond-plugin-image-preview.min.css" rel="stylesheet" />
@@ -119,6 +128,10 @@
     <link href="~/css/gwa-theme.css" rel="stylesheet" asp-append-version="true" />
     @* data-sidebar="dark" hanya agar Velzon memakai teks putih & logo-light; warnanya gradasi brand di gwa-sidebar.css *@
     <link href="~/css/gwa-sidebar.css" rel="stylesheet" asp-append-version="true" />
+    @* Tema DevExtreme sama dengan SurabayaTaxWeb: Material Blue Light Compact, dimuat sesudah CSS Velzon
+       (SurabayaTaxWeb menambahkannya lewat assets/js/app.js loadCSSDevExtreme; di sini statis karena tidak ada mode gelap). *@
+    <link href="~/css/devextreme/dx.material.blue.light.compact.css" rel="stylesheet" />
+    <link href="~/css/gwa-devextreme.css" rel="stylesheet" asp-append-version="true" />
 </head>
 <body>
     <div id="loader" class="loader" style="display: block">
@@ -147,9 +160,7 @@
         <div class="spinner">
         </div>
         <div class="teks">
-            <h2>
-                @appName
-            </h2>
+            <h2></h2>
         </div>
     </div>
 
@@ -168,7 +179,6 @@
     <script src="~/assets/js/app.js"></script>
 
     @*PLUGIN JS*@
-    <script src="~/assets/js/jquery.js"></script>
     <script src="~/assets/js/jquery.validate.js"></script>
     <script src="~/assets/js/jquery-ui.js"></script>
     <script src="~/assets/libs/dropzone/dropzone-min.js"></script>
@@ -178,8 +188,6 @@
     <script src="~/assets/libs/apexcharts/apexcharts.min.js"></script>
     <script src="~/assets/libs/swiper/swiper-bundle.min.js"></script>
     <script src="~/assets/js/spinner.js"></script>
-    <script src="~/assets/datatables/datatables.js"></script>
-    <script src="~/assets/datatables/datatables.min.js"></script>
     <script src="~/assets/libs/filepond/filepond.min.js"></script>
     <script src="~/assets/libs/filepond-plugin-image-preview/filepond-plugin-image-preview.min.js"></script>
     <script src="~/assets/libs/filepond-plugin-file-validate-size/filepond-plugin-file-validate-size.min.js"></script>
@@ -206,6 +214,9 @@
         }
         document.addEventListener('DOMContentLoaded', fnInitSidebarMenu);
     </script>
+    <script src="~/js/devextreme/exceljs.min.js"></script>
+    <script src="~/js/devextreme/FileSaver.min.js"></script>
+    <script src="~/Scripts/Shared/Gwa.js" asp-append-version="true"></script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

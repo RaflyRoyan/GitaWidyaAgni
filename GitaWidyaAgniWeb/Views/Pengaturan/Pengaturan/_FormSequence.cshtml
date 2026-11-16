@@ -1,0 +1,11 @@
+@model GitaWidyaAgniWeb.Models.Pengaturan.PengaturanVM.FormSequence
+
+<form id="frmSequence" onsubmit="return false">
+    <div class="alert alert-light border small mb-3">Hanya untuk perbaikan data. Id berikutnya untuk <span class="gwa-code">@Model.TableName</span> = nilai ini + 1.</div>
+    <label class="form-label gwa-required">Id terakhir</label>
+    @(Html.DevExtreme().NumberBox().ID("LastId").Value(Model.LastId).Min(0).ShowSpinButtons(true).Format("#0"))
+</form>
+<div class="hstack gap-2 justify-content-end mt-3">
+    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    <button type="button" class="btn btn-primary" onclick="fnSimpanSequence()"><i class="ri-save-line me-1"></i>Simpan</button>
+</div>
