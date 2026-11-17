@@ -24,7 +24,9 @@
                     ("btn-outline-success", "ri-check-double-line", "Setujui"),
                     ("btn-outline-secondary", "ri-archive-line", "Arsipkan"),
                     ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
-                    ("btn-outline-danger", "ri-close-circle-line", "Tolak / hapus")) { LegendId = "legendKeluar" }' />
+                    ("btn-outline-dark", "ri-printer-line", "Cetak surat (kop, tanda tangan)"),
+                    ("btn-outline-secondary", "ri-file-paper-2-line", "Lembar disposisi"),
+                    ("btn-outline-danger", "ri-close-circle-line", "Tolak / hapus")) { LegendId = "legendKeluar", Extra = new[] { ("btn-outline-dark", "ri-book-2-line", "Cetak Agenda Surat Keluar", "Surat.agenda(2)") } }' />
                 <div id="targetKeluar" class="mt-3"></div>
             </div>
             <div class="tab-pane fade" id="tabMasuk" role="tabpanel">
@@ -32,11 +34,13 @@
                     ("btn-outline-info", "ri-file-list-3-line", "Detail & disposisi"),
                     ("btn-outline-secondary", "ri-archive-line", "Arsipkan"),
                     ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
-                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus")) { LegendId = "legendMasuk" }' />
+                    ("btn-outline-secondary", "ri-file-paper-2-line", "Cetak lembar disposisi"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus")) { LegendId = "legendMasuk", Extra = new[] { ("btn-outline-dark", "ri-book-2-line", "Cetak Agenda Surat Masuk", "Surat.agenda(1)") } }' />
                 <div id="targetMasuk" class="mt-3"></div>
             </div>
             <div class="tab-pane fade" id="tabTemplate" role="tabpanel">
                 <partial name="_Toolbar" model='new ToolbarModel("Tambah Template", "Surat.addTemplate()",
+                    ("btn-outline-dark", "ri-eye-line", "Pratinjau di kop surat"),
                     ("btn-outline-info", "ri-file-download-line", "Unduh .docx"),
                     ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
                     ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan")) { LegendId = "legendTemplate" }' />
@@ -51,7 +55,8 @@
         window.SuratUrl = {};
         ['ListSurat', 'AddSurat', 'EditSurat', 'SimpanSurat', 'UpdateSurat', 'HapusSurat', 'Ajukan', 'Setujui', 'Tolak', 'Kirim', 'Arsip', 'BerkasSurat',
             'Detail', 'TambahDisposisi', 'SelesaiDisposisi', 'BukaDisposisi', 'HapusDisposisi',
-            'ListTemplate', 'AddTemplate', 'EditTemplate', 'SimpanTemplate', 'UpdateTemplate', 'HapusTemplate', 'BerkasTemplate'].forEach(function (a) {
+            'ListTemplate', 'AddTemplate', 'EditTemplate', 'SimpanTemplate', 'UpdateTemplate', 'HapusTemplate', 'BerkasTemplate',
+            'Cetak', 'LembarDisposisi', 'CetakTemplate', 'Agenda'].forEach(function (a) {
             window.SuratUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
         });
     </script>

@@ -367,6 +367,20 @@ Supaya angka LPJ kegiatan lengkap:
 - Isi **mata anggaran (item RAB)** pada transaksi atau pengajuan dana. Rincian RAB hanya tampil untuk item yang dipakai kegiatan itu.
 - Tetapkan Ketua Pelaksana dan Bendahara di Tim Pelaksana. Unggah foto ke Galeri dengan kegiatan terisi.
 
+### Persuratan
+
+Semua cetakan Persuratan memakai kop surat: logo, nama organisasi, universitas, alamat (`alamat`), dan kontak dari profil organisasi.
+
+| Cetakan | Tombol | Isi |
+|---|---|---|
+| Surat keluar | Baris surat keluar › **Cetak surat** | Tempat dan tanggal, Nomor / Lampiran / Perihal, tujuan, isi surat (HTML dari template), dan tanda tangan pengesah sesuai urutan persetujuan (gambar tanda tangan bila diunggah). Surat yang belum disetujui diberi tanda air **DRAFT**, dan yang ditolak **DITOLAK**. |
+| Lembar disposisi | Baris surat masuk (atau surat keluar yang sudah disetujui) › **Lembar disposisi** | Data surat, tabel disposisi (dari, kepada, instruksi, batas waktu, status, paraf) ditambah baris kosong untuk ditulis tangan, serta kotak catatan |
+| Agenda surat masuk / keluar | Toolbar tab Surat Masuk / Surat Keluar › **Cetak Agenda** (pilih rentang tanggal) | Buku agenda landscape. Surat masuk diurutkan menurut tanggal diterima dan memuat tujuan disposisinya. |
+| Pratinjau template | Tab Template › **Pratinjau di kop surat** | Isi template di atas kop, dengan tanda air **CONTOH** |
+| Daftar arsip dokumen | Arsip Dokumen › **Cetak Daftar Arsip** | Semua dokumen per kategori: judul, keterangan, berkas, ukuran, akses, tanggal unggah |
+
+Untuk mendapatkan PDF langsung tanpa viewer, tambahkan `pdf=1` pada URL cetakan. Contoh: `/Persuratan/Surat/Agenda?arah=1&pdf=1`.
+
 ### Label QR inventaris (Aset › Unit & label QR)
 
 - Label A4, 4 kolom, ukuran 46 × 53 mm. Isinya logo, nama organisasi, QR, kode unit, nama aset, dan nomor seri.
@@ -450,7 +464,11 @@ Ikuti pola yang sudah ada (contoh paling sederhana: `Informasi/Banner`; detail l
 
 ### Menambah laporan
 
-Buat kelas `XtraReport` lewat kode di `GitaWidyaAgniWeb/Reports/` (tanpa `.repx`). Aksi controller mengembalikan `View("~/Views/Shared/_ReportViewer.cshtml", report)`, dan JS membukanya dengan `AppUI.openReport(judul, url)`. Satuan bawaan report adalah 1/100 inci.
+1. Buat kelas laporan lewat kode di `GitaWidyaAgniWeb/Reports/` (tanpa `.repx`). Untuk dokumen, turunkan dari `DocumentReport`, yang sudah menyediakan blok kop surat, judul, paragraf, tabel, isi HTML, tanda tangan, dan tanda air. Identitas organisasi diambil dari `ReportBrand.Load(webRoot)`.
+2. Aksi controller cukup memanggil `return Laporan(() => report);`. Hasilnya halaman viewer bersama; dengan `?pdf=1`, hasilnya PDF langsung.
+3. Di JS, buka viewernya dengan `AppUI.openReport(judul, url)`. Tombol tambahan di toolbar bisa ditambahkan lewat `ToolbarModel.Extra`.
+
+Satuan bawaan laporan adalah 1/100 inci (A4 = 827 × 1169).
 
 ### Konvensi kode
 

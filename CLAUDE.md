@@ -632,7 +632,33 @@ Suggested order: Akses & Pengaturan first, so admins can manage roles and menus 
     - `Aset/CetakLabel` (POST, Edit) checks that the units belong to the asset, marks them label-printed and stores the rows in `IMemoryCache` for 10 minutes, keyed by user + id.
     - `Aset/LabelQr?id=` (Index) shows the viewer. The asset page no longer loads `js/qrcode.min.js`; Presensi still uses it.
   - The standalone viewer page is shared: `Views/Shared/_ReportViewer.cshtml` (model = any `XtraReport`), opened with `AppUI.openReport(title, url)` (iframe in `staticBackdropFullScreen`).
-  - LPJ: `Reports/LpjReport` (`LpjReport.Kegiatan` / `Kepengurusan`) follows the MB GWA LPJ templates: cover (title, logo, institution, year), numbered chapters, signatures, then appendices (documentation photos 2 per row; budget realization with income, expenses per category with RAB vs realization vs difference, and a summary / inventory list / officers table with photos). Each block is a `DetailReportBand` over `List<Row>` (C1..C6, Bold, Shade, Bullet, Img); a chapter heading is a `GroupHeader` WithFirstDetail above paragraphs and a `ReportHeader` above tables (two field-less group headers print in the wrong order). Narrative lines starting with `- ` print as bullets. The signing city is site setting `kota` (fallback Surabaya); the logo is the organization logo, else `assets/images/gwa-logo.png`.
+  - **Base class `Reports/DocumentReport`** (document reports: LPJ, Persuratan):
+    - A4 portrait (or landscape), Times New Roman 12, page number in the footer.
+    - Content is a sequence of blocks; each block is a `DetailReportBand` over `List<Row>` (C1..C8, Bold, Shade, Bullet, Img, Img2), so paragraphs and table rows break cleanly across pages.
+    - Blocks: `Letterhead(ReportBrand)` (logo, organization name, institution, address + contact, double rule), `TitleBlock`, `Section` / `Paragraphs` (lines starting with `- ` print as bullets), `Html` (XRRichText, letter bodies), `Table`, `Fields` (label : value without borders), `Signatures(place?, date, signers, knownLast)` (signature image above the name when present), and `Stamp` (diagonal watermark).
+    - A chapter heading is a `GroupHeader` WithFirstDetail above paragraphs and a `ReportHeader` above tables, because two field-less group headers print in the wrong order.
+    - Never loop on a list's `Count` while adding to it (the first disposition sheet hung the server this way).
+  - **`Reports/ReportBrand.Load(webRoot)`** supplies:
+    - name and logo from the organization profile (fallback `assets/images/gwa-logo.png`);
+    - address from site setting `alamat`;
+    - contact from the profile phone / email and Instagram, or WhatsApp;
+    - signing city from site setting `kota` (fallback Surabaya).
+  - **`BaseController.Laporan(() => report)`** returns the shared viewer page. `?pdf=1` downloads the PDF directly. An `ArgumentException` is shown as plain text.
+  - **LPJ:** `Reports/LpjReport` (`LpjReport.Kegiatan` / `Kepengurusan`) follows the MB GWA LPJ templates: cover (title, logo, institution, year), numbered chapters, signatures, then appendices. The appendices are:
+    - documentation photos, 2 per row;
+    - budget realization: income, expenses per category with RAB vs realization vs difference, and a summary;
+    - inventory list;
+    - officers table with photos.
+  - **Persuratan:** `Reports/PersuratanReport`, with data assembled by `Models/Persuratan/PersuratanCetak`. All reports use the letterhead.
+    - **Cetak surat** (`Surat/Cetak?key=`, outgoing letters only):
+      - Layout: place + date, Nomor / Lampiran / Perihal, recipient, the HTML body (plain text is converted), then signers from the letter approvals in level order.
+      - A signer's role is the approval position, else the approver's active role name. The signature image is printed when one is stored.
+      - Letters not yet Approved / Sent / Archived carry a DRAFT watermark (DITOLAK when rejected).
+    - **Pratinjau template** (`Surat/CetakTemplate?key=`): the template body on the letterhead with a CONTOH watermark.
+    - **Lembar disposisi** (`Surat/LembarDisposisi?key=`, incoming letters and approved outgoing ones): letter details, a disposition table (date / from, to, instruction, due date, status, initials) padded with empty rows for handwriting, and a notes box.
+    - **Agenda surat** (`Surat/Agenda?arah=1|2&dari=&sampai=`, landscape): incoming letters by received date with their disposition targets, or outgoing letters by letter date.
+    - **Daftar arsip dokumen** (`Dokumen/CetakDaftar`, landscape): documents grouped by category.
+    - Buttons: row actions "Cetak surat" / "Lembar disposisi" / "Pratinjau di kop surat", and toolbar buttons "Cetak Agenda Surat Masuk/Keluar" (asks for a date range) and "Cetak Daftar Arsip". `ToolbarModel.Extra` adds such buttons.
   - `Lpj/Pratinjau?key=` builds the report from current data; `Lpj/Finalisasi` (Process) exports it with `ExportToPdf` and calls `Lpj.Finalize`; `Lpj/Unduh?key=` returns the stored PDF.
   - The DevExpress install on this device is a trial: exported PDFs carry "created using the trial version of DevExpress components". A licensed install removes it.
 

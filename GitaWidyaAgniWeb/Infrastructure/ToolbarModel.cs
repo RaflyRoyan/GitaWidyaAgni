@@ -8,6 +8,8 @@ namespace GitaWidyaAgniWeb.Infrastructure
         public IEnumerable<(string Css, string Icon, string Text)> Legend { get; set; }
         /// <summary>Id panel legenda; beri id lain bila satu halaman punya beberapa toolbar (mis. per tab).</summary>
         public string LegendId { get; set; } = "legendInline";
+        /// <summary>Tombol tambahan setelah tombol Tambah (mis. cetak laporan): (css, ikon, teks, onclick).</summary>
+        public IEnumerable<(string Css, string Icon, string Text, string OnClick)> Extra { get; set; } = Array.Empty<(string, string, string, string)>();
 
         public ToolbarModel(string? addText, string? addOnClick, params (string Css, string Icon, string Text)[] legend)
         {

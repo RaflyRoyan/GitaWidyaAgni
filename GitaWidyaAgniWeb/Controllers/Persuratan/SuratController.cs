@@ -1,5 +1,6 @@
 using GitaWidyaAgniWeb.Infrastructure;
 using GitaWidyaAgniWeb.Models;
+using GitaWidyaAgniWeb.Models.Persuratan;
 using Microsoft.AspNetCore.Mvc;
 using VM = GitaWidyaAgniWeb.Models.Persuratan.SuratVM;
 
@@ -100,5 +101,13 @@ namespace GitaWidyaAgniWeb.Controllers.Persuratan
                 return NotFound();
             }
         }
+
+        // ---------- Cetak (DevExpress Reports): halaman viewer mandiri untuk iframe modal layar penuh (AppUI.openReport).
+        private string WebRoot => HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath;
+
+        [AccessAs(Acc.Index)] public IActionResult Cetak(string key) => Laporan(() => PersuratanCetak.Surat(key, WebRoot));
+        [AccessAs(Acc.Index)] public IActionResult LembarDisposisi(string key) => Laporan(() => PersuratanCetak.Disposisi(key, WebRoot));
+        [AccessAs(Acc.Index)] public IActionResult CetakTemplate(string key) => Laporan(() => PersuratanCetak.Template(key, WebRoot));
+        [AccessAs(Acc.Index)] public IActionResult Agenda(int arah, DateTime? dari, DateTime? sampai) => Laporan(() => PersuratanCetak.Agenda(arah, dari, sampai, WebRoot));
     }
 }

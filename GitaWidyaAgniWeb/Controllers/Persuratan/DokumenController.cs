@@ -1,5 +1,6 @@
 using GitaWidyaAgniWeb.Infrastructure;
 using GitaWidyaAgniWeb.Models;
+using GitaWidyaAgniWeb.Models.Persuratan;
 using Microsoft.AspNetCore.Mvc;
 using VM = GitaWidyaAgniWeb.Models.Persuratan.DokumenVM;
 
@@ -33,6 +34,10 @@ namespace GitaWidyaAgniWeb.Controllers.Persuratan
             var bytes = await BacaBerkasAsync(berkas);
             return Aksi(u => VM.Method.Update(EditKey(KEY_DOKUMEN), m, bytes, berkas, u), "Dokumen diubah.", KEY_DOKUMEN);
         }
+
+        // Daftar arsip dokumen (DevExpress Reports), halaman viewer untuk AppUI.openReport.
+        [AccessAs(Acc.Index)]
+        public IActionResult CetakDaftar() => Laporan(() => PersuratanCetak.Arsip(HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath));
 
         [HttpPost, AccessAs(Acc.Delete)] public IActionResult HapusDokumen([FromBody] GwaVM.KeyInput i) => Aksi(u => { VM.Method.Load(i.Key).Delete(u).Ok(); }, "Dokumen dihapus permanen.");
 

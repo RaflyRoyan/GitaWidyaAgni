@@ -134,7 +134,6 @@ namespace GitaWidyaAgniWeb.Models.Lpj
 
         public class Method
         {
-            public const string DEFAULT_PLACE = "Surabaya";
 
             public static LibLpj Load(string? key) => LibExtensions.Load<LibLpj>(key, "LPJ");
 
@@ -186,16 +185,13 @@ namespace GitaWidyaAgniWeb.Models.Lpj
                 obj.Update(user).Ok();
             }
 
-            /// <summary>Dokumen LPJ dari data terkini. Logo: profil organisasi, else logo bawaan. Kota tanda tangan: setting "kota".</summary>
+            /// <summary>Dokumen LPJ dari data terkini; logo dan kota tanda tangan dari ReportBrand.</summary>
             public static LpjReport BuildReport(LibLpj lpj, string webRoot)
             {
-                var logo = OrganizationProfile.GetLogo()?.Data
-                    ?? File.ReadAllBytes(Path.Combine(webRoot, "assets", "images", "gwa-logo.png"));
-                var place = SiteSetting.GetByKey("kota")?.SettingValue;
-                place = string.IsNullOrWhiteSpace(place) ? DEFAULT_PLACE : place.Trim();
+                var brand = ReportBrand.Load(webRoot);
                 return lpj.LpjType == LpjType.Kegiatan
-                    ? LpjReport.Kegiatan(lpj.GetKegiatanData(), logo, place)
-                    : LpjReport.Kepengurusan(lpj.GetKepengurusanData(), logo, place);
+                    ? LpjReport.Kegiatan(lpj.GetKegiatanData(), brand)
+                    : LpjReport.Kepengurusan(lpj.GetKepengurusanData(), brand);
             }
 
             public static byte[] ToPdf(LpjReport report)

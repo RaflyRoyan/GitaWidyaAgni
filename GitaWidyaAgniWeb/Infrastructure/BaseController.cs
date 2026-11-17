@@ -157,6 +157,30 @@ namespace GitaWidyaAgniWeb.Infrastructure
             return inline || string.IsNullOrWhiteSpace(fileName) ? File(data, contentType!) : File(data, contentType!, fileName);
         }
 
+        /// <summary>
+        /// Halaman viewer DevExpress Reports mandiri (Views/Shared/_ReportViewer, Layout = null) untuk iframe AppUI.openReport.
+        /// ArgumentException (data tidak ditemukan / encKey kedaluwarsa / tidak boleh dicetak) tampil sebagai teks.
+        /// </summary>
+        protected IActionResult Laporan(Func<DevExpress.XtraReports.UI.XtraReport> buat)
+        {
+            try
+            {
+                var report = buat();
+                // ?pdf=1 = unduh PDF langsung tanpa viewer.
+                if (Request.Query["pdf"] == "1")
+                {
+                    using var ms = new MemoryStream();
+                    report.ExportToPdf(ms);
+                    return File(ms.ToArray(), "application/pdf", (string.IsNullOrWhiteSpace(report.DisplayName) ? "laporan" : report.DisplayName.Replace('/', '-')) + ".pdf");
+                }
+                return View("~/Views/Shared/_ReportViewer.cshtml", report);
+            }
+            catch (ArgumentException ex)
+            {
+                return Content(ex.Message, "text/plain; charset=utf-8");
+            }
+        }
+
         protected static Response Gagal(string pesan) => new() { Status = ResponseStatus.Error, Message = pesan };
     }
 }

@@ -121,6 +121,12 @@ window.Surat = (function () {
         const done = function () { refreshArah(arah); };
 
         btn(container, 'btn-outline-info', 'ri-file-list-3-line', 'Detail, persetujuan & disposisi', function () { detail(row, arah); });
+        if (!masuk) {
+            btn(container, 'btn-outline-dark', 'ri-printer-line', 'Cetak surat', function () { report('Surat — ' + row.Subject, URL.cetak, row); });
+        }
+        if (masuk || row.Status === STATUS.APPROVED || row.Status === STATUS.SENT || row.Status === STATUS.ARCHIVED) {
+            btn(container, 'btn-outline-secondary', 'ri-file-paper-2-line', 'Lembar disposisi', function () { report('Lembar Disposisi — ' + row.Subject, URL.lembarDisposisi, row); });
+        }
         if (row.FileName) {
             btn(container, 'btn-outline-info', 'ri-file-download-line', 'Unduh berkas', function () { window.open(URL.berkasSurat + '?key=' + encodeURIComponent(row.EncDecrKey), '_blank'); });
         }
@@ -166,8 +172,28 @@ window.Surat = (function () {
         }
     }
 
+    /* ===== Cetak (DevExpress Reports di modal layar penuh) ===== */
+
+    function report(title, url, row) {
+        AppUI.openReport(title, url + '?key=' + encodeURIComponent(row.EncDecrKey));
+    }
+    // Agenda surat (1 = masuk, 2 = keluar) untuk rentang tanggal; tanggal kosong = tanpa batas.
+    function agenda(arah) {
+        const label = arah === ARAH.MASUK ? 'Agenda Surat Masuk' : 'Agenda Surat Keluar';
+        const today = new Date();
+        const first = new Date(today.getFullYear(), 0, 1);
+        AppUI.promptInput({ title: label, text: 'Dari tanggal (kosongkan = semua)', input: 'date', value: AppUI.toIsoDate(first), confirmText: 'Lanjut' }).then(function (dari) {
+            if (dari === null) return;
+            AppUI.promptInput({ title: label, text: 'Sampai tanggal (kosongkan = sekarang)', input: 'date', value: AppUI.toIsoDate(today), confirmText: 'Cetak' }).then(function (sampai) {
+                if (sampai === null) return;
+                AppUI.openReport(label, URL.agenda + '?' + $.param({ arah: arah, dari: dari || '', sampai: sampai || '' }));
+            });
+        });
+    }
+
     function templateActionTemplate(container, options) {
         const row = options.data;
+        btn(container, 'btn-outline-dark', 'ri-eye-line', 'Pratinjau di kop surat', function () { report('Template — ' + row.Name, URL.cetakTemplate, row); });
         if (row.FileName) {
             btn(container, 'btn-outline-info', 'ri-file-download-line', 'Unduh .docx', function () { window.open(URL.berkasTemplate + '?key=' + encodeURIComponent(row.EncDecrKey), '_blank'); });
         }
@@ -180,7 +206,7 @@ window.Surat = (function () {
     }
 
     return {
-        add: add, save: save, addDisposition: addDisposition, doneDisposition: doneDisposition, reopenDisposition: reopenDisposition,
+        add: add, save: save, agenda: agenda, addDisposition: addDisposition, doneDisposition: doneDisposition, reopenDisposition: reopenDisposition,
         removeDisposition: removeDisposition, addTemplate: addTemplate, saveTemplate: saveTemplate,
         statusTemplate: statusTemplate, letterActionTemplate: letterActionTemplate, templateActionTemplate: templateActionTemplate
     };

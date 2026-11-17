@@ -21,7 +21,7 @@
                     ("btn-outline-info", "ri-eye-line", "Lihat"),
                     ("btn-outline-secondary", "ri-download-2-line", "Unduh"),
                     ("btn-outline-warning", "ri-edit-2-line", "Ubah / ganti berkas"),
-                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus permanen")) { LegendId = "legendDokumen" }' />
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus permanen")) { LegendId = "legendDokumen", Extra = new[] { ("btn-outline-dark", "ri-printer-line", "Cetak Daftar Arsip", "Dokumen.cetak()") } }' />
                 <div id="targetDokumen" class="mt-3"></div>
             </div>
             <div class="tab-pane fade" id="tabKategori" role="tabpanel">
@@ -38,7 +38,7 @@
     <script>
         window.DokumenUrl = {};
         ['ListDokumen', 'AddDokumen', 'EditDokumen', 'SimpanDokumen', 'UpdateDokumen', 'HapusDokumen', 'Unduh',
-            'ListKategori', 'AddKategori', 'EditKategori', 'SimpanKategori', 'UpdateKategori', 'HapusKategori'].forEach(function (a) {
+            'ListKategori', 'AddKategori', 'EditKategori', 'SimpanKategori', 'UpdateKategori', 'HapusKategori', 'CetakDaftar'].forEach(function (a) {
             window.DokumenUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
         });
     </script>

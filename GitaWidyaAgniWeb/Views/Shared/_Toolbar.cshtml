@@ -11,6 +11,12 @@
             <i class="ri-add-line align-bottom me-1"></i> @Model.AddText
         </button>
     }
+    @foreach (var extra in Model.Extra)
+    {
+        <button type="button" class="btn @extra.Css btn-sm" onclick="@extra.OnClick">
+            <i class="@extra.Icon align-bottom me-1"></i> @extra.Text
+        </button>
+    }
     <button type="button" class="btn btn-outline-info btn-sm gwa-legend-toggle" data-bs-toggle="collapse" data-bs-target="#@Model.LegendId" aria-expanded="false" aria-controls="@Model.LegendId">
         <span class="gwa-when-closed"><i class="ri-eye-line align-bottom me-1"></i> Tampilkan Legenda</span>
         <span class="gwa-when-open"><i class="ri-eye-off-line align-bottom me-1"></i> Sembunyikan Legenda</span>

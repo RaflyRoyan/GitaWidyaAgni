@@ -73,7 +73,12 @@ window.Dokumen = (function () {
         }
     }
 
+    function cetak() {
+        AppUI.openReport('Daftar Arsip Dokumen', URL.cetakDaftar);
+    }
+
     return {
+        cetak: cetak,
         add: add, saveDocument: saveDocument, saveCategory: saveCategory,
         visibilityTemplate: visibilityTemplate, documentActionTemplate: documentActionTemplate, categoryActionTemplate: categoryActionTemplate
     };
