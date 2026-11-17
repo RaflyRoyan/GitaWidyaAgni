@@ -1,0 +1,25 @@
+@model GitaWidyaAgniWeb.Models.Kemitraan.SponsorshipVM.ListSponsor
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kemitraan
+
+@(Html.DevExtreme().DataGrid<SponsorshipVM.SponsorRow>()
+    .ID("tblSponsor")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Sponsorship")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Nomor).Caption("Nomor").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Mitra).Caption("Sponsor").CssClass("fw-medium");
+        columns.AddFor(m => m.Paket).Caption("Paket");
+        columns.AddFor(m => m.Bentuk).Caption("Bentuk");
+        columns.AddFor(m => m.Amount).Caption("Nilai").Format("#,##0");
+        columns.AddFor(m => m.ReceivedAmount).Caption("Diterima").Format("#,##0");
+        columns.AddFor(m => m.InKind).Caption("Uraian").Visible(false);
+        columns.AddFor(m => m.StartDate).Caption("Mulai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.EndDate).Caption("Selesai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy").Visible(false);
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Sponsorship.statusTemplate"));
+        columns.AddAction("Sponsorship.sponsorActionTemplate");
+    })
+)

@@ -42,6 +42,22 @@ namespace GWALib.Lib.Transaksi.Approval
                 _ => false
             };
         }
+        // Semua user yang berhak memutus langkah ini (aturan sama dengan IsApprover), untuk notifikasi.
+        internal static List<int> GetApproverUserIds(EF.ModelContext context, EF.MApprovalFlowStep step)
+        {
+            return (ApproverType)step.ApproverType switch
+            {
+                ApproverType.Role => context.MUserRoles
+                    .Where(x => x.RoleId == step.RoleId && (x.PeriodId == null || x.Period!.Status == (int)ManagementPeriodStatus.Active))
+                    .Select(x => x.UserId).Distinct().ToList(),
+                ApproverType.Jabatan => context.TManagementAssignments
+                    .Where(x => x.PositionId == step.PositionId && x.IsCurrent == (int)AssignmentPeriod.Berjalan
+                        && x.Period.Status == (int)ManagementPeriodStatus.Active && x.Member.UserId != null)
+                    .Select(x => x.Member.UserId!.Value).Distinct().ToList(),
+                ApproverType.UserTertentu => step.UserId != null ? new List<int> { step.UserId.Value } : new List<int>(),
+                _ => new List<int>()
+            };
+        }
         internal static void ValidateApprover(EF.ModelContext context, EF.MApprovalFlowStep step, int userId)
         {
             if (!IsApprover(context, step, userId))

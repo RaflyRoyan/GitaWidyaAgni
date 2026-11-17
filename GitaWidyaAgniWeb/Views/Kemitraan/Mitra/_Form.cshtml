@@ -1,0 +1,42 @@
+@model GitaWidyaAgniWeb.Models.Kemitraan.MitraVM.Add
+@using GitaWidyaAgniWeb.Models.Kemitraan
+@{ var isEdit = Model is MitraVM.Edit; }
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<MitraVM.NewRow>()
+        .ID("frmMitra")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Name).ColSpan(2).Editor(e => e.TextBox().MaxLength(150));
+            items.AddSimpleFor(m => m.PartyType).Editor(e => e.SelectBox().DataSource(Model.JenisOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.Industry).Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.City).Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.Phone).Editor(e => e.TextBox().MaxLength(30));
+            items.AddSimpleFor(m => m.Email).Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.Website).Editor(e => e.TextBox().MaxLength(255));
+            items.AddSimpleFor(m => m.Instagram).Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.Address).ColSpan(isEdit ? 2 : 3).Editor(e => e.TextBox().MaxLength(255));
+            if (isEdit)
+            {
+                items.AddSimpleFor(m => m.Status).Editor(e => e.SelectBox().DataSource(Model.StatusOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            }
+            items.AddSimpleFor(m => m.Notes).ColSpan(3).Editor(e => e.TextArea().Height(60));
+        })
+    )
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Logo</span></div>
+    @if (Model.HasLogo)
+    {
+        <label class="form-check-label small mb-1"><input type="checkbox" class="form-check-input me-1" id="chkHapusLogoMitra" /> Hapus logo</label>
+    }
+    @(Html.DevExtreme().FileUploader().ID("fileLogoMitra").UploadMode(FileUploadMode.UseForm).Multiple(false)
+        .Accept("image/*").AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".png", ".webp" }).MaxFileSize(5 * 1024 * 1024).SelectButtonText("Pilih logo").LabelText(""))
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Mitra.save(@(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

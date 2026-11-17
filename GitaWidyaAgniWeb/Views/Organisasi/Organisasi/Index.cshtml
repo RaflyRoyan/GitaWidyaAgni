@@ -1,0 +1,134 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.OrganisasiVM.Index
+@using GitaWidyaAgniWeb.Models.Organisasi
+
+@{
+    ViewData["Title"] = "Profil Organisasi";
+}
+
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="ri-information-line align-bottom me-1"></i> Profil Organisasi</h5>
+                <p class="gwa-card-intro">Nama, deskripsi, visi, misi, dan kontak tampil di landing page. Kode dipakai placeholder <span class="gwa-code">{org}</span> pada format nomor dokumen.</p>
+            </div>
+            <div class="card-body">
+                @if (!Model.SudahAda)
+                {
+                    <div class="alert alert-warning py-2"><i class="ri-error-warning-line me-1"></i> Profil organisasi belum diisi.</div>
+                }
+                <div class="gwa-mform">
+                    @(Html.DevExtreme().Form<OrganisasiVM.NewRow>()
+                        .ID("frmOrganisasi")
+                        .FormData(Model.Row)
+                        .LabelLocation(FormLabelLocation.Top)
+                        .ShowColonAfterLabel(false)
+                        .ColCount(3)
+                        .ColCountByScreen(c => c.Xs(1).Sm(1))
+                        .Items(items =>
+                        {
+                            items.AddGroup().Caption("Identitas").ColSpan(3).ColCount(3).Items(g =>
+                            {
+                                g.AddSimpleFor(m => m.Code).Editor(e => e.TextBox().MaxLength(20).InputAttr(new { style = "text-transform:uppercase" }));
+                                g.AddSimpleFor(m => m.Name).ColSpan(2).Editor(e => e.TextBox().MaxLength(150));
+                                g.AddSimpleFor(m => m.Description).ColSpan(3).Editor(e => e.TextArea().Height(90));
+                                g.AddSimpleFor(m => m.Vision).ColSpan(3).Editor(e => e.TextArea().Height(70));
+                                g.AddSimpleFor(m => m.Mission).ColSpan(3).Editor(e => e.TextArea().Height(110));
+                            });
+                            items.AddGroup().Caption("Kontak").ColSpan(3).ColCount(4).Items(g =>
+                            {
+                                g.AddSimpleFor(m => m.Email).Editor(e => e.TextBox().MaxLength(100));
+                                g.AddSimpleFor(m => m.Phone).Editor(e => e.TextBox().MaxLength(30));
+                                g.AddSimpleFor(m => m.Instagram).Editor(e => e.TextBox().MaxLength(100).Placeholder("mis. mbgwaupn"));
+                                g.AddSimpleFor(m => m.FoundedDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+                            });
+                            items.AddGroup().Caption("Pembina").ColSpan(3).ColCount(4).Items(g =>
+                            {
+                                g.AddSimpleFor(m => m.AdvisorName).Editor(e => e.TextBox().MaxLength(150));
+                                g.AddSimpleFor(m => m.AdvisorPhone).Editor(e => e.TextBox().MaxLength(30));
+                                g.AddSimpleFor(m => m.AdvisorEmail).Editor(e => e.TextBox().MaxLength(100));
+                                g.AddSimpleFor(m => m.AdvisorSkNumber).Editor(e => e.TextBox().MaxLength(100));
+                            });
+                        })
+                    )
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="ri-image-line align-bottom me-1"></i> Logo</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <img src="@Url.Action("Logo", "Brand", new { area = "" })?v=@DateTime.Now.Ticks" alt="Logo organisasi" class="img-fluid" style="max-height:140px" />
+                    <div class="small text-muted mt-1">@(Model.HasLogo ? "Logo dari profil" : "Logo bawaan (belum diunggah)")</div>
+                </div>
+                @(Html.DevExtreme().FileUploader().ID("fileLogo").UploadMode(FileUploadMode.UseForm).Multiple(false)
+                    .Accept("image/*").AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".png", ".webp" }).MaxFileSize(5 * 1024 * 1024)
+                    .SelectButtonText("Ganti logo").LabelText(""))
+                @if (Model.HasLogo)
+                {
+                    <label class="form-check-label small"><input type="checkbox" class="form-check-input me-1" id="chkHapusLogo" /> Hapus logo (kembali ke bawaan)</label>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="ri-file-paper-2-line align-bottom me-1"></i> SK Pembina</h5>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(Model.SkFileName))
+                {
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="ri-file-text-line fs-18"></i>
+                        <a href="@Url.Action("SkPembina")" target="_blank">@Model.SkFileName</a>
+                        <label class="ms-auto form-check-label small"><input type="checkbox" class="form-check-input me-1" id="chkHapusSk" /> Hapus</label>
+                    </div>
+                }
+                @(Html.DevExtreme().FileUploader().ID("fileSk").UploadMode(FileUploadMode.UseForm).Multiple(false)
+                    .MaxFileSize(10 * 1024 * 1024).SelectButtonText("Pilih berkas SK").LabelText(""))
+            </div>
+        </div>
+
+        <div class="d-grid">
+            <button type="button" class="btn btn-success" onclick="Organisasi.save()"><i class="ri-save-3-line align-bottom me-1"></i> Simpan Profil</button>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex align-items-center flex-wrap gap-2">
+                <div class="flex-grow-1">
+                    <h5 class="card-title mb-0"><i class="ri-gallery-line align-bottom me-1"></i> Foto Organisasi</h5>
+                    <p class="gwa-card-intro mb-0">Dipakai kolase bagian Tentang di landing page. Foto diperkecil otomatis.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    @(Html.DevExtreme().FileUploader().ID("fileFoto").UploadMode(FileUploadMode.UseForm).Multiple(false)
+                        .Accept("image/*").AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".png", ".webp" }).MaxFileSize(10 * 1024 * 1024)
+                        .SelectButtonText("Pilih foto").LabelText("").Width(220))
+                    <button type="button" class="btn btn-outline-primary" onclick="Organisasi.addPhoto()"><i class="ri-upload-2-line align-bottom me-1"></i> Unggah</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="targetFoto"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.OrganisasiUrl = {
+            simpan: '@Url.Action("Simpan")',
+            foto: '@Url.Action("Foto")',
+            tambahFoto: '@Url.Action("TambahFoto")',
+            hapusFoto: '@Url.Action("HapusFoto")',
+            gambar: '@Url.Action("OrganizationImage", "Landing", new { area = "" })'
+        };
+    </script>
+    <script src="~/Scripts/Organisasi/Organisasi.js" asp-append-version="true"></script>
+}

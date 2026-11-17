@@ -1,0 +1,26 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.IuranVM.Generate
+@using GitaWidyaAgniWeb.Models.Keuangan
+@* Buat tagihan massal: anggota aktif (atau yang dipilih) yang belum punya tagihan iuran ini di periode tersebut. *@
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<IuranVM.GenerateInput>()
+        .ID("frmGenerate")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.DuesSettingId).ColSpan(2).Editor(e => e.SelectBox().DataSource(Model.IuranOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.BillPeriod).Editor(e => e.TextBox().MaxLength(20).InputAttr(new { style = "text-transform:uppercase" }));
+            items.AddSimpleFor(m => m.DueDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd").ShowClearButton(true));
+            items.AddSimpleFor(m => m.MemberIds).ColSpan(2).Editor(e => e.TagBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowSelectionControls(true).Placeholder("Semua anggota aktif"));
+        })
+    )
+    <p class="gwa-mform-note">Anggota yang sudah punya tagihan iuran ini untuk periode yang sama dilewati.</p>
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Iuran.saveGenerate()"><i class="ri-magic-line align-bottom me-1"></i> Buat Tagihan</button>
+    </div>
+</div>

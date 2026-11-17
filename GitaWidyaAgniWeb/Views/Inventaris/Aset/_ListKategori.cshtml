@@ -1,0 +1,20 @@
+@model GitaWidyaAgniWeb.Models.Inventaris.AsetVM.ListKategori
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Inventaris
+
+@(Html.DevExtreme().DataGrid<AsetVM.KategoriRow>()
+    .ID("tblKategoriAset")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Kategori Aset")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Kategori").CssClass("fw-medium");
+        columns.AddFor(m => m.Description).Caption("Keterangan");
+        columns.AddFor(m => m.JumlahAset).Caption("Aset").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Aset.categoryActionTemplate");
+    })
+)

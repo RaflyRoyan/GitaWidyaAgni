@@ -1,0 +1,37 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.KegiatanVM.Kolaborator
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+<div class="gwa-mform" id="kegiatanKolaborator" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-handshake-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Judul</div>
+            <div class="gwa-mform-info-meta"><span>Mitra diundang lalu dicatat responnya (Diterima / Ditolak). Mitra Blacklist tidak bisa diundang.</span></div>
+        </div>
+    </div>
+    <div class="gwa-mform-add">
+        <div class="gwa-mform-add-form">
+            @(Html.DevExtreme().Form<KegiatanVM.KolaboratorInput>()
+                .ID("frmKolaborator")
+                .FormData(Model.Input)
+                .LabelLocation(FormLabelLocation.Top)
+                .ShowColonAfterLabel(false)
+                .ColCount(3)
+                .ColCountByScreen(c => c.Xs(1).Sm(1))
+                .Items(items =>
+                {
+                    items.AddSimpleFor(m => m.ExternalPartyId).Editor(e => e.SelectBox().DataSource(Model.MitraOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).Placeholder("Pilih mitra..."));
+                    items.AddSimpleFor(m => m.CollabRole).Editor(e => e.SelectBox().DataSource(Model.PeranOpsi).ValueExpr("Value").DisplayExpr("Text"));
+                    items.AddSimpleFor(m => m.Notes).Editor(e => e.TextBox().MaxLength(255));
+                })
+            )
+        </div>
+        <button type="button" class="btn btn-outline-primary" onclick="Kegiatan.addCollaborator()"><i class="ri-add-line align-bottom me-1"></i> Undang</button>
+    </div>
+    <div id="kegiatanKolaboratorTarget">
+        <partial name="~/Views/Kegiatan/Kegiatan/_KolaboratorList.cshtml" model="Model.List" />
+    </div>
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

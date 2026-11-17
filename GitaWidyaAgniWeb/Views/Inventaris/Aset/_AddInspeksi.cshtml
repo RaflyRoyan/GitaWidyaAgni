@@ -1,0 +1,28 @@
+@model GitaWidyaAgniWeb.Models.Inventaris.AsetVM.AddInspeksi
+@using GitaWidyaAgniWeb.Models.Inventaris
+@* Aset per unit wajib kode unit; kondisi Hilang menandai unit Hilang. Foto opsional (maks. 5 MB). *@
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<AsetVM.NewInspeksi>()
+        .ID("frmInspeksi")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.AssetId).Editor(e => e.SelectBox().DataSource(Model.AsetOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true));
+            items.AddSimpleFor(m => m.UnitCode).Editor(e => e.TextBox().MaxLength(20).Placeholder("mis. HT001").InputAttr(new { style = "text-transform:uppercase" }));
+            items.AddSimpleFor(m => m.ItemCondition).Editor(e => e.SelectBox().DataSource(Model.KondisiOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.InspectedAt).Editor(e => e.DateBox().Type(DateBoxType.DateTime).DisplayFormat("dd MMM yyyy HH:mm").DateSerializationFormat("yyyy-MM-ddTHH:mm:ss"));
+            items.AddSimpleFor(m => m.Notes).ColSpan(2).Editor(e => e.TextArea().Height(60).MaxLength(500));
+        })
+    )
+    @(Html.DevExtreme().FileUploader().ID("fileInspeksi").UploadMode(FileUploadMode.UseForm).Multiple(false)
+        .Accept("image/*").MaxFileSize(5 * 1024 * 1024).SelectButtonText("Foto (opsional)").LabelText(""))
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Aset.saveInspection()"><i class="ri-save-3-line align-bottom me-1"></i> Simpan</button>
+    </div>
+</div>

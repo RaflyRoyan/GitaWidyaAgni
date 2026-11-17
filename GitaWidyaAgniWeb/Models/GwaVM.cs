@@ -15,6 +15,51 @@ namespace GitaWidyaAgniWeb.Models
             public string Key { get; set; } = "";
             public string Keterangan { get; set; } = "";
         }
+        // Ubah status (nilai enum) untuk baris berkunci encKey.
+        public class StatusInput
+        {
+            public string Key { get; set; } = "";
+            public int Status { get; set; }
+            public string? Keterangan { get; set; }
+        }
+        /// <summary>
+        /// Form pembayaran / pencairan bersama (Views/Shared/_FormBayar.cshtml): akun kas, kategori, tanggal, nominal, catatan.
+        /// Halaman memakai wrapper _Bayar.cshtml dan memanggil OnSave (fungsi JS) yang mengirim formData #frmBayar.
+        /// </summary>
+        public class BayarForm
+        {
+            public string Judul { get; set; } = "";
+            public string? Info { get; set; }
+            public string OnSave { get; set; } = "";
+            public string Tombol { get; set; } = "Simpan";
+            public bool ShowAmount { get; set; } = true;
+            public bool ShowCategory { get; set; } = true;
+            public bool CategoryRequired { get; set; } = true;
+            public bool AccountRequired { get; set; } = true;
+            public bool ShowNotes { get; set; }
+            public List<OpsiItem> AkunOpsi { get; set; } = GitaWidyaAgniWeb.Models.Opsi.Akun();
+            public List<OpsiItem> KategoriOpsi { get; set; } = new();
+            public BayarInput Row { get; set; } = new();
+        }
+        public class BayarInput
+        {
+            public string Key { get; set; } = "";
+
+            [System.ComponentModel.DataAnnotations.Display(Name = "Akun Kas")]
+            public int? AccountId { get; set; }
+
+            [System.ComponentModel.DataAnnotations.Display(Name = "Kategori")]
+            public int? CategoryId { get; set; }
+
+            [System.ComponentModel.DataAnnotations.Display(Name = "Tanggal")]
+            public DateTime? Date { get; set; } = DateTime.Today;
+
+            [System.ComponentModel.DataAnnotations.Display(Name = "Nominal (Rp)")]
+            public decimal? Amount { get; set; }
+
+            [System.ComponentModel.DataAnnotations.Display(Name = "Catatan")]
+            public string? Notes { get; set; }
+        }
         // Pilihan SelectBox / TagBox.
         public class OpsiItem
         {

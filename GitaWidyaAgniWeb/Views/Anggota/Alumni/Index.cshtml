@@ -1,0 +1,33 @@
+@model GitaWidyaAgniWeb.Models.Anggota.AlumniVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Alumni";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-graduation-cap-line align-bottom me-1"></i> Profil Alumni</h5>
+        <p class="gwa-card-intro">Profil hanya untuk anggota berstatus Alumni (ubah status di Data Anggota). Kontak alumni yang tidak bersedia dihubungi sebaiknya tidak dibagikan.</p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel("Tambah Profil Alumni", "Alumni.add()",
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah profil"),
+            ("btn-outline-danger", "ri-delete-bin-line", "Hapus profil"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.AlumniUrl = {
+            list: '@Url.Action("List")',
+            add: '@Url.Action("Add")',
+            edit: '@Url.Action("Edit")',
+            simpanBaru: '@Url.Action("SimpanBaru")',
+            update: '@Url.Action("Update")',
+            hapus: '@Url.Action("Delete")'
+        };
+    </script>
+    <script src="~/Scripts/Anggota/Alumni.js" asp-append-version="true"></script>
+}

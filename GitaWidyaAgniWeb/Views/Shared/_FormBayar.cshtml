@@ -1,0 +1,59 @@
+@model GitaWidyaAgniWeb.Models.GwaVM.BayarForm
+@using GitaWidyaAgniWeb.Models
+@* Form pembayaran / pencairan bersama. Field yang tampil diatur BayarForm (ShowAmount, ShowCategory, ShowNotes). *@
+
+<div class="gwa-mform">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-money-dollar-circle-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Judul</div>
+            @if (!string.IsNullOrEmpty(Model.Info))
+            {
+                <div class="gwa-mform-info-meta"><span>@Model.Info</span></div>
+            }
+        </div>
+    </div>
+    @(Html.DevExtreme().Form<GwaVM.BayarInput>()
+        .ID("frmBayar")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            var akun = items.AddSimpleFor(m => m.AccountId)
+                .Editor(e => e.SelectBox().DataSource(Model.AkunOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(!Model.AccountRequired).Placeholder(Model.AccountRequired ? "Pilih akun..." : "Opsional"));
+            if (Model.AccountRequired)
+            {
+                akun.ValidationRules(r => r.AddRequired().Message("Pilih akun kas"));
+            }
+            items.AddSimpleFor(m => m.Date)
+                .ValidationRules(r => r.AddRequired().Message("Tanggal harus diisi"))
+                .Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+            if (Model.ShowCategory)
+            {
+                var kat = items.AddSimpleFor(m => m.CategoryId)
+                    .Editor(e => e.SelectBox().DataSource(Model.KategoriOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(!Model.CategoryRequired).Placeholder(Model.CategoryRequired ? "Pilih kategori..." : "Bawaan"));
+                if (Model.CategoryRequired)
+                {
+                    kat.ValidationRules(r => r.AddRequired().Message("Pilih kategori"));
+                }
+            }
+            if (Model.ShowAmount)
+            {
+                items.AddSimpleFor(m => m.Amount)
+                    .ValidationRules(r => r.AddRequired().Message("Nominal harus diisi"))
+                    .Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+            }
+            if (Model.ShowNotes)
+            {
+                items.AddSimpleFor(m => m.Notes).ColSpan(2).Editor(e => e.TextBox().MaxLength(255));
+            }
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="@Model.OnSave"><i class="ri-check-line align-bottom me-1"></i> @Model.Tombol</button>
+    </div>
+</div>

@@ -10,7 +10,7 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
 
 - **GWAShared**: dependency-free helpers (`Results/`, `Enums/`, `Extensions/`, `Utilities/`, `Models/`).
 - **GWALib**: data access and business layer, referencing GWAShared. `EF/` holds the database-first EF Core model (entities + `ModelContext`), scaffolded with Pomelo. Re-scaffolding overwrites these files: keep `OnConfiguring` commented out so the connection string is never committed.
-- **GitaWidyaAgniWeb**: ASP.NET Core 8 MVC app (Velzon template) for MB Gita Widya Agni UPN "Veteran" Jawa Timur. It has a public landing page, login and the dashboard shell; the management pages per module are still to be built (see "Web pages to build").
+- **GitaWidyaAgniWeb**: ASP.NET Core 8 MVC app (Velzon template) for MB Gita Widya Agni UPN "Veteran" Jawa Timur. It has a public landing page, login, the dashboard shell, a management page for every sidebar menu, and the Area Anggota self-service pages (see "Web pages").
 - **GWASeeder**: console that fills every table with sample data through GWALib.
 
 ## GWALib
@@ -130,6 +130,7 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
   - `WorkProgram`:
     - Maps `t_program`. The class name avoids clashing with the namespace.
     - Planned → Ongoing → Done, and Planned/Ongoing → Cancelled.
+    - `DivisionId` (bidang, active division, checked only when changed) and `Term` (`ProgramTerm`: Jangka Pendek / Panjang) are optional and group the program evaluation in the LPJ kepengurusan.
     - The previous program must come from another period. Delete is allowed only for a Planned program that nothing uses.
     - `internal GetOpenProgram` is available to other classes.
   - `ProgramTask`:
@@ -153,6 +154,12 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
   - `TimelinePlan`:
     - `StartDate` sets `PlanYear` and `PlanMonth`.
     - `LinkActivity` sets status Terjadwal and copies the activity's dates and program.
+  - `Lpj` (`t_lpj`, added 2026-11-17 with `t_program.division_id` / `term`; DDL in `database/migrations/2026-11-17_lpj.sql`, EF entity written by hand to match):
+    - LPJ Kegiatan (one per parent activity; sub-activities are refused and reported inside the parent) or LPJ Kepengurusan (one per period).
+    - The table holds only the narrative sections (introduction, background, activity kind, purpose, activity form, vision/mission, closing). Empty sections are pre-filled on create from the organization profile (description, vision, mission), the activity description and the sub-activity titles, plus a standard closing.
+    - Draft → Final (`Finalize(pdf)` stores the PDF; a kepengurusan LPJ also sets `t_period_handover.lpj_document` of the handover from that period when it is Draft / Ditolak, reported as `HandoverAttached`) → Draft (`Reopen` drops the PDF). Update and delete only while Draft. Lists skip the document blob (`GetDocument`).
+    - `GetKegiatanData()` (parent + sub-activities): schedules (activity dates and active weekly schedules), results (achievements of the linked competitions), up to 12 gallery photos, budget lines (Posted transactions of the activities, their sponsorships and funding requests; expenses with a budget item show the RAB line qty × unit price next to the realized sum), signers (Ketua Pelaksana, Bendahara, Ketua Umum).
+    - `GetKepengurusanData()`: programs of the period by bidang and jangka, parent activities of type Event / Lomba / Lainnya in the period, non-disposed assets with condition counts, assignments of the period (position, name, NIA, faculty / study program, latest photo; no address or phone), up to 24 gallery photos, signers (Ketua Umum, Sekretaris, Pembina from the profile).
 - `Lib/Transaksi/TimPelaksana/` (all new):
   - `CommitteeSection`:
     - The name is unique per activity. Delete is refused when members, rundown, checklist or applications use the section.
@@ -271,6 +278,8 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
     - Items (at least one) are created with the order and never edited separately; cancel and recreate instead. The price is copied (variant price, else product price). A ready-stock tracked product is deducted with a Terjual movement. A pre-order product must still be open and is not deducted.
     - Fulfillment Dipesan → SiapDiambil → Selesai (requires Lunas). Dipesan / SiapDiambil → Batal is refused once money was received, and returns the stock with Retur movements.
     - `ReceivePayment` creates a Posted Income transaction with `sales_order_id`, and refuses more than the remainder. `CancelPayment(transactionId)` voids it. `PaidAmount` / `PaymentStatus` come from Posted Income; a total of 0 is Lunas.
+    - `SaveGuest(GuestRow)` needs no login (public shop): name and WhatsApp number (at least 8 digits) are required, at most `GUEST_MAX_LINES` (10) lines and `GUEST_MAX_QUANTITY` (20) per line, the date is today, and `ins_by` stays NULL. To allow this, the user id is `int?` along the chain (`TransaksiHelper.GenerateNumber`, `DocumentNumberSeq.GenerateNumber`, `SalesOrderItem.CreateRow`, `ProductStockMovement.Apply`).
+    - `FindGuestOrder(number, phone)` looks up a guest order (no member buyer) by number plus phone; phones are compared as digits with a leading `0` read as `62`.
 - `Lib/Transaksi/Inventaris/` (all new):
   - `InventarisHelper` (internal):
     - `GetOutstanding` returns the quantity of an asset still out on Borrowed / Overdue requests. It loads into the context and reads Local, so status changes in the same command count.
@@ -374,7 +383,7 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
     - `Cast` runs in one transaction. It validates the voter, sets `voted_at` with a conditional `ExecuteUpdate` (`voted_at IS NULL`) to stop double voting, then stores the encrypted vote. It returns a `VoteReceipt` holding a random token, shown only once; `ballot_reference` is its SHA-256 hex.
     - `VerifyReceipt(electionId, receipt)` needs no login. `GetDataList` is a bulletin board of ballot references without choices.
   - `ElectionResult`: read-only, written by `Finalize`, sorted by rank.
-  - `ElectionAuditEvent`: read-only, written by the other classes. Events are CREATED, UPDATED, REGISTRATION_OPENED, OPENED, CLOSED, RESULT_FINALIZED, CANDIDATE_*, VOTERS_ADDED, VOTER_CHANGED and VOTER_DELETED. Individual votes are deliberately not audited. `ip_address` is only filled when a caller passes it to `internal Add`; no public method takes it yet.
+  - `ElectionAuditEvent`: read-only, written by the other classes. Events are CREATED, UPDATED, REGISTRATION_OPENED, OPENED, CLOSED, RESULT_FINALIZED, CANDIDATE_*, VOTERS_ADDED, VOTER_CHANGED and VOTER_DELETED. Individual votes are deliberately not audited. `ip_address` comes from the `internal Add` argument, else from `General/RequestInfo.IpAddress` (an AsyncLocal the web fills per request).
 - `Lib/Transaksi/Information/` (all new):
   - `InformationHelper.ValidateLink` (internal): a link is an http(s) URL or a path starting with `/` (not `//`).
   - `Announcement`:
@@ -393,15 +402,19 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
     - `Log(NewRow)` needs no login (e.g. LOGIN_FAILED); the user comes from `NewRow.UserId`. Other modules use `internal Add(context, …)`. There is no update or delete except `Purge(before)` for a job.
     - Module and Action are uppercase codes, and EntityName is the lowercase table name.
     - Old / new values accept an object or a JSON string and are stored as JSON. Values under keys containing password / token / secret / hash / key / signature become `***`. Lists do not load the old / new values.
-  - The other modules do not call `Notification.Add` / `ActivityLog.Add` yet; wiring them in is a later step.
+  - `NotifyHelper` (internal) sends in-app notifications from other modules inside their context: `ToUsers` / `ToUser`, `ToMembers` / `ToMember` (members without a user are skipped), and `ToApprovers(step)` (users from `ApprovalHelper.GetApproverUserIds`, same rules as `IsApprover`). The acting user never gets their own notification, and validation errors are swallowed so a notification never cancels the main change. Type codes and link paths (web pages) are constants there. It is wired into:
+    - Letter, FundingRequest and ProcurementRequest: submit notifies the first step's approvers, an approval that is not the last notifies the next step, and a final decision (approve / reject / revision) notifies the creator (procurement also the requesting member).
+    - LetterDisposition (target member), DuesBill.Generate (billed members), Election.OpenVoting (eligible voters), CommitteeApplication accept / reject, SalesOrder SiapDiambil (member buyer), BorrowRequest approve / reject / overdue (member borrower), Certificate create, Aspiration.Respond (non-anonymous sender), ManagementAssignment create, and Announcement on its first publish (all active members with a user).
+  - `ActivityLog`: the web logs every successful write through a global filter (see the web section). `ActivityLog` / `ElectionAuditEvent` take IP and user agent from `RequestInfo` when the caller gives none.
 - Read-only child classes (`ProcurementReceiptItem`, `BorrowItemUnit`, `SalesOrderItem`, `LetterApproval`, `LetterDisposition`, `AssetMovement`, `Document`, `Competition`) also follow the `<Name>.cs` + `<Name>.Services.cs` split.
 - Transaction order: Approval → Akses → Anggota → Program → TimPelaksana → Presensi → Keuangan → Sponsorship → Pengadaan → Merchandise → Inventaris → Surat → Prestasi → Formulir → EVoting → Information.
 
 ### Status (2026-11-16)
 
 - **Library:** all 88 `t_*` tables have a service class. Every transaction module is done: `Approval`, `Akses`, `Anggota`, `Program`, `TimPelaksana`, `Presensi`, `Keuangan`, `Sponsorship`, `Pengadaan`, `Merchandise`, `Inventaris`, `Surat`, `Prestasi`, `Formulir`, `EVoting` and `Information`.
-- **Database testing:** every module has run against MySQL through `GWASeeder`, and all 131 tables are filled. Earlier modules were also tested on the previous device. A Keuangan scenario program (`fintest`) existed in a scratchpad; it is not part of the repo.
-- **Web:** foundation, auth, landing page, login and dashboard shell are done. The management pages are not built yet (see "Web pages to build").
+- **Database testing:** every module has run against MySQL through `GWASeeder`, and all 131 tables of that time are filled (`t_lpj`, added later, is not seeded). Earlier modules were also tested on the previous device. A Keuangan scenario program (`fintest`) existed in a scratchpad; it is not part of the repo.
+- **Web (2026-11-17):** foundation, auth, landing page, login, dashboard shell, all 37 management pages and the 11 Area Anggota pages are built (see "Web pages"). Every admin page was tested over HTTPS as admin. Area Anggota pages were only tested as admin (no linked member), so their member views still need a run with a member account.
+- **Library additions for the web:** `Member.GetByUser(user)`, `UserAccount.ChangeOwnPassword(current, new, user)` (message `PASSWORD_CURRENT_INVALID`), and a fix in `MemberPoint.GetLeaderboard` (order before projecting to the record, which EF could not translate).
 
 Open items not tied to one folder:
 - **Pending user decisions:**
@@ -409,7 +422,7 @@ Open items not tied to one folder:
   - There is no column for an email-verified flag (`UserToken.VerifyEmail` only consumes the token) and none for report revision notes (`ActivityReport`). Adding them is up to the user.
 - **Commits:** `861fd70` holds the library. The web app, the seeder and the docs were committed and pushed after it. Commit only when asked.
 - **Security:** `GWALib/EF/ModelContext.cs:282` has a commented DB root password that is already in git history. Rotate that password and remove the line.
-- **Local database (this device):** `C:\Users\hisya\Documents\gitawidyaagni-sql\gitawidyaagni_create.sql` was generated from the EF model with Pomelo `GenerateCreateScript`. It has no seed data, CHECK constraints, triggers or views. MySQL 8 is in `C:\Program Files\MySQL\MySQL Server 8.0\bin` and is not on PATH.
+- **Database scripts (in the repo):** `database/gitawidyaagni_create.sql` is a schema-only `mysqldump` of the dev database (132 tables, 267 foreign keys, column COMMENTs; verified on an empty database 2026-11-17). Later schema changes go to `database/migrations/YYYY-MM-DD_<name>.sql`, then regenerate the create script (`database/README.md`). MySQL 8 is in `C:\Program Files\MySQL\MySQL Server 8.0\bin` and is not on PATH.
 
 ## GitaWidyaAgniWeb
 
@@ -519,9 +532,11 @@ ASP.NET Core 8 MVC. The template is Velzon (`wwwroot/assets`), plus DevExtreme 2
 - Stop a running web process before building from the IDE. Otherwise the build fails with `MSB3027 ... locked by "GitaWidyaAgniWeb"`.
 - The `Secure` auth cookie is not sent over plain `http://` by non-browser clients. To test logged-in pages with curl, run the app on `https://localhost:<port>` and use `curl -k` with a cookie jar.
 
-### Web pages to build
+### Web pages
 
-The sidebar menu and the Controller Action rows already exist in the database (seeded by `GWASeeder`). Done (DevExtreme pattern): `Akses/User`, `Akses/Role`, `Akses/Menu`, `Pengaturan/Pengaturan` (2026-11-16). Every other link below is still a 404.
+The sidebar menu and the Controller Action rows exist in the database (seeded by `GWASeeder`). Every page in the table below is built with the DevExtreme pattern (2026-11-16 / 17). Areas follow the sidebar header: `Akses`, `Pengaturan`, `Organisasi`, `Anggota`, `ProgramKerja`, `Kegiatan`, `Keuangan`, `Inventaris`, `Pengadaan`, `Merchandise`, `Kemitraan`, `Persuratan`, `Prestasi`, `Formulir`, `EVoting`, `Informasi`, plus `AreaAnggota` for the member pages.
+
+Public pages added on the landing controller: `/rekrutmen/{id?}` (open recruitment apply), `/sertifikat/verifikasi?kode=` (certificate check), `/toko` (guest merchandise order + tracking) and `/aset/{unitCode}` (asset unit detail from a QR label scan).
 
 **Rules for each page:**
 - Use the controller name exactly as seeded. The access catalog (controllers, actions, menu, roles) is `GWASeeder/Seed.Akses.cs`.
@@ -550,7 +565,8 @@ Suggested order: Akses & Pengaturan first, so admins can manage roles and menus 
 | 10 | Anggota › Data Anggota | `Anggota` | `Member`, `MemberPhoto`, link to `UserAccount` |
 | 11 | Anggota › Alumni | `Alumni` | `AlumniProfile` |
 | 12 | Anggota › Rekrutmen | `Rekrutmen` | `Recruitment` (open / close), `RecruitmentApplicant` (review), `Form` for extra questions; public apply page (`Apply` + `FormResponse.SubmitApplicant`) |
-| 13 | Program Kerja | `ProgramKerja` | `WorkProgram`, `ProgramTask`, `TimelinePlan` |
+| 13 | Program Kerja | `ProgramKerja` | `WorkProgram` (bidang + jangka), `ProgramTask`, `TimelinePlan` |
+| 13a | LPJ (area `Lpj`, `/Lpj/Lpj`) | `Lpj` | `Lpj` (narrative form, preview, finalize to PDF, reopen, download); roles KETUA, WAKIL, SEKRETARIS |
 | 14 | Kegiatan › Daftar Kegiatan | `Kegiatan` | `Activity`, `ActivityParticipant`, `ActivityCollaborator`, `ActivityReport` |
 | 15 | Kegiatan › Tim Pelaksana | `TimPelaksana` | `CommitteeSection`, `CommitteeMember`, `CommitteeRecruitment` / `CommitteeApplication`, `ActivityRundown`, `ActivityChecklist` (+ `GenerateFromTemplate`, `ChecklistTemplate` master), `ActivityTripMember` |
 | 16 | Kegiatan › Presensi | `Presensi` | `ActivitySchedule` (+ `GenerateSessions`), `AttendanceSession` (open with QR / close / cancel), `AttendanceRecord` (`CheckIn` / `CheckOut` with camera + location, `SetManual`), `MeetingMinutes` |
@@ -576,28 +592,53 @@ Suggested order: Akses & Pengaturan first, so admins can manage roles and menus 
 | 36 | Informasi › Berita | `Berita` | `Announcement` (publish / archive, cover) |
 | 37 | Informasi › Banner | `Banner` | `Banner` (image, schedule) |
 
-**Member self-service pages** (`[LoginOnly]`). The menu header "Area Anggota" is seeded for every role, with controllers `ProfilSaya`, `PresensiSaya`, `KegiatanSaya`, `IuranSaya`, `PeminjamanSaya`, `Toko`, `FormulirSaya`, `Pemilihan`, `PrestasiSaya`, `DisposisiSaya` and `Notifikasi` (only `Index` registered, need_auth 0). `Toko` must also allow merchandise orders without login (guest buyer name + phone), which needs a new public `SalesOrder` method because `Save` requires a user.
-- Profil saya.
-- Presensi scan QR.
-- Iuran saya.
-- Kegiatan dan daftar peserta.
-- Lamaran tim pelaksana.
-- Peminjaman dan pesan merchandise.
-- Isi formulir dan kirim aspirasi.
-- Memilih di e-voting.
-- Prestasi, poin dan sertifikat saya.
-- Disposisi untuk saya.
-- Notifikasi (`Notification.GetMyList` / `MarkRead`, plus a bell in the header).
+**Member self-service pages** (area `AreaAnggota`, URL `/AreaAnggota/<Controller>`). The menu header "Area Anggota" is seeded for every role, with controllers `ProfilSaya`, `PresensiSaya`, `KegiatanSaya`, `IuranSaya`, `PeminjamanSaya`, `Toko`, `FormulirSaya`, `Pemilihan`, `PrestasiSaya`, `DisposisiSaya` and `Notifikasi` (only `Index` registered, need_auth 0).
+- They inherit `Controllers/AreaAnggota/AreaAnggotaController` (`[Area("AreaAnggota"), LoginOnly]`). `SayaAtauNull()` / `Saya()` return the logged-in user's member (`Member.GetByUser`). Without a member the page shows `Views/AreaAnggota/_BukanAnggota.cshtml`.
+- Every action uses the logged-in member, never a member id from the request. Cancelling or finishing a child row (participant, application, order, borrow request, disposition, certificate download) first checks that the row belongs to that member.
+- The views are plain Bootstrap cards (no DevExtreme grids) with small inline scripts.
+- Pages:
+  - `ProfilSaya`: contact edit, own photo, positions and divisions, change password (old password required).
+  - `PresensiSaya`: QR scan with `js/html5-qrcode.min.js` (2.3.8, or type the code), selfie upload, geolocation, check-in / check-out, history.
+  - `KegiatanSaya`: register / cancel as participant, apply / withdraw for open committee recruitments (the member's own form response is attached when the recruitment has a form), committee duties.
+  - `IuranSaya`: own dues bills (read only).
+  - `PeminjamanSaya`: borrow request as member (borrower type Anggota) and cancel.
+  - `Toko`: catalog with variants, client-side cart, order as member, own orders and cancel.
+  - `FormulirSaya`: fill open forms (`Isi`; answers posted as FormData `q{id}` / `f{id}`), send and delete own aspirations.
+  - `Pemilihan`: ballot, `ElectionVote.Cast` with a one-time receipt dialog, receipt check, final results.
+  - `PrestasiSaya`: achievements, points with rank, competitions, certificates with download and verification link.
+  - `DisposisiSaya`: own dispositions, mark done.
+  - `Notifikasi`: list, mark read / all read, delete. `_Header` shows a bell with the unread count (`Notification.GetUnreadCount`).
+- Guests order on the public `/toko` page (`LandingController.Toko`, `Models/Landing/TokoVM.cs`): catalog with a quantity per product / variant (form keys `Qty[{productId}-{variantId or 0}]`), name + WhatsApp, a honeypot field `Website`, `SalesOrder.SaveGuest`, a WhatsApp confirm link to `m_site_setting.whatsapp`, and order tracking by number + WhatsApp (`FindGuestOrder`). Product photos for it come from `/Landing/ProdukFoto?key=` (active products only). `TokoProduk.LoadKatalog()` is shared with Area Anggota `Toko`, which links non-members to `/toko`. The landing navbar and footer have a Toko link.
 
-**Other web work:**
-- Wire `Notification.Add` / `ActivityLog.Add` into the modules.
-- A hosted service for the scheduled jobs (README "Job terjadwal") and a `MessageOutbox` sender.
-- Pass `ip_address` to election audit events.
-- Theme `_DevExtremeLayout` if DevExtreme pages are used.
+**Cross-cutting web services:**
+- `Infrastructure/ActivityLogFilter` (global): every successful non-GET action of a logged-in user that returns `Json(Response)` with Status Success is written with `ActivityLog.LogAsync`. Module = area (else controller), Action = action name, EntityName = controller, EntityId = `Data.Id` when present, NewValue = the action arguments as JSON (files become name + size; GWALib masks secret-looking keys, including `Key`). `Notifikasi` and `Login` are skipped. A logging failure only writes a warning.
+- `RequestInfoMiddleware` (after `UseRouting`) fills `GWALib.General.RequestInfo` with the IP and user agent.
+- `Infrastructure/Jobs/ScheduledJobService` (hosted service, checked every minute): `SEND_OUTBOX` 1 min, `CLOSE_EXPIRED_ELECTION` 5 min, `MARK_BORROW_OVERDUE` 30 min, `GENERATE_ATTENDANCE_SESSIONS` 6 h (today to +7 days), `PURGE_OLD_DATA` daily (notifications 90 days, activity log 365, tokens 30, job log 90).
+  - Each run is logged with `ScheduledJobLog`, and the next run is computed from the last logged run, so a restart does not repeat daily jobs. `SEND_OUTBOX` writes a log row only when messages are due.
+  - Config section `Jobs`: `Enabled` (default true; enable it on one instance only), `Username` (the job user; empty = first active SUPERADMIN user), plus the retention days and `SessionDaysAhead`.
+- `Infrastructure/Jobs/MessageSender`: email over SMTP (`Smtp:Host/Port/EnableSsl/Username/Password/From/FromName`) and WhatsApp over a Fonnte-style HTTP gateway (`WhatsApp:Url`, `WhatsApp:Token` sent as `Authorization`; POST form `target` + `message`; a body with `"status":false` counts as failed). A channel without configuration is not sent and its messages stay Menunggu. Put the password and token in user-secrets.
+- `_DevExtremeLayout` stays unthemed and unused (`_Layout` loads DevExtreme itself).
+- **DevExpress Reports** (`DevExpress.AspNetCore.Reporting` 23.2.5; `NuGet.config` also points to `C:\Program Files\DevExpress 23.2\Components\System\Components\Packages`). Printed documents use XtraReport + Web Document Viewer, not browser printing.
+  - `Program.cs`: `AddDevExpressControls`, `ConfigureReportingServices(... UseCachedReportSourceBuilder())`, `UseDevExpressControls` after `UseStaticFiles`.
+  - `Controllers/ReportViewerController` (route `DXXRDV`) is `[LoginOnly, IgnoreAntiforgeryToken]`, because the client viewer sends no antiforgery header.
+  - The client viewer files are in `wwwroot/lib/dxreporting-23.2.5` (`devexpress-reporting` and `@devexpress/analytics-core` 23.2.5 from unpkg, knockout from the DevExtreme install). jQuery and `dx.all.js` come from the project, which is the same 23.2.5.
+  - Pattern: the page action builds the report and returns a standalone viewer view (`Layout = null`, `Html.DevExpress().WebDocumentViewer(...).Bind(report)`). The page JS loads that view in an iframe inside `staticBackdropFullScreen`.
+  - Reports are code-based classes in `Reports/` (no .repx). Controls created in code use the default unit (1/100 inch) even when `ReportUnit` is changed, so write sizes in 0.1 mm and convert them (`M` / `R` helpers).
+  - Inventaris QR labels:
+    - `Reports/LabelQrUnitReport` is A4 with 4 columns of 46 × 53 mm labels (logo, organization name, QR, code, asset name + serial).
+    - The QR holds the public URL `{App:PublicUrl or request host}/aset/{unitCode}` (`Infrastructure/AsetLabel.PublicUrl`). Set `App:PublicUrl` to the production domain before printing real labels.
+    - Scanning opens `LandingController.AsetPublik` without login: unit code, asset name / code, category, brand, serial, condition, unit status, location, specification, the first asset photo (`/Landing/AsetFoto?kode=`), and a WhatsApp link to the organization. It never shows cost, rates or borrowers. Unknown or deleted units return 404, and a logged-in user also gets a dashboard link.
+    - Internal scanners (borrow checkout and return in `Peminjaman.js` / `PeminjamanVM`, and the unit code on inspection / maintenance in `AsetVM.Method.UnitId`) accept the URL or the bare code. `AsetLabel.KodeUnit` on the server, and `unitCode()` in `Peminjaman.js`, take the last path segment in upper case.
+    - `Aset/CetakLabel` (POST, Edit) checks that the units belong to the asset, marks them label-printed and stores the rows in `IMemoryCache` for 10 minutes, keyed by user + id.
+    - `Aset/LabelQr?id=` (Index) shows the viewer. The asset page no longer loads `js/qrcode.min.js`; Presensi still uses it.
+  - The standalone viewer page is shared: `Views/Shared/_ReportViewer.cshtml` (model = any `XtraReport`), opened with `AppUI.openReport(title, url)` (iframe in `staticBackdropFullScreen`).
+  - LPJ: `Reports/LpjReport` (`LpjReport.Kegiatan` / `Kepengurusan`) follows the MB GWA LPJ templates: cover (title, logo, institution, year), numbered chapters, signatures, then appendices (documentation photos 2 per row; budget realization with income, expenses per category with RAB vs realization vs difference, and a summary / inventory list / officers table with photos). Each block is a `DetailReportBand` over `List<Row>` (C1..C6, Bold, Shade, Bullet, Img); a chapter heading is a `GroupHeader` WithFirstDetail above paragraphs and a `ReportHeader` above tables (two field-less group headers print in the wrong order). Narrative lines starting with `- ` print as bullets. The signing city is site setting `kota` (fallback Surabaya); the logo is the organization logo, else `assets/images/gwa-logo.png`.
+  - `Lpj/Pratinjau?key=` builds the report from current data; `Lpj/Finalisasi` (Process) exports it with `ExportToPdf` and calls `Lpj.Finalize`; `Lpj/Unduh?key=` returns the stored PDF.
+  - The DevExpress install on this device is a trial: exported PDFs carry "created using the trial version of DevExpress components". A licensed install removes it.
 
 ## GWASeeder
 
-A console project, part of the solution, that fills every table (131 of 131) with sample data for MB Gita Widya Agni through the GWALib services, so the validation rules run too.
+A console project, part of the solution, that fills every table except `t_lpj` (131 of 132) with sample data for MB Gita Widya Agni through the GWALib services, so the validation rules run too.
 
 - **Run:** `dotnet run --project GWASeeder` (empty database), `-- --reset` (deletes every row of every model table with FOREIGN_KEY_CHECKS off, after typing RESET or `--yes`, then seeds) or `-- --sync-akses` (access catalog only, on a seeded database). Other options: `--evoting-key <base64>`, `--admin-password <pw>`.
   - The connection string comes from env `GWA_DB`, then `GitaWidyaAgniWeb/appsettings.Development.json`, then `appsettings.json`.
@@ -620,7 +661,7 @@ A console project, part of the solution, that fills every table (131 of 131) wit
 ## Schema sources
 
 - The ERD artifact is at https://claude.ai/artifact/MvmojvM5z8kKz7SEwtjdJV. It has 131 tables in modules `inti`, `akses`, `sistem`, `anggota`, `program`, `panitia`, `presensi`, `keuangan`, `mitra`, `sponsor`, `pengadaan`, `danus`, `inventaris`, `surat`, `evoting`, `lomba`, and others.
-- The MySQL 8 DDL is at `C:\Users\Royan\Documents\gitawidyaagni-sql\gitawidyaagni_create.sql` (database `gitawidyaagni`). The meaning of every coded `int` column is in its `COMMENT` (`1=..., 2=...`).
+- The MySQL 8 DDL is `database/gitawidyaagni_create.sql` (database `gitawidyaagni`). The meaning of every coded `int` column is in its `COMMENT` (`1=..., 2=...`).
 - `m_*` tables are masters and `t_*` tables are transactions.
 - There is no AUTO_INCREMENT: ids come from `m_sequence`, except `t_election_vote.id`, which is random.
 

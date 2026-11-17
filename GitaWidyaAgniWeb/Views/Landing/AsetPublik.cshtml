@@ -1,0 +1,87 @@
+@model GitaWidyaAgniWeb.Models.Landing.AsetPublikVM
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = Model.Aset != null ? Model.Unit!.UnitCode + " · " + Model.Aset.Name : "Aset tidak ditemukan";
+    ViewData["SolidNav"] = true;
+    var id = new System.Globalization.CultureInfo("id-ID");
+    var u = Model.Unit;
+    var a = Model.Aset;
+    var statusCss = u?.Status switch
+    {
+        AssetUnitStatus.Tersedia => "ok",
+        AssetUnitStatus.Dipinjam => "busy",
+        AssetUnitStatus.Perawatan => "busy",
+        _ => "off"
+    };
+}
+<section class="page-hero">
+    <div class="gwa-container" style="max-width:860px">
+        <span class="eyebrow">Inventaris @Model.OrgName</span>
+        <h1 class="section-title">@(a?.Name ?? "Aset tidak ditemukan")</h1>
+        @if (u != null)
+        {
+            <p class="mb-0 sub"><span class="shop-code">@u.UnitCode</span></p>
+        }
+    </div>
+</section>
+
+<section class="pb-5">
+    <div class="gwa-container">
+        <div class="article">
+            @if (a == null || u == null)
+            {
+                <div class="apply-alert err" role="alert">
+                    <i class="ri-error-warning-line" aria-hidden="true"></i>
+                    <div><strong>Kode unit @Model.Kode tidak dikenal.</strong> Label mungkin sudah tidak berlaku. Hubungi pengurus inventaris.</div>
+                </div>
+            }
+            else
+            {
+                @if (Model.AdaFoto)
+                {
+                    <div class="cover asset-photo">
+                        <img src="@Url.Action("AsetFoto", "Landing", new { kode = u.UnitCode })" alt="Foto @a.Name" loading="lazy" />
+                    </div>
+                }
+                <div class="asset-status @statusCss" role="status">
+                    <i class="@(statusCss == "ok" ? "ri-checkbox-circle-line" : statusCss == "busy" ? "ri-time-line" : "ri-close-circle-line")" aria-hidden="true"></i>
+                    <div>
+                        <strong>@EnumHelper.Text(u.Status)</strong>
+                        @if (a.Status == AssetStatus.Disposed)
+                        {
+                            <span>· aset sudah dihapuskan dari inventaris</span>
+                        }
+                    </div>
+                </div>
+                <dl class="verify-list">
+                    <dt>Kode unit</dt><dd>@u.UnitCode</dd>
+                    <dt>Nama aset</dt><dd>@a.Name</dd>
+                    <dt>Kode aset</dt><dd>@a.AssetCode</dd>
+                    @if (!string.IsNullOrWhiteSpace(Model.Kategori)) { <dt>Kategori</dt><dd>@Model.Kategori</dd> }
+                    @if (!string.IsNullOrWhiteSpace(a.Brand)) { <dt>Merek</dt><dd>@a.Brand</dd> }
+                    @if (!string.IsNullOrWhiteSpace(u.SerialNumber)) { <dt>Nomor seri</dt><dd>@u.SerialNumber</dd> }
+                    <dt>Kondisi</dt><dd>@EnumHelper.Text(u.UnitCondition)</dd>
+                    @if (!string.IsNullOrWhiteSpace(a.Location)) { <dt>Lokasi simpan</dt><dd>@a.Location</dd> }
+                    @if (!string.IsNullOrWhiteSpace(a.Specification)) { <dt>Spesifikasi</dt><dd style="white-space:pre-line">@a.Specification</dd> }
+                    @if (u.LabelPrintedAt.HasValue) { <dt>Label dicetak</dt><dd>@u.LabelPrintedAt.Value.ToString("d MMMM yyyy", id)</dd> }
+                </dl>
+                <p class="asset-note">Aset ini milik @Model.OrgName. Bila menemukan alat ini di luar tempatnya, mohon kembalikan atau hubungi pengurus.</p>
+                <div class="hero-actions mt-3">
+                    @if (!string.IsNullOrWhiteSpace(Model.WhatsApp))
+                    {
+                        <a class="btn-gwa btn-flame" target="_blank" rel="noopener"
+                           href="https://wa.me/@Model.WhatsApp?text=@Uri.EscapeDataString("Halo, saya ingin bertanya tentang aset " + a.Name + " (" + u.UnitCode + ").")">
+                            <i class="ri-whatsapp-line" aria-hidden="true"></i> Hubungi pengurus
+                        </a>
+                    }
+                    @if (Model.Login)
+                    {
+                        <a class="btn-gwa btn-outline-ink" href="@Url.Action("Index", "Aset", new { area = "Inventaris" })"><i class="ri-dashboard-2-line" aria-hidden="true"></i> Kelola di dashboard</a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</section>

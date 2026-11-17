@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.TimPelaksanaVM.ListTemplate
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<TimPelaksanaVM.TemplateRow>()
+    .ID("tblTemplate")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Template Checklist")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Template").CssClass("fw-medium");
+        columns.AddFor(m => m.Jenis).Caption("Jenis Kegiatan");
+        columns.AddFor(m => m.Description).Caption("Keterangan");
+        columns.AddFor(m => m.JumlahItem).Caption("Item").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("TimPelaksana.templateActionTemplate");
+    })
+)

@@ -1,0 +1,58 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.PeriodeVM.ItemIndex
+@using GitaWidyaAgniWeb.Models.Organisasi
+@* Modal item serah terima: panel tambah (hanya Draft / Ditolak) + grid _ItemList. *@
+
+<div class="gwa-mform" id="serahTerimaItem" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-list-check-2"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Judul</div>
+            <div class="gwa-mform-info-meta"><span>ID referensi dicek ke tabel sesuai jenis (mis. Aset → id aset, MoU Aktif → id MoU). Kosongkan bila tidak merujuk data.</span></div>
+        </div>
+    </div>
+
+    @if (Model.BisaUbah)
+    {
+        <div class="gwa-mform-section">
+            <span class="gwa-mform-section-title">Tambah item</span>
+        </div>
+        <div class="gwa-mform-add">
+            <div class="gwa-mform-add-form">
+                @(Html.DevExtreme().Form<PeriodeVM.NewItem>()
+                    .ID("frmSerahTerimaItem")
+                    .FormData(Model.Input)
+                    .LabelLocation(FormLabelLocation.Top)
+                    .ShowColonAfterLabel(false)
+                    .ColCount(4)
+                    .ColCountByScreen(c => c.Xs(1).Sm(1))
+                    .Items(items =>
+                    {
+                        items.AddSimpleFor(m => m.ItemType)
+                            .Editor(e => e.SelectBox().DataSource(Model.JenisOpsi).ValueExpr("Value").DisplayExpr("Text"));
+                        items.AddSimpleFor(m => m.Description).ColSpan(3)
+                            .Editor(e => e.TextBox().MaxLength(255));
+                        items.AddSimpleFor(m => m.RefId)
+                            .Editor(e => e.NumberBox().Min(1).Format("#0"));
+                        items.AddSimpleFor(m => m.Amount)
+                            .Editor(e => e.NumberBox().Format("#,##0.##"));
+                        items.AddSimpleFor(m => m.Quantity)
+                            .Editor(e => e.NumberBox().Min(0).Format("#0"));
+                        items.AddSimpleFor(m => m.ItemCondition)
+                            .Editor(e => e.SelectBox().DataSource(Model.KondisiOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true));
+                        items.AddSimpleFor(m => m.Notes).ColSpan(4)
+                            .Editor(e => e.TextBox().MaxLength(255));
+                    })
+                )
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="Periode.addItem()"><i class="ri-add-line align-bottom me-1"></i> Tambah</button>
+        </div>
+    }
+
+    <div id="serahTerimaItemTarget">
+        <partial name="~/Views/Organisasi/Periode/_ItemList.cshtml" model="Model.List" />
+    </div>
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

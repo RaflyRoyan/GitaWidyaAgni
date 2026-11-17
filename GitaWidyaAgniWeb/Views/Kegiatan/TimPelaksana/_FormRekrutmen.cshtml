@@ -1,0 +1,26 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.TimPelaksanaVM.AddRekrutmen
+@using GitaWidyaAgniWeb.Models.Kegiatan
+@{ var isEdit = Model is TimPelaksanaVM.EditRekrutmen; }
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<TimPelaksanaVM.NewRekrutmen>()
+        .ID("frmRekrutmen")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.OpenAt).Editor(e => e.DateBox().Type(DateBoxType.DateTime).DisplayFormat("dd MMM yyyy HH:mm").DateSerializationFormat("yyyy-MM-ddTHH:mm:ss"));
+            items.AddSimpleFor(m => m.CloseAt).Editor(e => e.DateBox().Type(DateBoxType.DateTime).DisplayFormat("dd MMM yyyy HH:mm").DateSerializationFormat("yyyy-MM-ddTHH:mm:ss"));
+            items.AddSimpleFor(m => m.Quota).Editor(e => e.NumberBox().Min(1).Format("#0").ShowClearButton(true));
+            items.AddSimpleFor(m => m.FormId).Editor(e => e.SelectBox().DataSource(Model.FormulirOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Tanpa formulir"));
+        })
+    )
+    <p class="gwa-mform-note">Formulir tambahan berjenis Pendaftaran Rekrutmen dibuat di menu Formulir. Anggota melamar dari Area Anggota › Kegiatan Saya.</p>
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="TimPelaksana.save('Rekrutmen', @(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

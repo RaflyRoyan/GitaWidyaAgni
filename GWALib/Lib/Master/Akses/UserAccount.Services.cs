@@ -141,6 +141,23 @@ namespace GWALib.Lib.Master.Akses
             var row = context.MUsers.SingleOrDefault(x => x.Id == Id);
             return row != null && IsPasswordValid(row, password);
         }
+        // Ganti password sendiri (Area Anggota): password lama wajib benar. Reset oleh admin memakai ChangePassword.
+        public static Response<UserAccount> ChangeOwnPassword(string currentPassword, string newPassword, string user)
+        {
+            return ServiceHandler.Handle(() =>
+            {
+                var userId = ValidateUtility.ValidateUser(user);
+                using var context = DBClass.GetContext();
+                var row = GetRow(context, userId);
+                if (!IsPasswordValid(row, currentPassword ?? string.Empty))
+                {
+                    throw new ArgumentException(ExceptionMessage.PASSWORD_CURRENT_INVALID);
+                }
+                SetRowPassword(row, newPassword, userId);
+                context.SaveChanges();
+                return new UserAccount(row);
+            }, data => ResponseFactory.DataUpdated(data), msg => ResponseFactory.DataUpdateFailed<UserAccount>(msg));
+        }
         #endregion
 
         #region ASYNC

@@ -1,4 +1,5 @@
 using GWALib.General;
+using GWALib.Lib.Transaksi.Information;
 using GWALib.General.Utilities;
 using GWALib.Lib.Master.Anggota;
 using GWALib.Lib.Transaksi.Approval;
@@ -478,7 +479,7 @@ namespace GWALib.Lib.Transaksi.Pengadaan
             {
                 throw new ArgumentException(ExceptionMessage.PROCUREMENT_ITEM_REQUIRED);
             }
-            ApprovalHelper.GetActiveSteps(context, DOCUMENT_TYPE);
+            var steps = ApprovalHelper.GetActiveSteps(context, DOCUMENT_TYPE);
             RecalculateEstimate(context, row, userId);
             if (row.BudgetItemId != null)
             {
@@ -495,6 +496,8 @@ namespace GWALib.Lib.Transaksi.Pengadaan
                 row.IsOverBudget = (int)BudgetCheck.SesuaiAnggaran;
             }
             row.Status = (int)ProcurementStatus.Diajukan;
+            NotifyHelper.ToApprovers(context, steps[0], $"Pengadaan {row.RequestNumber} menunggu persetujuan", row.Title,
+                NotifyHelper.LINK_PROCUREMENT, "t_procurement_request", row.Id, userId);
         }
         // Langkah berjalan = langkah pertama yang belum Setuju sejak permintaan revisi terakhir.
         private static void SetDecision(EF.ModelContext context, EF.TProcurementRequest row, ProcurementDecision decision, string? note,
@@ -536,6 +539,26 @@ namespace GWALib.Lib.Transaksi.Pengadaan
             }
             row.UpdDate = DateTime.Now;
             row.UpdBy = userId;
+
+            if (row.Status == (int)ProcurementStatus.Diajukan)
+            {
+                var next = steps[steps.IndexOf(step) + 1];
+                NotifyHelper.ToApprovers(context, next, $"Pengadaan {row.RequestNumber} menunggu persetujuan", row.Title,
+                    NotifyHelper.LINK_PROCUREMENT, "t_procurement_request", row.Id, userId);
+            }
+            else
+            {
+                var result = decision switch
+                {
+                    ProcurementDecision.Setuju => "disetujui",
+                    ProcurementDecision.Tolak => "ditolak",
+                    _ => "perlu direvisi"
+                };
+                var title = $"Pengadaan {row.RequestNumber} {result}";
+                var requester = context.MMembers.Where(x => x.Id == row.RequestedByMemberId).Select(x => x.UserId).FirstOrDefault();
+                NotifyHelper.ToUsers(context, new[] { row.InsBy, requester }, NotifyHelper.TYPE_APPROVAL_RESULT, title, note ?? row.Title,
+                    NotifyHelper.LINK_PROCUREMENT, "t_procurement_request", row.Id, userId);
+            }
         }
         private static void SetPurchase(EF.ModelContext context, EF.TProcurementRequest row, int? fundingRequestId, int userId)
         {

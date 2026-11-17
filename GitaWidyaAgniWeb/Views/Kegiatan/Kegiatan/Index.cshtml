@@ -1,0 +1,58 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.KegiatanVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Daftar Kegiatan";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-calendar-line align-bottom me-1"></i> Kegiatan</h5>
+        <p class="gwa-card-intro">Kegiatan publik tampil di landing page. Audiens menentukan siapa yang wajib presensi. Kegiatan yang sudah Selesai mengunci data turunannya.</p>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs gwa-tabs mb-3" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabKegiatan" data-tab="Kegiatan" type="button" role="tab"><i class="ri-calendar-line me-1"></i>Kegiatan</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabLaporan" data-tab="Laporan" type="button" role="tab"><i class="ri-file-chart-line me-1"></i>Laporan Kegiatan</button></li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tabKegiatan" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Kegiatan", "Kegiatan.add(\"Kegiatan\")",
+                    ("btn-outline-success", "ri-group-line", "Peserta"),
+                    ("btn-outline-info", "ri-handshake-line", "Kolaborator / mitra"),
+                    ("btn-outline-primary", "ri-play-circle-line", "Mulai / selesaikan"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah kegiatan"),
+                    ("btn-outline-secondary", "ri-close-circle-line", "Batalkan"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus (direncanakan, tanpa data turunan)")) { LegendId = "legendKegiatan" }' />
+                <div id="targetKegiatan" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabLaporan" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Laporan", "Kegiatan.add(\"Laporan\")",
+                    ("btn-outline-info", "ri-file-download-line", "Unduh berkas"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah laporan"),
+                    ("btn-outline-primary", "ri-send-plane-line", "Ajukan"),
+                    ("btn-outline-success", "ri-check-double-line", "Setujui"),
+                    ("btn-outline-secondary", "ri-arrow-go-back-line", "Minta revisi"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus")) { LegendId = "legendLaporan" }' />
+                <div id="targetLaporan" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.KegiatanUrl = {};
+        ['Kegiatan', 'Laporan'].forEach(function (t) {
+            ['List', 'Add', 'Edit', 'Simpan', 'Update', 'Status', 'Hapus'].forEach(function (a) {
+                window.KegiatanUrl[a.toLowerCase() + t] = '@Url.Action("__")'.replace('__', a + t);
+            });
+        });
+        ['Peserta', 'PesertaList', 'TambahPeserta', 'KonfirmasiPeserta', 'BatalPeserta', 'Kolaborator', 'KolaboratorList', 'TambahKolaborator',
+            'ResponKolaborator', 'HapusKolaborator', 'BerkasLaporan', 'AjukanLaporan', 'SetujuiLaporan', 'RevisiLaporan'].forEach(function (a) {
+            window.KegiatanUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Kegiatan/Kegiatan.js" asp-append-version="true"></script>
+}

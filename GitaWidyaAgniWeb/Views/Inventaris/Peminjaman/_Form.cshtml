@@ -1,0 +1,56 @@
+@model GitaWidyaAgniWeb.Models.Inventaris.PeminjamanVM.Add
+@using GitaWidyaAgniWeb.Models.Inventaris
+@* Anggota: pilih anggota. Organisasi: pilih mitra. Perorangan luar: isi nama. Seikhlasnya hanya untuk anggota. Item lain ditambah dari Detail. *@
+@{
+    var editModel = Model as PeminjamanVM.Edit;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-swap-box-line"></i></span>
+            <div><div class="gwa-mform-info-title">@editModel!.Nomor</div><div class="gwa-mform-info-meta"><span>Item diubah dari tombol Detail.</span></div></div>
+        </div>
+    }
+    @(Html.DevExtreme().Form<PeminjamanVM.NewRow>()
+        .ID("frmPeminjaman")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddGroup().Caption("Peminjam").ColSpan(3).ColCount(3).Items(g =>
+            {
+                g.AddSimpleFor(m => m.BorrowerType).Editor(e => e.SelectBox().DataSource(Model.JenisOpsi).ValueExpr("Value").DisplayExpr("Text"));
+                g.AddSimpleFor(m => m.MemberId).Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true).Placeholder("Untuk jenis Anggota"));
+                g.AddSimpleFor(m => m.ExternalPartyId).Editor(e => e.SelectBox().DataSource(Model.MitraOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true).Placeholder("Untuk jenis Organisasi"));
+                g.AddSimpleFor(m => m.BorrowerName).Editor(e => e.TextBox().MaxLength(150).Placeholder("Kosong = nama anggota / mitra"));
+                g.AddSimpleFor(m => m.BorrowerInstitution).Editor(e => e.TextBox().MaxLength(150));
+                g.AddSimpleFor(m => m.BorrowerPhone).Editor(e => e.TextBox().MaxLength(30));
+                g.AddSimpleFor(m => m.BorrowerEmail).Editor(e => e.TextBox().MaxLength(100));
+                g.AddSimpleFor(m => m.Guarantee).ColSpan(2).Editor(e => e.TextBox().MaxLength(255).Placeholder("mis. KTM / KTP"));
+            });
+            items.AddGroup().Caption("Peminjaman").ColSpan(3).ColCount(3).Items(g =>
+            {
+                g.AddSimpleFor(m => m.Purpose).ColSpan(3).Editor(e => e.TextBox().MaxLength(255));
+                g.AddSimpleFor(m => m.BorrowDate).Editor(e => e.DateBox().Type(DateBoxType.DateTime).DisplayFormat("dd MMM yyyy HH:mm").DateSerializationFormat("yyyy-MM-ddTHH:mm:ss"));
+                g.AddSimpleFor(m => m.ExpectedReturnDate).Editor(e => e.DateBox().Type(DateBoxType.DateTime).DisplayFormat("dd MMM yyyy HH:mm").DateSerializationFormat("yyyy-MM-ddTHH:mm:ss"));
+                g.AddSimpleFor(m => m.RentalScheme).Editor(e => e.SelectBox().DataSource(Model.SkemaOpsi).ValueExpr("Value").DisplayExpr("Text"));
+                if (!isEdit)
+                {
+                    g.AddSimpleFor(m => m.AssetId).ColSpan(2).Editor(e => e.SelectBox().DataSource(Model.AsetOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true));
+                    g.AddSimpleFor(m => m.Quantity).Editor(e => e.NumberBox().Min(1).ShowSpinButtons(true).Format("#0"));
+                }
+                g.AddSimpleFor(m => m.Notes).ColSpan(3).Editor(e => e.TextArea().Height(50).MaxLength(500));
+            });
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Peminjaman.@(isEdit ? "update" : "save")()"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

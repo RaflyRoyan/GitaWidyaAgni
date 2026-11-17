@@ -316,7 +316,11 @@
                         }
                     </p>
                 </div>
-                <div class="col-lg-4 text-lg-end">
+                <div class="col-lg-4 text-lg-end d-flex flex-wrap gap-2 justify-content-lg-end">
+                    @if (Model.OpenRecruitment != null)
+                    {
+                        <a href="@Url.Action("Rekrutmen", "Landing", new { id = Model.OpenRecruitment.Id })" class="btn-gwa btn-gold"><i class="ri-user-add-line" aria-hidden="true"></i> Daftar Sekarang</a>
+                    }
                     @if (!string.IsNullOrWhiteSpace(Model.Site.WhatsApp))
                     {
                         <a href="https://wa.me/@Model.Site.WhatsApp" target="_blank" rel="noopener" class="btn-gwa btn-flame"><i class="ri-whatsapp-line" aria-hidden="true"></i> Hubungi Humas</a>

@@ -45,7 +45,9 @@ namespace GitaWidyaAgniWeb.Infrastructure
         {
             try
             {
-                return PartialView($"{URLView}_{namaView ?? actionName}.cshtml", buatModel());
+                // namaView diawali "~/" = path lengkap (mis. ~/Views/Shared/_FormBayar.cshtml).
+                var view = namaView != null && namaView.StartsWith("~/") ? namaView : $"{URLView}_{namaView ?? actionName}.cshtml";
+                return PartialView(view, buatModel());
             }
             catch (ArgumentException e)
             {
@@ -56,6 +58,9 @@ namespace GitaWidyaAgniWeb.Infrastructure
                 return JsonServerError(ex);
             }
         }
+
+        /// <summary>Modal form pembayaran bersama (Views/Shared/_FormBayar.cshtml).</summary>
+        protected IActionResult FormBayar(Func<Models.GwaVM.BayarForm> buatModel) => Bagian(buatModel, "~/Views/Shared/_FormBayar.cshtml");
 
         /// <summary>
         /// Aksi simpan / ubah / proses. aksi(user) boleh mengembalikan data untuk dikirim balik (Data).
@@ -134,6 +139,22 @@ namespace GitaWidyaAgniWeb.Infrastructure
             }
             contentType ??= "application/octet-stream";
             return string.IsNullOrWhiteSpace(fileName) ? File(data, contentType) : File(data, contentType, fileName);
+        }
+
+        private static readonly Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider _mime = new();
+
+        /// <summary>Unduhan berkas; content type dari ekstensi nama file bila tidak diberikan. null → 404.</summary>
+        protected IActionResult Berkas(byte[]? data, string? fileName, string? contentType = null, bool inline = false)
+        {
+            if (data == null || data.Length == 0)
+            {
+                return NotFound();
+            }
+            if (string.IsNullOrWhiteSpace(contentType) && (string.IsNullOrWhiteSpace(fileName) || !_mime.TryGetContentType(fileName, out contentType)))
+            {
+                contentType = "application/octet-stream";
+            }
+            return inline || string.IsNullOrWhiteSpace(fileName) ? File(data, contentType!) : File(data, contentType!, fileName);
         }
 
         protected static Response Gagal(string pesan) => new() { Status = ResponseStatus.Error, Message = pesan };

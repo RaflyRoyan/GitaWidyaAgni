@@ -1,0 +1,26 @@
+@model GitaWidyaAgniWeb.Models.Formulir.FormulirVM.JawabanDetail
+@using GWAShared.Enums
+
+<div class="border rounded p-3">
+    <div class="fw-semibold mb-2">@Model.Judul</div>
+    <dl class="row mb-0 small">
+        @foreach (var a in Model.Rows)
+        {
+            <dt class="col-sm-5">@a.QuestionSeq. @a.QuestionText</dt>
+            <dd class="col-sm-7">
+                @if (a.QuestionType == QuestionType.File && !string.IsNullOrEmpty(a.AnswerFileName))
+                {
+                    <a href="@Url.Action("BerkasJawaban", new { key = a.EncDecrKey })" target="_blank">@a.AnswerFileName</a>
+                }
+                else if (a.Choices.Count > 0)
+                {
+                    @string.Join(", ", a.Choices)
+                }
+                else
+                {
+                    <span style="white-space:pre-line">@a.AnswerText</span>
+                }
+            </dd>
+        }
+    </dl>
+</div>

@@ -1,0 +1,31 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.GaleriVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Galeri";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-gallery-line align-bottom me-1"></i> Galeri Kegiatan</h5>
+        <p class="gwa-card-intro">Galeri Terbit dan Publik tampil di landing page. Terbitkan setelah ada minimal satu foto; foto pertama otomatis menjadi sampul.</p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel("Tambah Galeri", "Galeri.add()",
+            ("btn-outline-success", "ri-image-add-line", "Foto galeri"),
+            ("btn-outline-primary", "ri-global-line", "Terbitkan / arsipkan"),
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah galeri"),
+            ("btn-outline-danger", "ri-delete-bin-line", "Hapus (hanya Draft)"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.GaleriUrl = {};
+        ['List', 'Add', 'Edit', 'SimpanBaru', 'Update', 'Terbitkan', 'Arsipkan', 'Delete', 'Foto', 'Gambar', 'TambahFoto', 'Sampul', 'Keterangan', 'HapusFoto'].forEach(function (a) {
+            window.GaleriUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Kegiatan/Galeri.js" asp-append-version="true"></script>
+}

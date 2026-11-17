@@ -203,6 +203,18 @@ namespace GWALib.Lib.Transaksi.Program
                 Member.GetActiveMember(context, picMemberId.Value);
             }
         }
+        // Bidang harus divisi aktif (dicek hanya saat berubah); jangka harus nilai enum.
+        private static void ValidateGrouping(EF.ModelContext context, int? divisionId, ProgramTerm? term)
+        {
+            if (divisionId != null)
+            {
+                Division.ValidateActiveDivision(context, divisionId.Value);
+            }
+            if (term != null && !Enum.IsDefined(term.Value))
+            {
+                throw new ArgumentException(string.Format(ExceptionMessage.FIELD_INVALID, "Jangka Program"));
+            }
+        }
         private static void ValidateDelete(EF.ModelContext context, EF.TProgram row)
         {
             TransaksiHelper.ValidateStatus((ProgramStatus)row.Status, "menghapus program kerja", ProgramStatus.Planned);
@@ -223,6 +235,8 @@ namespace GWALib.Lib.Transaksi.Program
             var picMemberId = newrow.PicMemberId > 0 ? newrow.PicMemberId : null;
             ManagementPeriod.ValidateOpenPeriod(context, newrow.PeriodId);
             ValidateData(context, 0, newrow.PeriodId, previousProgramId, picMemberId, title, newrow.StartDate, newrow.EndDate, newrow.BudgetAmount);
+            var divisionId = newrow.DivisionId > 0 ? newrow.DivisionId : null;
+            ValidateGrouping(context, divisionId, newrow.Term);
 
             var row = new EF.TProgram
             {
@@ -230,6 +244,8 @@ namespace GWALib.Lib.Transaksi.Program
                 PeriodId = newrow.PeriodId,
                 PreviousProgramId = previousProgramId,
                 PicMemberId = picMemberId,
+                DivisionId = divisionId,
+                Term = (int?)newrow.Term,
                 Title = title,
                 Description = string.IsNullOrWhiteSpace(newrow.Description) ? null : newrow.Description.Trim(),
                 StartDate = newrow.StartDate,
@@ -251,9 +267,13 @@ namespace GWALib.Lib.Transaksi.Program
             var picMemberId = PicMemberId > 0 ? PicMemberId : null;
             ValidateData(context, row.Id, row.PeriodId, previousProgramId, picMemberId != row.PicMemberId ? picMemberId : null,
                 title, StartDate, EndDate, BudgetAmount);
+            var divisionId = DivisionId > 0 ? DivisionId : null;
+            ValidateGrouping(context, divisionId != row.DivisionId ? divisionId : null, Term);
 
             row.PreviousProgramId = previousProgramId;
             row.PicMemberId = picMemberId;
+            row.DivisionId = divisionId;
+            row.Term = (int?)Term;
             row.Title = title;
             row.Description = string.IsNullOrWhiteSpace(Description) ? null : Description.Trim();
             row.StartDate = StartDate;

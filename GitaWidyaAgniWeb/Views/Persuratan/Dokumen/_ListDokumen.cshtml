@@ -1,0 +1,22 @@
+@model GitaWidyaAgniWeb.Models.Persuratan.DokumenVM.ListDokumen
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Persuratan
+
+@(Html.DevExtreme().DataGrid<DokumenVM.DokumenRow>()
+    .ID("tblDokumen")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Arsip Dokumen")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Title).Caption("Judul").CssClass("fw-medium");
+        columns.AddFor(m => m.CategoryName).Caption("Kategori");
+        columns.AddFor(m => m.Description).Caption("Keterangan").Visible(false);
+        columns.AddFor(m => m.FileName).Caption("Berkas");
+        columns.AddFor(m => m.Ukuran).Caption("Ukuran").Alignment(HorizontalAlignment.Right);
+        columns.AddFor(m => m.Visibility).Caption("Visibilitas").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Dokumen.visibilityTemplate"));
+        columns.AddFor(m => m.InsDate).Caption("Diunggah").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddAction("Dokumen.documentActionTemplate");
+    })
+)

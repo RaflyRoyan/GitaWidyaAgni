@@ -1,9 +1,13 @@
 using GitaWidyaAgniWeb.Infrastructure;
 using GitaWidyaAgniWeb.Models.Landing;
+using GWALib.Lib.Master.Anggota;
+using GWALib.Lib.Master.Inventaris;
 using GWALib.Lib.Master.Information;
+using GWALib.Lib.Master.Merchandise;
 using GWALib.Lib.Master.Organization;
 using GWALib.Lib.Transaksi.Anggota;
 using GWALib.Lib.Transaksi.Information;
+using GWALib.Lib.Transaksi.Merchandise;
 using GWALib.Lib.Transaksi.Prestasi;
 using GWALib.Lib.Transaksi.Program;
 using GWAShared.Enums;
@@ -56,6 +60,181 @@ namespace GitaWidyaAgniWeb.Controllers
                 Page = page,
                 HasNext = items.Count > NEWS_PAGE_SIZE
             });
+        }
+
+        // Verifikasi sertifikat publik dari kode verifikasi (tanpa login).
+        [HttpGet("sertifikat/verifikasi")]
+        public IActionResult VerifikasiSertifikat(string? kode)
+        {
+            var model = new VerifikasiSertifikatVM { Kode = kode?.Trim() };
+            if (model.Dicari && model.Kode!.Length <= 32)
+            {
+                model.Sertifikat = Load(() => Certificate.Verify(model.Kode), null);
+            }
+            return View(model);
+        }
+
+        // Open recruitment publik: daftar rekrutmen yang dibuka + form pendaftaran (tanpa login).
+        [HttpGet("rekrutmen/{id:int?}")]
+        public IActionResult Rekrutmen(int? id)
+        {
+            var open = Load(Recruitment.GetOpenList, new List<Recruitment>());
+            var selected = id.HasValue ? open.FirstOrDefault(x => x.Id == id) : open.Count == 1 ? open[0] : null;
+            if (id.HasValue && selected == null)
+            {
+                return RedirectToAction(nameof(Rekrutmen), new { id = (int?)null });
+            }
+            return View(new RecruitmentPageVM { Open = open, Selected = selected, Input = new ApplyInput() });
+        }
+
+        [HttpPost("rekrutmen/{id:int}")]
+        public IActionResult Rekrutmen(int id, ApplyInput input)
+        {
+            var open = Load(Recruitment.GetOpenList, new List<Recruitment>());
+            var selected = open.FirstOrDefault(x => x.Id == id);
+            if (selected == null)
+            {
+                return RedirectToAction(nameof(Rekrutmen), new { id = (int?)null });
+            }
+            var model = new RecruitmentPageVM { Open = open, Selected = selected, Input = input };
+            var result = RecruitmentApplicant.Apply(new RecruitmentApplicant.NewRow
+            {
+                RecruitmentId = id,
+                ApplicantCategory = input.Category,
+                Nim = input.Nim,
+                Fullname = input.Fullname ?? "",
+                Email = input.Email ?? "",
+                Phone = input.Phone,
+                ProgramStudi = input.ProgramStudi,
+                Angkatan = input.Angkatan,
+                Institution = input.Institution,
+                Motivation = input.Motivation
+            });
+            if (result.Status == ResponseStatus.Success)
+            {
+                model.Success = true;
+                model.Input = new ApplyInput();
+            }
+            else
+            {
+                model.Error = result.Message;
+            }
+            return View(model);
+        }
+
+        // Toko merchandise publik: pesan tanpa login (nama + WhatsApp) dan lacak pesanan dengan nomor + WhatsApp.
+        [HttpGet("toko")]
+        public IActionResult Toko(string? nomor, string? wa)
+        {
+            var model = NewTokoModel();
+            model.LacakNomor = nomor?.Trim();
+            model.LacakWa = wa?.Trim();
+            if (model.LacakDicari)
+            {
+                model.Lacak = Load(() => SalesOrder.FindGuestOrder(model.LacakNomor, model.LacakWa), null);
+                model.LacakItem = model.Lacak == null ? new() : Load(() => model.Lacak.GetItems(true), new List<SalesOrderItem>());
+            }
+            return View(model);
+        }
+
+        [HttpPost("toko")]
+        public IActionResult Toko(TokoInput input)
+        {
+            var model = NewTokoModel();
+            model.Input = input;
+            if (!string.IsNullOrEmpty(input.Website))
+            {
+                model.Error = "Pesanan gagal dikirim.";
+                return View(model);
+            }
+            var result = SalesOrder.SaveGuest(new SalesOrder.GuestRow
+            {
+                BuyerName = input.BuyerName,
+                BuyerPhone = input.BuyerPhone,
+                Notes = input.Notes,
+                Items = input.ToItems()
+            });
+            if (result.Status == ResponseStatus.Success)
+            {
+                model.Dibuat = result.Data;
+                model.Input = new TokoInput();
+                model.Katalog = Load(TokoProduk.LoadKatalog, new List<TokoProduk>());
+            }
+            else
+            {
+                model.Error = result.Message;
+            }
+            return View(model);
+        }
+
+        // Foto produk aktif untuk katalog toko publik.
+        [ResponseCache(Duration = 300)]
+        public IActionResult ProdukFoto(string key)
+        {
+            try
+            {
+                var product = new Product(key);
+                var photo = product.Id > 0 && product.IsActive == ActiveStatus.Aktif ? product.GetPhoto() : null;
+                return photo == null ? NotFound() : File(photo.Data, photo.ContentType ?? "image/jpeg");
+            }
+            catch (Exception)
+            {
+                return NotFound();
+            }
+        }
+
+        // Hasil scan label QR unit aset (isi QR = URL ini): detail alat tanpa login. Unit yang dihapus tidak ditampilkan.
+        [HttpGet("aset/{kode}")]
+        public IActionResult AsetPublik(string kode)
+        {
+            var model = new AsetPublikVM
+            {
+                Kode = AsetLabel.KodeUnit(kode),
+                WhatsApp = Load(LoadSite, new SiteInfo()).WhatsApp,
+                OrgName = _access.GetAppName(),
+                Login = User.Identity?.IsAuthenticated == true
+            };
+            var unit = Load(() => AssetUnit.GetByCode(model.Kode), null);
+            if (unit != null && unit.Status != AssetUnitStatus.Dihapus)
+            {
+                model.Unit = unit;
+                model.Aset = Load(() => new Asset(unit.AssetId.ToString().EncryptString<Asset>()), null);
+                model.Kategori = model.Aset?.Category?.Name;
+                model.AdaFoto = model.Aset != null && Load(() => AssetPhoto.GetInfoList(model.Aset.Id).Count > 0, false);
+            }
+            if (model.Aset == null)
+            {
+                Response.StatusCode = StatusCodes.Status404NotFound;
+            }
+            return View(model);
+        }
+
+        // Foto pertama aset dari unit (halaman AsetPublik).
+        [ResponseCache(Duration = 300)]
+        public IActionResult AsetFoto(string kode)
+        {
+            var unit = Load(() => AssetUnit.GetByCode(AsetLabel.KodeUnit(kode)), null);
+            if (unit == null || unit.Status == AssetUnitStatus.Dihapus)
+            {
+                return NotFound();
+            }
+            var photo = Load(() => AssetPhoto.GetDataList(unit.AssetId).OrderBy(x => x.SeqPhoto).FirstOrDefault(), null);
+            return photo == null ? NotFound() : File(photo.Photo, photo.ContentType);
+        }
+
+        private TokoPageVM NewTokoModel()
+        {
+            var anggota = false;
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                anggota = Load(() => Member.GetByUser(User.GetLibUser()) != null, false);
+            }
+            return new TokoPageVM
+            {
+                Katalog = Load(TokoProduk.LoadKatalog, new List<TokoProduk>()),
+                WhatsAppAdmin = Load(LoadSite, new SiteInfo()).WhatsApp,
+                AnggotaLogin = anggota
+            };
         }
 
         [Route("berita/{slug}")]

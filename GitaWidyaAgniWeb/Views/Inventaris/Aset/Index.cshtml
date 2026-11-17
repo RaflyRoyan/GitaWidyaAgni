@@ -1,0 +1,71 @@
+@model GitaWidyaAgniWeb.Models.Inventaris.AsetVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Aset Inventaris";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-music-2-line align-bottom me-1"></i> Aset Inventaris</h5>
+        <p class="gwa-card-intro">Aset per unit punya kode unit (prefix + nomor) yang dicetak sebagai label QR untuk peminjaman dan inspeksi. Aset per jumlah dicatat stoknya lewat mutasi.</p>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs gwa-tabs mb-3 flex-nowrap overflow-auto" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabAset" data-tab="Aset" type="button" role="tab"><i class="ri-music-2-line me-1"></i>Aset</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPerawatan" data-tab="Perawatan" type="button" role="tab"><i class="ri-tools-line me-1"></i>Perawatan</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabInspeksi" data-tab="Inspeksi" type="button" role="tab"><i class="ri-search-eye-line me-1"></i>Inspeksi</button></li>
+            <li class="nav-item"><button class="nav-link text-nowrap" data-bs-toggle="tab" data-bs-target="#tabMutasi" data-tab="Mutasi" type="button" role="tab"><i class="ri-history-line me-1"></i>Riwayat Mutasi</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabKategori" data-tab="Kategori" type="button" role="tab"><i class="ri-price-tag-3-line me-1"></i>Kategori</button></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tabAset" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Aset", "Aset.add(\"Aset\")",
+                    ("btn-outline-success", "ri-qr-code-line", "Unit & label QR (aset per unit)"),
+                    ("btn-outline-info", "ri-image-line", "Foto"),
+                    ("btn-outline-primary", "ri-arrow-left-right-line", "Mutasi stok (aset per jumlah)"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapuskan aset")) { LegendId = "legendAset" }' />
+                <div id="targetAset" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabPerawatan" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Jadwalkan Perawatan", "Aset.add(\"Perawatan\")",
+                    ("btn-outline-primary", "ri-play-circle-line", "Mulai"),
+                    ("btn-outline-success", "ri-checkbox-circle-line", "Selesai"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus")) { LegendId = "legendPerawatan" }' />
+                <div id="targetPerawatan" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabInspeksi" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Catat Inspeksi", "Aset.add(\"Inspeksi\")",
+                    ("btn-outline-info", "ri-camera-line", "Foto"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus (inspeksi manual)")) { LegendId = "legendInspeksi" }' />
+                <div id="targetInspeksi" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabMutasi" role="tabpanel">
+                <div id="targetMutasi"></div>
+            </div>
+            <div class="tab-pane fade" id="tabKategori" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Kategori", "Aset.add(\"Kategori\")",
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan")) { LegendId = "legendKategori" }' />
+                <div id="targetKategori" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.AsetUrl = {};
+        ['Aset', 'Perawatan', 'Inspeksi', 'Mutasi', 'Kategori'].forEach(function (t) {
+            ['List', 'Add', 'Edit', 'Simpan', 'Update', 'Hapus'].forEach(function (a) {
+                window.AsetUrl[a.toLowerCase() + t] = '@Url.Action("__")'.replace('__', a + t);
+            });
+        });
+        ['Unit', 'TambahUnit', 'HapusUnit', 'CetakLabel', 'LabelQr', 'Foto', 'Gambar', 'TambahFoto', 'HapusFoto', 'Mutasi', 'MulaiPerawatan', 'Selesai', 'SimpanSelesai', 'FotoInspeksi'].forEach(function (a) {
+            window.AsetUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Inventaris/Aset.js" asp-append-version="true"></script>
+}

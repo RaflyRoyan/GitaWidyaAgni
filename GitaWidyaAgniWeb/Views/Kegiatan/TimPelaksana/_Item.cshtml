@@ -1,0 +1,38 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.TimPelaksanaVM.Item
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+<div class="gwa-mform" id="templateItem" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-list-check-2"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Nama</div>
+            <div class="gwa-mform-info-meta"><span>Seksi dicocokkan dengan nama seksi kegiatan (tanpa membedakan huruf besar).</span></div>
+        </div>
+    </div>
+    <div class="gwa-mform-add">
+        <div class="gwa-mform-add-form">
+            @(Html.DevExtreme().Form<TimPelaksanaVM.NewItem>()
+                .ID("frmItem")
+                .FormData(Model.Input)
+                .LabelLocation(FormLabelLocation.Top)
+                .ShowColonAfterLabel(false)
+                .ColCount(5)
+                .ColCountByScreen(c => c.Xs(1).Sm(1))
+                .Items(items =>
+                {
+                    items.AddSimpleFor(m => m.Title).ColSpan(2).Editor(e => e.TextBox().MaxLength(200));
+                    items.AddSimpleFor(m => m.SectionName).Editor(e => e.TextBox().MaxLength(100));
+                    items.AddSimpleFor(m => m.OffsetDay).Editor(e => e.NumberBox().Min(-365).Max(365).ShowSpinButtons(true).Format("#0"));
+                    items.AddSimpleFor(m => m.Priority).Editor(e => e.SelectBox().DataSource(Model.PrioritasOpsi).ValueExpr("Value").DisplayExpr("Text"));
+                })
+            )
+        </div>
+        <button type="button" class="btn btn-outline-primary" onclick="TimPelaksana.addItem()"><i class="ri-add-line align-bottom me-1"></i> Tambah</button>
+    </div>
+    <div id="templateItemTarget">
+        <partial name="~/Views/Kegiatan/TimPelaksana/_ItemList.cshtml" model="Model.List" />
+    </div>
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

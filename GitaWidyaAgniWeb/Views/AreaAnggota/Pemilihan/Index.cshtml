@@ -1,0 +1,141 @@
+@model GitaWidyaAgniWeb.Controllers.AreaAnggota.PemilihanController.Model
+@using GWAShared.Enums
+@{
+    ViewData["Title"] = "Pemilihan";
+}
+
+@if (Model.Dibuka.Count == 0 && Model.Final.Count == 0)
+{
+    <div class="card"><div class="card-body text-center text-muted py-5"><i class="ri-checkbox-multiple-line fs-1 d-block mb-2" aria-hidden="true"></i>Belum ada pemilihan.</div></div>
+}
+
+@foreach (var p in Model.Dibuka)
+{
+    var e = p.Data;
+    var berhak = p.Status != null && p.Status.EligibilityStatus == VoterEligibility.Eligible;
+    var sudah = p.Status?.HasVoted == true;
+    var berjalan = DateTime.Now >= e.StartAt && DateTime.Now <= e.EndAt;
+    <div class="card" data-election="@e.EncDecrKey">
+        <div class="card-header">
+            <h5 class="card-title mb-1"><i class="ri-checkbox-multiple-line align-bottom me-1"></i> @e.Title</h5>
+            <p class="gwa-card-intro mb-0">Pemungutan @e.StartAt.ToString("dd MMM yyyy HH:mm") – @e.EndAt.ToString("dd MMM yyyy HH:mm"). Pilihan Anda rahasia dan tidak bisa diubah setelah dikirim.</p>
+        </div>
+        <div class="card-body">
+            @if (!string.IsNullOrWhiteSpace(e.Description))
+            {
+                <p style="white-space:pre-line">@e.Description</p>
+            }
+            @if (p.Status == null)
+            {
+                <div class="alert alert-secondary mb-3">Anda tidak terdaftar sebagai pemilih pada pemilihan ini.</div>
+            }
+            else if (!berhak)
+            {
+                <div class="alert alert-secondary mb-3">Hak pilih Anda tidak aktif pada pemilihan ini.</div>
+            }
+            else if (sudah)
+            {
+                <div class="alert alert-success mb-3"><i class="ri-checkbox-circle-line me-1"></i> Anda sudah memilih pada @p.Status.VotedAt?.ToString("dd MMM yyyy HH:mm"). Terima kasih!</div>
+            }
+            else if (!berjalan)
+            {
+                <div class="alert alert-warning mb-3">Pemungutan suara belum dimulai atau sudah berakhir.</div>
+            }
+
+            <div class="row g-3">
+                @foreach (var k in p.Kandidat)
+                {
+                    <div class="col-md-6 col-xl-4">
+                        <div class="border rounded p-3 h-100 d-flex flex-column">
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <img src="@Url.Action("FotoKandidat", new { key = k.EncDecrKey })" alt="Foto @k.MemberName" width="72" height="72" style="object-fit:cover;border-radius:50%;background:#f3ede2" onerror="this.style.visibility='hidden'" />
+                                <div>
+                                    <span class="badge bg-primary fs-14">@k.CandidateNumber</span>
+                                    <div class="fw-semibold mt-1">@k.MemberName</div>
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(k.Vision)) { <div class="small"><b>Visi</b><div style="white-space:pre-line">@k.Vision</div></div> }
+                            @if (!string.IsNullOrWhiteSpace(k.Mission)) { <div class="small mt-1"><b>Misi</b><div style="white-space:pre-line">@k.Mission</div></div> }
+                            @if (berhak && !sudah && berjalan)
+                            {
+                                <button type="button" class="btn btn-success mt-auto pt-2" onclick="Pemilihan.vote('@e.EncDecrKey','@k.EncDecrKey','@k.CandidateNumber','@k.MemberName')">
+                                    <i class="ri-checkbox-circle-line me-1"></i> Pilih No. @k.CandidateNumber
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="border-top mt-3 pt-3">
+                <label class="form-label small mb-1" for="cek_@e.Id">Cek bukti memilih (receipt)</label>
+                <div class="input-group" style="max-width:520px">
+                    <input id="cek_@e.Id" class="form-control font-monospace" autocomplete="off" placeholder="Tempel kode receipt" />
+                    <button type="button" class="btn btn-outline-secondary" onclick="Pemilihan.check('@e.EncDecrKey','cek_@e.Id')">Cek</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (Model.Final.Count > 0)
+{
+    <div class="card">
+        <div class="card-header"><h5 class="card-title mb-0"><i class="ri-award-line align-bottom me-1"></i> Hasil Pemilihan</h5></div>
+        <div class="card-body">
+            @foreach (var (e, hasil) in Model.Final)
+            {
+                var max = Math.Max(1, hasil.Count == 0 ? 1 : hasil.Max(h => h.VoteCount));
+                <div class="mb-4">
+                    <div class="fw-semibold">@e.Title</div>
+                    <div class="small text-muted mb-2">Final @e.FinalizedAt?.ToString("dd MMM yyyy HH:mm")</div>
+                    @foreach (var h in hasil)
+                    {
+                        <div class="d-flex align-items-center gap-2 py-1">
+                            <span style="width:40%">@h.CandidateNumber. @h.MemberName @if (h.IsWinner == ElectionOutcome.Winner) {<i class="ri-trophy-fill text-warning" title="Pemenang" aria-label="Pemenang"></i>}</span>
+                            <div class="progress flex-grow-1" style="height:10px" role="img" aria-label="@h.VoteCount suara">
+                                <div class="progress-bar bg-primary" style="width:@(h.VoteCount * 100 / max)%"></div>
+                            </div>
+                            <span class="text-end" style="min-width:6rem">@h.VoteCount (@h.VotePercentage.ToString("0.##")%)</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        window.Pemilihan = (function () {
+            function vote(electionKey, candidateKey, nomor, nama) {
+                AppUI.confirm('Pilih No. ' + nomor + ' — ' + nama + '?', 'Pilihan tidak bisa diubah setelah dikirim.', 'Ya, kirim suara', 'btn-success').then(function (ok) {
+                    if (!ok) return;
+                    AppUI.postJson('@Url.Action("Coblos")', { Key: electionKey, CandidateKey: candidateKey }).done(function (r) {
+                        const receipt = r.Data.Receipt;
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Suara tercatat',
+                            html: '<p>Simpan kode bukti ini. Kode hanya ditampilkan <b>sekali</b> dan dipakai untuk memastikan suara Anda ada di kotak suara.</p>'
+                                + '<input id="swalReceipt" class="form-control font-monospace text-center" readonly>',
+                            didOpen: function () { $('#swalReceipt').val(receipt).trigger('select'); },
+                            confirmButtonText: 'Sudah saya simpan',
+                            customClass: { confirmButton: 'btn btn-success' },
+                            buttonsStyling: false,
+                            allowOutsideClick: false
+                        }).then(function () { window.location.reload(); });
+                    });
+                });
+            }
+            function check(electionKey, inputId) {
+                const receipt = $.trim($('#' + inputId).val() || '');
+                if (!receipt) { AppUI.alertWarning('Tempel kode receipt.'); return; }
+                AppUI.postJson('@Url.Action("Cek")', { Key: electionKey, Receipt: receipt }).done(function (r) {
+                    if (r.Data) AppUI.alertSuccess('Bukti valid: suara ada di kotak suara.');
+                    else AppUI.alertWarning('Bukti tidak ditemukan pada pemilihan ini.');
+                });
+            }
+            return { vote: vote, check: check };
+        })();
+    </script>
+}

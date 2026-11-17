@@ -1,0 +1,79 @@
+@model GitaWidyaAgniWeb.Models.Formulir.FormulirVM.Pertanyaan
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@* Pilihan Ganda / Kotak Centang wajib minimal 2 pilihan (satu per baris). Urutan 0 = paling akhir. *@
+
+<div class="gwa-mform" id="pertanyaanForm" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-list-check-2"></i></span>
+        <div><div class="gwa-mform-info-title">@Model.Judul</div></div>
+    </div>
+    @if (Model.Terkunci)
+    {
+        <p class="gwa-mform-note">Formulir sudah punya jawaban, pertanyaan tidak bisa diubah.</p>
+    }
+    else
+    {
+        <div class="gwa-mform-add flex-column align-items-stretch">
+            <input type="hidden" id="qKey" />
+            <div class="row g-2 w-100">
+                <div class="col-md-8">
+                    <label class="form-label small mb-1" for="qText">Pertanyaan</label>
+                    <input id="qText" class="form-control" maxlength="500" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label small mb-1" for="qType">Tipe</label>
+                    <select id="qType" class="form-select" onchange="Formulir.questionTypeChanged()">
+                        @foreach (var t in Model.TipeOpsi)
+                        {
+                            <option value="@t.Value">@t.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12" id="qOptionsWrap" hidden>
+                    <label class="form-label small mb-1" for="qOptions">Pilihan (satu per baris)</label>
+                    <textarea id="qOptions" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small mb-1" for="qSeq">Urutan</label>
+                    <input id="qSeq" type="number" min="0" value="0" class="form-control" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <label class="form-check-label"><input type="checkbox" id="qWajib" class="form-check-input me-1" /> Wajib diisi</label>
+                </div>
+                <div class="col-md-6 d-flex align-items-end justify-content-end gap-2">
+                    <button type="button" class="btn btn-light" id="qBatal" hidden onclick="Formulir.resetQuestion()">Batal ubah</button>
+                    <button type="button" class="btn btn-outline-primary" onclick="Formulir.saveQuestion()"><i class="ri-save-3-line align-bottom me-1"></i> <span id="qSaveText">Tambah</span></button>
+                </div>
+            </div>
+        </div>
+    }
+    @if (Model.Rows.Count == 0)
+    {
+        <p class="text-muted mb-0">Belum ada pertanyaan.</p>
+    }
+    else
+    {
+        <ol class="list-group list-group-numbered">
+            @foreach (var q in Model.Rows)
+            {
+                <li class="list-group-item d-flex align-items-start gap-2">
+                    <div class="flex-grow-1 ms-1">
+                        <div class="fw-medium">@q.QuestionText @if (q.IsRequired == AnswerRequirement.Wajib) {<span class="text-danger" title="Wajib">*</span>}</div>
+                        <div class="small text-muted">@EnumHelper.Text(q.QuestionType)@(q.Options.Count > 0 ? " · " + string.Join(" / ", q.Options) : "")</div>
+                    </div>
+                    @if (!Model.Terkunci)
+                    {
+                        <button type="button" class="btn btn-sm btn-icon btn-outline-warning" title="Ubah" aria-label="Ubah pertanyaan"
+                                data-key="@q.EncDecrKey" data-seq="@q.Seq" data-type="@((int)q.QuestionType)" data-wajib="@(q.IsRequired == AnswerRequirement.Wajib ? "1" : "0")"
+                                data-text="@q.QuestionText" data-options="@string.Join("\n", q.Options)" onclick="Formulir.editQuestion(this)"><i class="ri-edit-2-line"></i></button>
+                        <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus" aria-label="Hapus pertanyaan" onclick="Formulir.removeQuestion('@q.EncDecrKey')"><i class="ri-delete-bin-line"></i></button>
+                    }
+                </li>
+            }
+        </ol>
+    }
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

@@ -1,0 +1,121 @@
+@model GitaWidyaAgniWeb.Models.Inventaris.PeminjamanVM.Detail
+@using GitaWidyaAgniWeb.Models.Inventaris
+@* Item (tambah / hapus saat Menunggu), pengembalian (per jumlah atau scan kode unit saat Dipinjam), pembayaran. *@
+
+<div class="gwa-mform" id="pinjamDetail" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-swap-box-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Judul</div>
+            <div class="gwa-mform-info-meta"><span>@Model.Ringkasan</span></div>
+        </div>
+    </div>
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Item</span></div>
+    @if (Model.BisaUbahItem)
+    {
+        <div class="gwa-mform-add">
+            <div class="gwa-mform-add-form">
+                @(Html.DevExtreme().Form<PeminjamanVM.ItemInput>()
+                    .ID("frmItemPinjam")
+                    .FormData(Model.Input)
+                    .LabelLocation(FormLabelLocation.Top)
+                    .ShowColonAfterLabel(false)
+                    .ColCount(3)
+                    .ColCountByScreen(c => c.Xs(1).Sm(1))
+                    .Items(items =>
+                    {
+                        items.AddSimpleFor(m => m.AssetId).ColSpan(2).Editor(e => e.SelectBox().DataSource(Model.AsetOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true));
+                        items.AddSimpleFor(m => m.Quantity).Editor(e => e.NumberBox().Min(1).ShowSpinButtons(true).Format("#0"));
+                    })
+                )
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="Peminjaman.addItem()"><i class="ri-add-line align-bottom me-1"></i> Tambah</button>
+        </div>
+    }
+    @if (Model.BisaKembali)
+    {
+        <div class="gwa-mform-add">
+            <div class="gwa-mform-add-form d-flex flex-wrap gap-2 align-items-end">
+                <div class="flex-grow-1">
+                    <label class="form-label mb-1 fw-medium" for="kodeKembali">Scan / ketik kode unit yang kembali</label>
+                    <input id="kodeKembali" class="form-control text-uppercase" maxlength="20" autocomplete="off" placeholder="mis. HT001" onkeydown="if(event.key==='Enter'){event.preventDefault();Peminjaman.returnUnit();}" />
+                </div>
+                <div>
+                    <label class="form-label mb-1 fw-medium" for="kondisiKembali">Kondisi</label>
+                    <select id="kondisiKembali" class="form-select">
+                        @foreach (var k in Model.KondisiOpsi)
+                        {
+                            <option value="@k.Value">@k.Text</option>
+                        }
+                    </select>
+                </div>
+                <label class="form-check-label mb-2"><input type="checkbox" class="form-check-input me-1" id="hilangKembali" /> Hilang</label>
+            </div>
+            <button type="button" class="btn btn-outline-success" onclick="Peminjaman.returnUnit()"><i class="ri-qr-scan-2-line align-bottom me-1"></i> Kembalikan Unit</button>
+        </div>
+    }
+    <div class="table-responsive mb-3">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light"><tr><th>Aset</th><th class="text-center">Jumlah</th><th class="text-center">Kembali</th><th class="text-end">Sewa</th><th class="text-center">Telat</th><th class="text-end">Denda</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var i in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-medium">@i.Aset</div>
+                            @if (i.Units.Count > 0)
+                            {
+                                <div class="small">
+                                    @foreach (var u in i.Units)
+                                    {
+                                        <span class="badge @(u.Kembali ? "badge-soft-success" : "badge-soft-warning") me-1" title="@u.Status">@u.UnitCode</span>
+                                    }
+                                </div>
+                            }
+                        </td>
+                        <td class="text-center">@i.Quantity</td>
+                        <td class="text-center">@i.ReturnedQuantity</td>
+                        <td class="text-end">@i.RentalFee.ToString("#,##0")</td>
+                        <td class="text-center">@(i.LateDays > 0 ? i.LateDays + " hari" : "-")</td>
+                        <td class="text-end">@i.LateFee.ToString("#,##0")</td>
+                        <td class="text-end text-nowrap">
+                            @if (Model.BisaUbahItem)
+                            {
+                                <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus item" aria-label="Hapus item" onclick="Peminjaman.removeItem('@i.EncDecrKey')"><i class="ri-delete-bin-line"></i></button>
+                            }
+                            @if (Model.BisaKembali && !i.PerUnit && i.ReturnedQuantity < i.Quantity)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-success" onclick="Peminjaman.returnQuantity('@i.EncDecrKey', @(i.Quantity - i.ReturnedQuantity))"><i class="ri-arrow-go-back-line me-1"></i>Kembali</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Pembayaran</span></div>
+    @if (Model.Bayar.Count == 0)
+    {
+        <p class="text-muted mb-0">Belum ada pembayaran.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var b in Model.Bayar)
+            {
+                <li class="list-group-item d-flex align-items-center gap-2">
+                    <span class="gwa-code">@b.Nomor</span>
+                    <span>@b.Tanggal.ToString("dd MMM yyyy") · @b.Kategori</span>
+                    <span class="ms-auto fw-semibold">@b.Amount.ToString("#,##0")</span>
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Batalkan pembayaran" aria-label="Batalkan pembayaran" onclick="Peminjaman.cancelPayment(@b.TransactionId)"><i class="ri-close-line"></i></button>
+                </li>
+            }
+        </ul>
+    }
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

@@ -1,0 +1,26 @@
+@model GitaWidyaAgniWeb.Models.Persuratan.DokumenVM.AddKategori
+@using GitaWidyaAgniWeb.Models.Persuratan
+@{ var isEdit = Model is DokumenVM.EditKategori; }
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<DokumenVM.NewKategori>()
+        .ID("frmKategori")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(1)
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Name).Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.Description).Editor(e => e.TextBox().MaxLength(255));
+            if (isEdit)
+            {
+                items.AddSimpleFor(m => m.IsActive).Editor(e => e.SelectBox().DataSource(Model.AktifList).ValueExpr("Value").DisplayExpr("Text"));
+            }
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Dokumen.saveCategory(@(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

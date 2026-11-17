@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Prestasi.PrestasiVM.ListPoin
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Prestasi
+
+@(Html.DevExtreme().DataGrid<PrestasiVM.PoinRow>()
+    .ID("tblPoin")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Poin Anggota")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.MemberName).Caption("Anggota").CssClass("fw-medium");
+        columns.AddFor(m => m.Sumber).Caption("Sumber");
+        columns.AddFor(m => m.Points).Caption("Poin").Alignment(HorizontalAlignment.Right);
+        columns.AddFor(m => m.EarnedDate).Caption("Tanggal").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.Notes).Caption("Catatan");
+        columns.AddAction("Prestasi.pointActionTemplate");
+    })
+    .Summary(s => s.TotalItems(t => t.AddFor(m => m.Points).SummaryType(SummaryType.Sum).DisplayFormat("Total {0}")))
+)

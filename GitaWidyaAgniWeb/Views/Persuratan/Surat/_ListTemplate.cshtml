@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Persuratan.SuratVM.ListTemplate
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Persuratan
+
+@(Html.DevExtreme().DataGrid<SuratVM.TemplateRow>()
+    .ID("tblTemplateSurat")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Template Surat")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Template").CssClass("fw-medium");
+        columns.AddFor(m => m.LetterType).Caption("Jenis").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.AdaIsi).Caption("Isi HTML").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddFor(m => m.FileName).Caption("Berkas .docx");
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Surat.templateActionTemplate");
+    })
+)

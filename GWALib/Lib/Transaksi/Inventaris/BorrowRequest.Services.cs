@@ -1,4 +1,5 @@
 using GWALib.General;
+using GWALib.Lib.Transaksi.Information;
 using GWALib.General.Utilities;
 using GWALib.Lib.Master.Anggota;
 using GWALib.Lib.Master.Inventaris;
@@ -69,11 +70,11 @@ namespace GWALib.Lib.Transaksi.Inventaris
         }
         public Response<BorrowRequest> Approve(string user)
         {
-            return Run((context, row, userId) => SetDecision(row, BorrowRequestStatus.Approved, null, userId), user);
+            return Run((context, row, userId) => SetDecision(context, row, BorrowRequestStatus.Approved, null, userId), user);
         }
         public Response<BorrowRequest> Reject(string? reason, string user)
         {
-            return Run((context, row, userId) => SetDecision(row, BorrowRequestStatus.Rejected, reason, userId), user);
+            return Run((context, row, userId) => SetDecision(context, row, BorrowRequestStatus.Rejected, reason, userId), user);
         }
         public Response<BorrowRequest> Cancel(string? reason, string user)
         {
@@ -185,11 +186,11 @@ namespace GWALib.Lib.Transaksi.Inventaris
         }
         public Task<Response<BorrowRequest>> ApproveAsync(string user)
         {
-            return RunAsync((context, row, userId) => SetDecision(row, BorrowRequestStatus.Approved, null, userId), user);
+            return RunAsync((context, row, userId) => SetDecision(context, row, BorrowRequestStatus.Approved, null, userId), user);
         }
         public Task<Response<BorrowRequest>> RejectAsync(string? reason, string user)
         {
-            return RunAsync((context, row, userId) => SetDecision(row, BorrowRequestStatus.Rejected, reason, userId), user);
+            return RunAsync((context, row, userId) => SetDecision(context, row, BorrowRequestStatus.Rejected, reason, userId), user);
         }
         public Task<Response<BorrowRequest>> CancelAsync(string? reason, string user)
         {
@@ -509,7 +510,7 @@ namespace GWALib.Lib.Transaksi.Inventaris
             RecalculateTotals(context, row, userId);
             GWAShared.Utilities.ValidateUtility.ValidateDAModel(row);
         }
-        private static void SetDecision(EF.TBorrowRequest row, BorrowRequestStatus decision, string? reason, int userId)
+        private static void SetDecision(EF.ModelContext context, EF.TBorrowRequest row, BorrowRequestStatus decision, string? reason, int userId)
         {
             TransaksiHelper.ValidateStatus((BorrowRequestStatus)row.Status, decision == BorrowRequestStatus.Approved ? "menyetujui peminjaman" : "menolak peminjaman",
                 BorrowRequestStatus.Pending);
@@ -523,6 +524,10 @@ namespace GWALib.Lib.Transaksi.Inventaris
             row.ApprovedAt = now;
             row.UpdDate = now;
             row.UpdBy = userId;
+            NotifyHelper.ToMember(context, row.MemberId, NotifyHelper.TYPE_BORROW,
+                $"Peminjaman {row.RequestNumber} " + (decision == BorrowRequestStatus.Approved ? "disetujui" : "ditolak"),
+                decision == BorrowRequestStatus.Approved ? "Ambil aset sesuai jadwal pinjam." : reason,
+                NotifyHelper.LINK_MY_BORROW, "t_borrow_request", row.Id, userId);
         }
         private static void SetCancel(EF.TBorrowRequest row, string? reason, int userId)
         {
@@ -663,6 +668,9 @@ namespace GWALib.Lib.Transaksi.Inventaris
                 row.Status = (int)BorrowRequestStatus.Overdue;
                 row.UpdDate = now;
                 row.UpdBy = userId;
+                NotifyHelper.ToMember(context, row.MemberId, NotifyHelper.TYPE_BORROW, $"Peminjaman {row.RequestNumber} terlambat dikembalikan",
+                    $"Batas kembali {row.ExpectedReturnDate:dd-MM-yyyy HH:mm}. Segera kembalikan untuk menghindari denda.",
+                    NotifyHelper.LINK_MY_BORROW, "t_borrow_request", row.Id, userId);
             }
             return rows.Count;
         }

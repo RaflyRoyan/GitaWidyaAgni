@@ -1,0 +1,58 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.KegiatanVM.AddLaporan
+@using GitaWidyaAgniWeb.Models.Kegiatan
+@* Form bersama Add & Edit laporan. Kegiatan / program tetap setelah dibuat. Berkas dikirim lewat FormData. *@
+
+@{
+    var editModel = Model as KegiatanVM.EditLaporan;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-file-chart-line"></i></span>
+            <div>
+                <div class="gwa-mform-info-title">@Model.Row.Title</div>
+                <div class="gwa-mform-info-meta"><span>Status <b>@editModel!.StatusText</b></span></div>
+            </div>
+        </div>
+    }
+    @(Html.DevExtreme().Form<KegiatanVM.NewLaporan>()
+        .ID("frmLaporan")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Title).ColSpan(2).Editor(e => e.TextBox().MaxLength(200));
+            if (!isEdit)
+            {
+                items.AddSimpleFor(m => m.ActivityId).Editor(e => e.SelectBox().DataSource(Model.KegiatanOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+                items.AddSimpleFor(m => m.ProgramId).Editor(e => e.SelectBox().DataSource(Model.ProgramOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            }
+            items.AddSimpleFor(m => m.Summary).ColSpan(2).Editor(e => e.TextArea().Height(140));
+        })
+    )
+    <div class="gwa-mform-section">
+        <span class="gwa-mform-section-title">Berkas laporan</span>
+        <span class="gwa-mform-section-hint">PDF / dokumen (opsional)</span>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.FileName))
+    {
+        <div class="gwa-mform-note d-flex align-items-center gap-2">
+            <i class="ri-file-text-line"></i><span>@Model.FileName</span>
+            <label class="ms-auto form-check-label"><input type="checkbox" class="form-check-input me-1" id="chkHapusBerkasLaporan" /> Hapus berkas</label>
+        </div>
+    }
+    @(Html.DevExtreme().FileUploader().ID("fileLaporan").UploadMode(FileUploadMode.UseForm).Multiple(false)
+        .MaxFileSize(20 * 1024 * 1024).SelectButtonText("Pilih berkas").LabelText("atau tarik berkas ke sini"))
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Kegiatan.saveReport(@(isEdit ? "true" : "false"))">
+            <i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")
+        </button>
+    </div>
+</div>

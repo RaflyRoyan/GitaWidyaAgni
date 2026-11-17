@@ -1,0 +1,39 @@
+@model GitaWidyaAgniWeb.Models.EVoting.EVotingVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "E-Voting";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-checkbox-multiple-line align-bottom me-1"></i> E-Voting</h5>
+        <p class="gwa-card-intro">
+            Siapkan kandidat dan daftar pemilih, lalu buka pemungutan suara. Suara terenkripsi dan tidak terhubung ke pemilih;
+            hasil dihitung saat Finalisasi setelah pemungutan ditutup. Anggota memilih dari Area Anggota › Pemilihan.
+        </p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel("Buat Pemilihan", "EVoting.add()",
+            ("btn-outline-success", "ri-settings-3-line", "Kelola kandidat, pemilih & hasil"),
+            ("btn-outline-info", "ri-user-add-line", "Buka pendaftaran kandidat"),
+            ("btn-outline-primary", "ri-play-circle-line", "Buka pemungutan suara"),
+            ("btn-outline-secondary", "ri-stop-circle-line", "Tutup pemungutan"),
+            ("btn-outline-dark", "ri-award-line", "Finalisasi hasil"),
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+            ("btn-outline-danger", "ri-delete-bin-line", "Hapus"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.EVotingUrl = {};
+        ['List', 'Add', 'Edit', 'SimpanBaru', 'Update', 'Delete', 'Pendaftaran', 'Buka', 'Tutup', 'Finalisasi', 'Kelola',
+            'SimpanKandidat', 'VerifikasiKandidat', 'TolakKandidat', 'MundurKandidat', 'HapusKandidat', 'FotoKandidat',
+            'TambahPemilih', 'HakPilih', 'HapusPemilih'].forEach(function (a) {
+            window.EVotingUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/EVoting/EVoting.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,67 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.PeriodeVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Periode & Serah Terima";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-calendar-2-line align-bottom me-1"></i> Periode Kepengurusan</h5>
+        <p class="gwa-card-intro">Hanya satu periode yang Aktif. Pergantian periode lewat serah terima: saat disetujui, periode asal ditutup, periode tujuan diaktifkan, dan penugasan periode asal diakhiri.</p>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs gwa-tabs mb-3" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabPeriode" data-tab="Periode" type="button" role="tab"><i class="ri-calendar-2-line me-1"></i>Periode</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabSerahTerima" data-tab="SerahTerima" type="button" role="tab"><i class="ri-exchange-box-line me-1"></i>Serah Terima</button></li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tabPeriode" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Periode", "Periode.addPeriode()",
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah periode"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus periode (hanya Draft yang belum dipakai)")) { LegendId = "legendPeriode" }' />
+                <div id="targetPeriode" class="mt-3"></div>
+            </div>
+
+            <div class="tab-pane fade" id="tabSerahTerima" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Serah Terima", "Periode.addHandover()",
+                    ("btn-outline-success", "ri-list-check-2", "Item serah terima"),
+                    ("btn-outline-info", "ri-file-download-line", "Unduh LPJ"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-primary", "ri-send-plane-line", "Ajukan"),
+                    ("btn-outline-success", "ri-check-double-line", "Setujui"),
+                    ("btn-outline-danger", "ri-close-circle-line", "Tolak / hapus")) { LegendId = "legendSerahTerima" }' />
+                <div id="targetSerahTerima" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.PeriodeUrl = {
+            listPeriode: '@Url.Action("ListPeriode")',
+            addPeriode: '@Url.Action("AddPeriode")',
+            editPeriode: '@Url.Action("EditPeriode")',
+            simpanPeriode: '@Url.Action("SimpanPeriode")',
+            updatePeriode: '@Url.Action("UpdatePeriode")',
+            hapusPeriode: '@Url.Action("HapusPeriode")',
+            listSerahTerima: '@Url.Action("ListSerahTerima")',
+            addSerahTerima: '@Url.Action("AddSerahTerima")',
+            editSerahTerima: '@Url.Action("EditSerahTerima")',
+            simpanSerahTerima: '@Url.Action("SimpanSerahTerima")',
+            updateSerahTerima: '@Url.Action("UpdateSerahTerima")',
+            lpj: '@Url.Action("Lpj")',
+            ajukan: '@Url.Action("AjukanSerahTerima")',
+            setujui: '@Url.Action("SetujuiSerahTerima")',
+            tolak: '@Url.Action("TolakSerahTerima")',
+            hapusSerahTerima: '@Url.Action("HapusSerahTerima")',
+            item: '@Url.Action("Item")',
+            itemList: '@Url.Action("ItemList")',
+            tambahItem: '@Url.Action("TambahItem")',
+            hapusItem: '@Url.Action("HapusItem")'
+        };
+    </script>
+    <script src="~/Scripts/Organisasi/Periode.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,43 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.PeriodeVM.AddPeriode
+@using GitaWidyaAgniWeb.Models.Organisasi
+@* Form bersama Add & Edit periode. Periode baru selalu Draft; status (Draft / Aktif) hanya di Edit. Closed hanya lewat serah terima. *@
+
+@{
+    var isEdit = Model is PeriodeVM.EditPeriode;
+}
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<PeriodeVM.NewPeriode>()
+        .ID("frmPeriode")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Name).ColSpan(2)
+                .Editor(e => e.TextBox().MaxLength(100).Placeholder("mis. Periode 2026/2027"));
+            items.AddSimpleFor(m => m.StartDate)
+                .Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+            items.AddSimpleFor(m => m.EndDate)
+                .Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+            if (isEdit)
+            {
+                items.AddSimpleFor(m => m.Status)
+                    .Editor(e => e.SelectBox().DataSource(Model.StatusList).ValueExpr("Value").DisplayExpr("Text"));
+            }
+        })
+    )
+    @if (isEdit)
+    {
+        <p class="gwa-mform-note">Mengaktifkan periode langsung hanya untuk periode pertama. Selanjutnya gunakan serah terima.</p>
+    }
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Periode.@(isEdit ? "updatePeriode" : "savePeriode")()">
+            <i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")
+        </button>
+    </div>
+</div>

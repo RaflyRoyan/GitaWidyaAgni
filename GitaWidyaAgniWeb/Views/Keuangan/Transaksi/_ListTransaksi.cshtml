@@ -1,0 +1,31 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.TransaksiVM.ListTransaksi
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Keuangan
+
+@(Html.DevExtreme().DataGrid<TransaksiVM.TransaksiRow>()
+    .ID("tblTransaksi")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Transaksi Keuangan")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Summary(s => s.TotalItems(t =>
+    {
+        t.AddFor(m => m.Masuk).SummaryType(SummaryType.Sum).ValueFormat("#,##0").DisplayFormat("{0}");
+        t.AddFor(m => m.Keluar).SummaryType(SummaryType.Sum).ValueFormat("#,##0").DisplayFormat("{0}");
+    }))
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.TransactionNumber).Caption("Nomor").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.TransactionDate).Caption("Tanggal").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.Kategori).Caption("Kategori").CssClass("fw-medium");
+        columns.AddFor(m => m.Description).Caption("Keterangan");
+        columns.AddFor(m => m.Akun).Caption("Akun");
+        columns.AddFor(m => m.Masuk).Caption("Masuk").Format("#,##0").CssClass("text-success");
+        columns.AddFor(m => m.Keluar).Caption("Keluar").Format("#,##0").CssClass("text-danger");
+        columns.AddFor(m => m.Periode).Caption("Periode").Visible(false);
+        columns.AddFor(m => m.Sumber).Caption("Sumber");
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Transaksi.statusTemplate"));
+        columns.AddAction("Transaksi.transactionActionTemplate");
+    })
+)

@@ -1,0 +1,24 @@
+@model GitaWidyaAgniWeb.Models.ProgramKerja.ProgramKerjaVM.ListTugas
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.ProgramKerja
+
+@(Html.DevExtreme().DataGrid<ProgramKerjaVM.TugasRow>()
+    .ID("tblTugas")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Tugas Program Kerja")
+    .OnRowPrepared("ProgramKerja.taskRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Title).Caption("Tugas").CellTemplate(new JS("ProgramKerja.taskTitleTemplate"));
+        columns.AddFor(m => m.Program).Caption("Program");
+        columns.AddFor(m => m.Divisi).Caption("Divisi");
+        columns.AddFor(m => m.Pj).Caption("PJ");
+        columns.AddFor(m => m.Prioritas).Caption("Prioritas").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("ProgramKerja.priorityTemplate"));
+        columns.AddFor(m => m.DueDate).Caption("Tenggat").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.CompletedAt).Caption("Diselesaikan").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm").Visible(false);
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("ProgramKerja.taskStatusTemplate"));
+        columns.AddAction("ProgramKerja.taskActionTemplate");
+    })
+)

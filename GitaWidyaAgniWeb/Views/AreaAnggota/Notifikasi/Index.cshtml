@@ -1,0 +1,41 @@
+@{
+    ViewData["Title"] = "Notifikasi";
+}
+
+<div class="card">
+    <div class="card-header d-flex flex-wrap align-items-center gap-2">
+        <h5 class="card-title mb-0 me-auto"><i class="ri-notification-3-line align-bottom me-1"></i> Notifikasi</h5>
+        <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" id="chkBelumDibaca" onchange="Notifikasi.refresh()" />
+            <label class="form-check-label" for="chkBelumDibaca">Hanya belum dibaca</label>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="Notifikasi.readAll()"><i class="ri-check-double-line me-1"></i> Tandai semua dibaca</button>
+    </div>
+    <div class="card-body p-0" id="target"></div>
+</div>
+
+@section Scripts {
+    <script>
+        window.Notifikasi = (function () {
+            const URL = { list: '@Url.Action("List")', baca: '@Url.Action("Baca")', bacaSemua: '@Url.Action("BacaSemua")', hapus: '@Url.Action("Hapus")' };
+            function refresh() {
+                return AppUI.loadPartial('#target', URL.list, { belumDibaca: $('#chkBelumDibaca').is(':checked') });
+            }
+            // Klik notifikasi: tandai dibaca lalu buka tautannya (bila ada).
+            function open(el) {
+                const d = $(el).data();
+                const go = function () { if (d.link) window.location.href = d.link; else refresh(); };
+                if (d.read) { go(); return; }
+                AppUI.postJson(URL.baca, { Key: d.key }).always(go);
+            }
+            function readAll() {
+                AppUI.postJson(URL.bacaSemua, {}).done(function (r) { AppUI.alertSuccess(r.Message); refresh(); });
+            }
+            function remove(key) {
+                AppUI.postJson(URL.hapus, { Key: key }).done(refresh);
+            }
+            $(refresh);
+            return { refresh: refresh, open: open, readAll: readAll, remove: remove };
+        })();
+    </script>
+}

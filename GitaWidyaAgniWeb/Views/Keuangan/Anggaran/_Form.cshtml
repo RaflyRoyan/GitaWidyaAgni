@@ -1,0 +1,23 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.AnggaranVM.Add
+@using GitaWidyaAgniWeb.Models.Keuangan
+@{ var isEdit = Model is AnggaranVM.Edit; }
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<AnggaranVM.NewRow>()
+        .ID("frmAnggaran")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Name).Editor(e => e.TextBox().MaxLength(150).Placeholder("mis. RAB Periode 2026/2027"));
+            items.AddSimpleFor(m => m.PeriodId).Editor(e => e.SelectBox().DataSource(Model.PeriodeOpsi).ValueExpr("Value").DisplayExpr("Text").ReadOnly(isEdit));
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Anggaran.@(isEdit ? "update" : "save")()"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

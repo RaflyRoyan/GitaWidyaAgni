@@ -1,0 +1,37 @@
+@model GitaWidyaAgniWeb.Models.Pengadaan.PengadaanVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Pengadaan Barang";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-shopping-cart-2-line align-bottom me-1"></i> Pengadaan Barang</h5>
+        <p class="gwa-card-intro">Susun daftar barang dan penawaran vendor, ajukan (alur PROCUREMENT), lalu beli, bayar, dan catat penerimaan. Barang aset bisa langsung didaftarkan sebagai aset saat diterima.</p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel("Buat Pengadaan", "Pengadaan.add()",
+            ("btn-outline-info", "ri-file-list-3-line", "Detail: barang, penawaran, persetujuan, penerimaan"),
+            ("btn-outline-primary", "ri-send-plane-line", "Ajukan"),
+            ("btn-outline-success", "ri-check-double-line", "Setujui"),
+            ("btn-outline-secondary", "ri-arrow-go-back-line", "Revisi / batal"),
+            ("btn-outline-dark", "ri-shopping-bag-line", "Beli / bayar"),
+            ("btn-outline-success", "ri-inbox-archive-line", "Terima barang"),
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+            ("btn-outline-danger", "ri-close-circle-line", "Tolak / hapus"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.PengadaanUrl = {};
+        ['List', 'Add', 'Edit', 'SimpanBaru', 'Update', 'Delete', 'Ajukan', 'Setujui', 'Revisi', 'Tolak', 'Batal', 'OpsiPengajuanDana', 'Beli', 'Detail',
+            'TambahItem', 'HapusItem', 'HargaAktual', 'TambahPenawaran', 'PilihPenawaran', 'HapusPenawaran', 'BerkasPenawaran', 'Bayar', 'SimpanBayar',
+            'BatalBayar', 'Terima', 'SimpanTerima', 'HapusTerima'].forEach(function (a) {
+            window.PengadaanUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Pengadaan/Pengadaan.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,44 @@
+@model GitaWidyaAgniWeb.Models.Merchandise.MerchandiseVM.AddPesanan
+@using GitaWidyaAgniWeb.Models.Merchandise
+@* Pembeli anggota atau nama pembeli. Barang (minimal satu) tidak bisa diubah setelah disimpan; batalkan lalu buat ulang. *@
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<MerchandiseVM.NewPesanan>()
+        .ID("frmPesanan")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.BuyerMemberId).Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.BuyerName).Editor(e => e.TextBox().MaxLength(150));
+            items.AddSimpleFor(m => m.BuyerPhone).Editor(e => e.TextBox().MaxLength(30));
+            items.AddSimpleFor(m => m.OrderDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+            items.AddSimpleFor(m => m.ActivityId).Editor(e => e.SelectBox().DataSource(Model.KegiatanOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.PicMemberId).Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.Notes).ColSpan(3).Editor(e => e.TextBox().MaxLength(500));
+        })
+    )
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Barang</span></div>
+    <template id="tplBarisPesanan">
+        <div class="d-flex gap-2 mb-2 baris-pesanan">
+            <select class="form-select p-produk" aria-label="Produk">
+                <option value="">Pilih produk...</option>
+                @foreach (var p in Model.ProdukOpsi)
+                {
+                    <option value="@p.Value">@p.Text</option>
+                }
+            </select>
+            <input type="number" class="form-control p-qty" min="1" value="1" style="max-width:90px" aria-label="Jumlah" />
+            <button type="button" class="btn btn-icon btn-outline-danger" title="Hapus baris" aria-label="Hapus baris" onclick="$(this).closest('.baris-pesanan').remove()"><i class="ri-close-line"></i></button>
+        </div>
+    </template>
+    <div id="barisPesanan"></div>
+    <button type="button" class="btn btn-sm btn-outline-primary" onclick="Merchandise.addOrderLine()"><i class="ri-add-line align-bottom me-1"></i> Tambah Barang</button>
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Merchandise.saveOrder()"><i class="ri-save-3-line align-bottom me-1"></i> Simpan Pesanan</button>
+    </div>
+</div>

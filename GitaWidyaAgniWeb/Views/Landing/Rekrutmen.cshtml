@@ -1,0 +1,142 @@
+@model GitaWidyaAgniWeb.Models.Landing.RecruitmentPageVM
+@using GWAShared.Enums
+@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = "Open Recruitment";
+    ViewData["SolidNav"] = true;
+    var id = new System.Globalization.CultureInfo("id-ID");
+    var sel = Model.Selected;
+    var umum = sel?.AcceptPublic == RecruitmentAudience.TermasukUmum;
+}
+<section class="page-hero">
+    <div class="gwa-container" style="max-width:860px">
+        <span class="eyebrow">Bergabung bersama kami</span>
+        <h1 class="section-title">@(sel?.Title ?? "Open Recruitment")</h1>
+        @if (sel != null)
+        {
+            <p class="mb-0 sub"><i class="ri-calendar-line" aria-hidden="true"></i> Dibuka sampai @sel.CloseDate.ToString("dddd, d MMMM yyyy HH:mm", id) WIB</p>
+        }
+        else
+        {
+            <p class="mb-0 sub">Pilih rekrutmen yang sedang dibuka untuk mendaftar.</p>
+        }
+    </div>
+</section>
+
+<section class="pb-5">
+    <div class="gwa-container">
+        <div class="article">
+            @if (Model.Open.Count == 0)
+            {
+                <p class="mb-0">Saat ini belum ada rekrutmen yang dibuka. Pantau Instagram kami untuk info pendaftaran berikutnya.</p>
+            }
+            else if (sel == null)
+            {
+                <ul class="apply-list">
+                    @foreach (var r in Model.Open)
+                    {
+                        <li>
+                            <a href="@Url.Action("Rekrutmen", "Landing", new { id = r.Id })">
+                                <strong>@r.Title</strong>
+                                <span>Ditutup @r.CloseDate.ToString("d MMMM yyyy", id)</span>
+                                <i class="ri-arrow-right-line" aria-hidden="true"></i>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+            else if (Model.Success)
+            {
+                <div class="apply-alert ok" role="status">
+                    <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+                    <div><strong>Pendaftaran terkirim.</strong> Terima kasih! Panitia akan menghubungi kamu lewat email atau WhatsApp untuk tahap berikutnya.</div>
+                </div>
+                <a href="@Url.Action("Index", "Landing")" class="btn-gwa btn-outline-ink mt-3">Kembali ke beranda</a>
+            }
+            else
+            {
+                @if (!string.IsNullOrWhiteSpace(sel.Description))
+                {
+                    <div class="content mb-4">@sel.Description</div>
+                }
+                @if (Model.Error != null)
+                {
+                    <div class="apply-alert err" role="alert" id="applyError">
+                        <i class="ri-error-warning-line" aria-hidden="true"></i><div>@Model.Error</div>
+                    </div>
+                }
+                <form method="post" action="@Url.Action("Rekrutmen", "Landing", new { id = sel.Id })" class="apply-form" novalidate>
+                    @Html.AntiForgeryToken()
+                    @if (umum)
+                    {
+                        <div class="field full">
+                            <label for="Category">Kategori pendaftar</label>
+                            <select id="Category" name="Category">
+                                <option value="@((int)MemberCategory.Mahasiswa)" selected="@(Model.Input.Category == MemberCategory.Mahasiswa)">Mahasiswa UPN "Veteran" Jawa Timur</option>
+                                <option value="@((int)MemberCategory.Umum)" selected="@(Model.Input.Category == MemberCategory.Umum)">Umum / luar kampus</option>
+                            </select>
+                        </div>
+                    }
+                    else
+                    {
+                        <input type="hidden" name="Category" value="@((int)MemberCategory.Mahasiswa)" />
+                    }
+                    <div class="field full">
+                        <label for="Fullname">Nama lengkap <span aria-hidden="true">*</span></label>
+                        <input id="Fullname" name="Fullname" value="@Model.Input.Fullname" required maxlength="150" autocomplete="name" />
+                    </div>
+                    <div class="field">
+                        <label for="Email">Email <span aria-hidden="true">*</span></label>
+                        <input id="Email" name="Email" type="email" value="@Model.Input.Email" required maxlength="100" autocomplete="email" />
+                    </div>
+                    <div class="field">
+                        <label for="Phone">No. WhatsApp</label>
+                        <input id="Phone" name="Phone" type="tel" value="@Model.Input.Phone" maxlength="30" autocomplete="tel" />
+                    </div>
+                    <div class="field" data-mhs>
+                        <label for="Nim">NIM <span aria-hidden="true">*</span></label>
+                        <input id="Nim" name="Nim" value="@Model.Input.Nim" maxlength="20" inputmode="numeric" />
+                    </div>
+                    <div class="field" data-mhs>
+                        <label for="Angkatan">Angkatan</label>
+                        <input id="Angkatan" name="Angkatan" type="number" min="1990" max="2100" value="@Model.Input.Angkatan" />
+                    </div>
+                    <div class="field full" data-mhs>
+                        <label for="ProgramStudi">Program studi</label>
+                        <input id="ProgramStudi" name="ProgramStudi" value="@Model.Input.ProgramStudi" maxlength="100" />
+                    </div>
+                    @if (umum)
+                    {
+                        <div class="field full" data-umum>
+                            <label for="Institution">Instansi / sekolah</label>
+                            <input id="Institution" name="Institution" value="@Model.Input.Institution" maxlength="150" />
+                        </div>
+                    }
+                    <div class="field full">
+                        <label for="Motivation">Motivasi bergabung</label>
+                        <textarea id="Motivation" name="Motivation" rows="4" maxlength="2000">@Model.Input.Motivation</textarea>
+                    </div>
+                    <div class="full">
+                        <button type="submit" class="btn-gwa btn-flame"><i class="ri-send-plane-line" aria-hidden="true"></i> Kirim Pendaftaran</button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            const cat = document.getElementById('Category');
+            if (!cat) return;
+            const sync = function () {
+                const mhs = cat.value === '@((int)MemberCategory.Mahasiswa)';
+                document.querySelectorAll('[data-mhs]').forEach(function (el) { el.hidden = !mhs; });
+                document.querySelectorAll('[data-umum]').forEach(function (el) { el.hidden = mhs; });
+            };
+            cat.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+}

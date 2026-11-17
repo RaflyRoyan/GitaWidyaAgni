@@ -1,0 +1,19 @@
+@model GitaWidyaAgniWeb.Models.Merchandise.MerchandiseVM.ListMutasi
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Merchandise
+
+@(Html.DevExtreme().DataGrid<MerchandiseVM.MutasiRow>()
+    .ID("tblMutasiStok")
+    .DataSource(Model.Rows)
+    .ListGrid("Mutasi Stok Produk")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.MovementDate).Caption("Waktu").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.Produk).Caption("Produk").CssClass("fw-medium");
+        columns.AddFor(m => m.Jenis).Caption("Jenis");
+        columns.AddFor(m => m.Quantity).Caption("Jumlah").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.Referensi).Caption("Referensi");
+        columns.AddFor(m => m.Notes).Caption("Catatan");
+    })
+)

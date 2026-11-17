@@ -1,0 +1,102 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.PengajuanDanaVM.Detail
+@using GitaWidyaAgniWeb.Models.Keuangan
+@* Riwayat persetujuan + realisasi (tambah hanya saat Dicairkan dan LPJ Belum). Bukti maks. 5 MB. *@
+
+<div class="gwa-mform" id="danaDetail" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-file-list-3-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Judul</div>
+            <div class="gwa-mform-info-meta"><span>@Model.Ringkasan</span></div>
+        </div>
+    </div>
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Persetujuan</span></div>
+    @if (Model.Persetujuan.Count == 0)
+    {
+        <p class="text-muted">Belum ada keputusan.</p>
+    }
+    else
+    {
+        <div class="table-responsive mb-3">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light"><tr><th>#</th><th>Langkah</th><th>Penyetuju</th><th>Keputusan</th><th>Catatan</th><th>Waktu</th></tr></thead>
+                <tbody>
+                    @foreach (var a in Model.Persetujuan)
+                    {
+                        <tr><td>@a.Level</td><td>@a.Langkah</td><td>@a.Approver</td><td>@a.Keputusan</td><td>@a.Note</td><td>@a.DecidedAt?.ToString("dd MMM yyyy HH:mm")</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Realisasi</span></div>
+    @if (Model.BisaRealisasi)
+    {
+        <div class="gwa-mform-add">
+            <div class="gwa-mform-add-form">
+                @(Html.DevExtreme().Form<PengajuanDanaVM.RealisasiInput>()
+                    .ID("frmRealisasi")
+                    .FormData(Model.Input)
+                    .LabelLocation(FormLabelLocation.Top)
+                    .ShowColonAfterLabel(false)
+                    .ColCount(4)
+                    .ColCountByScreen(c => c.Xs(1).Sm(2))
+                    .Items(items =>
+                    {
+                        items.AddSimpleFor(m => m.RealizationDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+                        items.AddSimpleFor(m => m.Description).ColSpan(2).Editor(e => e.TextBox().MaxLength(255));
+                        items.AddSimpleFor(m => m.Amount).Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+                        items.AddSimpleFor(m => m.Quantity).Editor(e => e.NumberBox().Min(0).Format("#,##0.##"));
+                        items.AddSimpleFor(m => m.Unit).Editor(e => e.TextBox().MaxLength(30));
+                        items.AddSimpleFor(m => m.Notes).ColSpan(2).Editor(e => e.TextBox().MaxLength(255));
+                    })
+                )
+                @(Html.DevExtreme().FileUploader().ID("fileBukti").UploadMode(FileUploadMode.UseForm).Multiple(false)
+                    .MaxFileSize(5 * 1024 * 1024).SelectButtonText("Bukti / nota").LabelText(""))
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="PengajuanDana.addRealization()"><i class="ri-add-line align-bottom me-1"></i> Tambah</button>
+        </div>
+    }
+    @if (Model.Realisasi.Count == 0)
+    {
+        <p class="text-muted mb-0">Belum ada realisasi.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light"><tr><th>Tanggal</th><th>Uraian</th><th>Jml</th><th class="text-end">Nominal</th><th>Bukti</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.Realisasi)
+                    {
+                        <tr>
+                            <td>@r.RealizationDate.ToString("dd MMM yyyy")</td>
+                            <td>@r.Description<div class="small text-muted">@r.Notes</div></td>
+                            <td>@r.Quantity?.ToString("#,##0.##") @r.Unit</td>
+                            <td class="text-end">@r.Amount.ToString("#,##0")</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(r.ReceiptFileName))
+                                {
+                                    <a href="@Url.Action("Bukti", new { key = r.EncDecrKey })" target="_blank">@r.ReceiptFileName</a>
+                                }
+                            </td>
+                            <td class="text-end">
+                                @if (Model.BisaRealisasi)
+                                {
+                                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus realisasi" aria-label="Hapus realisasi" onclick="PengajuanDana.removeRealization('@r.EncDecrKey')"><i class="ri-delete-bin-line"></i></button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot><tr class="fw-semibold"><td colspan="3">Total</td><td class="text-end">@Model.Realisasi.Sum(x => x.Amount).ToString("#,##0")</td><td colspan="2"></td></tr></tfoot>
+            </table>
+        </div>
+    }
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

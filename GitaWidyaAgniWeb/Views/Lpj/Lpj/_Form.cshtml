@@ -1,0 +1,89 @@
+@model GitaWidyaAgniWeb.Models.Lpj.LpjVM.Add
+@using GitaWidyaAgniWeb.Models.Lpj
+@* Form bersama Add & Edit LPJ. Kegiatan / periode tetap setelah dibuat. Bagian yang kosong saat dibuat diisi awal dari
+   profil organisasi dan data kegiatan. Baris diawali "- " dicetak sebagai poin. *@
+
+@{
+    var editModel = Model as LpjVM.Edit;
+    var isEdit = editModel != null;
+    var kegiatan = Model.Kegiatan;
+    var habis = !isEdit && (kegiatan ? Model.KegiatanOpsi.Count == 0 : Model.PeriodeOpsi.Count == 0);
+    const string POIN = "Baris diawali \"- \" dicetak sebagai poin.";
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-file-chart-line"></i></span>
+            <div>
+                <div class="gwa-mform-info-title">@Model.Row.Title</div>
+                <div class="gwa-mform-info-meta"><span>@(kegiatan ? "Kegiatan" : "Periode") <b>@editModel!.Referensi</b></span><span>Status <b>@editModel.StatusText</b></span></div>
+            </div>
+        </div>
+    }
+    else if (habis)
+    {
+        <div class="gwa-mform-note">Semua @(kegiatan ? "kegiatan induk" : "periode") sudah punya LPJ.</div>
+    }
+    @(Html.DevExtreme().Form<LpjVM.NewRow>()
+        .ID("frmLpj")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            if (!isEdit)
+            {
+                if (kegiatan)
+                {
+                    items.AddSimpleFor(m => m.ActivityId).IsRequired(true).HelpText("Kegiatan induk; sub-kegiatan ikut dilaporkan.")
+                        .Editor(e => e.SelectBox().DataSource(Model.KegiatanOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true));
+                }
+                else
+                {
+                    items.AddSimpleFor(m => m.PeriodId).IsRequired(true)
+                        .Editor(e => e.SelectBox().DataSource(Model.PeriodeOpsi).ValueExpr("Value").DisplayExpr("Text"));
+                }
+                items.AddSimpleFor(m => m.Title).Editor(e => e.TextBox().MaxLength(200).Placeholder(kegiatan ? "Kosong = judul kegiatan" : "Kosong = Kepengurusan {organisasi} {periode}"));
+            }
+            else
+            {
+                items.AddSimpleFor(m => m.Title).ColSpan(2).IsRequired(true).Editor(e => e.TextBox().MaxLength(200));
+            }
+            var hint = isEdit ? "" : "Kosong = diisi awal dari profil organisasi. ";
+            items.AddSimpleFor(m => m.Introduction).ColSpan(2).HelpText(hint + "Pisahkan paragraf dengan baris baru.").Editor(e => e.TextArea().Height(140));
+            if (kegiatan)
+            {
+                items.AddSimpleFor(m => m.Background).ColSpan(2).HelpText(isEdit ? "" : "Kosong = deskripsi kegiatan.").Editor(e => e.TextArea().Height(120));
+                items.AddSimpleFor(m => m.ActivityKind).ColSpan(2).Editor(e => e.TextArea().Height(70));
+                items.AddSimpleFor(m => m.Purpose).ColSpan(2).HelpText(POIN).Editor(e => e.TextArea().Height(100));
+                items.AddSimpleFor(m => m.ActivityForm).ColSpan(2).HelpText(POIN + (isEdit ? "" : " Kosong = daftar sub-kegiatan.")).Editor(e => e.TextArea().Height(100));
+            }
+            else
+            {
+                items.AddSimpleFor(m => m.VisionMission).ColSpan(2).HelpText(isEdit ? "" : "Kosong = visi & misi profil organisasi.").Editor(e => e.TextArea().Height(120));
+                items.AddSimpleFor(m => m.Purpose).ColSpan(2).Label(l => l.Text("Tujuan")).HelpText(POIN).Editor(e => e.TextArea().Height(100));
+            }
+            items.AddSimpleFor(m => m.Closing).ColSpan(2).HelpText(isEdit ? "" : "Kosong = kalimat penutup baku.").Editor(e => e.TextArea().Height(100));
+        })
+    )
+    <div class="gwa-mform-note">
+        @if (kegiatan)
+        {
+            <span>Waktu &amp; tempat, hasil lomba, dokumentasi (galeri), dan realisasi anggaran diambil dari data kegiatan saat dokumen dibuat.</span>
+        }
+        else
+        {
+            <span>Evaluasi program kerja (per bidang &amp; jangka), daftar kegiatan, inventaris, susunan pengurus, dan dokumentasi diambil dari data periode saat dokumen dibuat.</span>
+        }
+    </div>
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Lpj.save(@(isEdit ? "true" : "false"))" @(habis ? "disabled" : "")>
+            <i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")
+        </button>
+    </div>
+</div>

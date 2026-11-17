@@ -1,0 +1,127 @@
+@model GitaWidyaAgniWeb.Controllers.AreaAnggota.FormulirSayaController.Model
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@{
+    ViewData["Title"] = "Formulir & Aspirasi";
+}
+
+<div class="row g-3">
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="ri-survey-line align-bottom me-1"></i> Formulir Dibuka</h5>
+                <p class="gwa-card-intro mb-0">Evaluasi kegiatan, survei, dan pendaftaran tim pelaksana.</p>
+            </div>
+            @if (Model.Formulir.Count == 0)
+            {
+                <div class="card-body text-muted">Tidak ada formulir yang sedang dibuka.</div>
+            }
+            else
+            {
+                <ul class="list-group list-group-flush">
+                    @foreach (var (f, sudah) in Model.Formulir)
+                    {
+                        <li class="list-group-item d-flex align-items-center gap-3">
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">@f.Title</div>
+                                <div class="small text-muted">
+                                    @EnumHelper.Text(f.FormType) @(f.ActivityTitle != null ? "· " + f.ActivityTitle : "")
+                                    @(f.IsAnonymous == IdentityMode.Anonim ? "· anonim" : "") @(f.CloseAt.HasValue ? "· ditutup " + f.CloseAt.Value.ToString("dd MMM HH:mm") : "")
+                                </div>
+                            </div>
+                            @if (sudah)
+                            {
+                                <span class="badge badge-soft-success"><i class="ri-check-line"></i> Sudah diisi</span>
+                            }
+                            else
+                            {
+                                <a class="btn btn-sm btn-primary" href="@Url.Action("Isi", new { key = f.EncDecrKey })">Isi</a>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+
+    <div class="col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="ri-chat-3-line align-bottom me-1"></i> Kirim Aspirasi</h5>
+                <p class="gwa-card-intro mb-0">Aspirasi anonim tidak menyimpan identitas Anda dan tidak muncul di riwayat di bawah.</p>
+            </div>
+            <div class="card-body">
+                <form id="frmAspirasi" class="row g-2" novalidate>
+                    <div class="col-sm-4">
+                        <label class="form-label small mb-1" for="aCat">Kategori</label>
+                        <select id="aCat" name="category" class="form-select">
+                            @foreach (var c in Model.KategoriAspirasi) { <option value="@c.Value">@c.Text</option> }
+                        </select>
+                    </div>
+                    <div class="col-sm-8">
+                        <label class="form-label small mb-1" for="aTitle">Judul</label>
+                        <input id="aTitle" name="title" class="form-control" maxlength="200" required />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small mb-1" for="aContent">Isi</label>
+                        <textarea id="aContent" name="content" class="form-control" rows="4" maxlength="5000" required></textarea>
+                    </div>
+                    <div class="col-sm-7">
+                        <label class="form-label small mb-1" for="aFile">Lampiran (opsional, maks. 5 MB)</label>
+                        <input id="aFile" name="lampiran" type="file" class="form-control" />
+                    </div>
+                    <div class="col-sm-5 d-flex align-items-end">
+                        <label class="form-check-label"><input type="checkbox" id="aAnon" class="form-check-input me-1" /> Kirim anonim</label>
+                    </div>
+                    <div class="col-12 text-end"><button type="submit" class="btn btn-success"><i class="ri-send-plane-line me-1"></i> Kirim</button></div>
+                </form>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h5 class="card-title mb-0"><i class="ri-history-line align-bottom me-1"></i> Aspirasi Saya</h5></div>
+            <ul class="list-group list-group-flush">
+                @foreach (var a in Model.Aspirasi)
+                {
+                    <li class="list-group-item">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-semibold flex-grow-1">@a.Title</span>
+                            <span class="badge badge-soft-secondary">@EnumHelper.Text(a.Status)</span>
+                            @if (a.Status == AspirationStatus.Baru)
+                            {
+                                <button type="button" class="btn btn-sm btn-icon btn-ghost-danger" title="Hapus" aria-label="Hapus aspirasi" onclick="FormulirSaya.removeAspiration('@a.EncDecrKey')"><i class="ri-delete-bin-line"></i></button>
+                            }
+                        </div>
+                        <div class="small text-muted">@EnumHelper.Text(a.Category) · @a.InsDate.ToString("dd MMM yyyy")</div>
+                        @if (!string.IsNullOrEmpty(a.Response))
+                        {
+                            <div class="small border-start border-3 ps-2 mt-1" style="white-space:pre-line"><b>Tanggapan:</b> @a.Response</div>
+                        }
+                    </li>
+                }
+                @if (Model.Aspirasi.Count == 0) { <li class="list-group-item text-muted">Belum ada aspirasi.</li> }
+            </ul>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.FormulirSaya = (function () {
+            $('#frmAspirasi').on('submit', function (e) {
+                e.preventDefault();
+                if (!$.trim($('#aTitle').val()) || !$.trim($('#aContent').val())) { AppUI.alertWarning('Isi judul dan isi aspirasi.'); return; }
+                const fd = new FormData(this);
+                fd.append('anonim', $('#aAnon').is(':checked'));
+                if (!$('#aFile')[0].files.length) fd.delete('lampiran');
+                AppUI.postForm('@Url.Action("KirimAspirasi")', fd).done(function (r) {
+                    AppUI.alertSuccess(r.Message);
+                    setTimeout(function () { window.location.reload(); }, 800);
+                });
+            });
+            function removeAspiration(key) {
+                AppUI.confirmPost('Hapus aspirasi?', '', '@Url.Action("HapusAspirasi")', { Key: key }, 'Hapus', 'btn-danger').done(function () { window.location.reload(); });
+            }
+            return { removeAspiration: removeAspiration };
+        })();
+    </script>
+}

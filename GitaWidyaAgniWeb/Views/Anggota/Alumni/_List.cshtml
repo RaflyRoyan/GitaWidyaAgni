@@ -1,0 +1,26 @@
+@model GitaWidyaAgniWeb.Models.Anggota.AlumniVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Anggota
+
+@(Html.DevExtreme().DataGrid<AlumniVM.Row>()
+    .ID("tblGrid")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Profil Alumni")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Nama).Caption("Nama").CssClass("fw-medium");
+        columns.AddFor(m => m.Angkatan).Caption("Angkatan").Alignment(HorizontalAlignment.Center).Width(95);
+        columns.AddFor(m => m.GraduationYear).Caption("Lulus").Alignment(HorizontalAlignment.Center).Width(80);
+        columns.AddFor(m => m.CurrentJob).Caption("Pekerjaan");
+        columns.AddFor(m => m.Company).Caption("Perusahaan");
+        columns.AddFor(m => m.Industry).Caption("Bidang").Visible(false);
+        columns.AddFor(m => m.City).Caption("Kota");
+        columns.AddFor(m => m.Phone).Caption("Telepon").Visible(false);
+        columns.AddFor(m => m.Email).Caption("Email").Visible(false);
+        columns.AddFor(m => m.LinkedinUrl).Caption("LinkedIn").Visible(false);
+        columns.AddFor(m => m.BisaDihubungi).Caption("Bisa Dihubungi").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Alumni.actionTemplate");
+    })
+)

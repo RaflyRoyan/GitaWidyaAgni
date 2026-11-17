@@ -97,6 +97,10 @@ namespace GWAShared.Results
         public const string REPORT_SOURCE_REQUIRED = "Laporan harus terkait kegiatan atau program kerja";
         public const string GALLERY_EMPTY = "Galeri yang terbit harus memiliki minimal satu foto";
         public const string PROGRAM_IN_USE = "Program kerja sudah dipakai data lain sehingga tidak dapat dihapus; batalkan program alih-alih menghapus";
+        public const string LPJ_ACTIVITY_EXISTS = "LPJ untuk kegiatan ini sudah ada";
+        public const string LPJ_PERIOD_EXISTS = "LPJ untuk periode ini sudah ada";
+        public const string LPJ_SUB_ACTIVITY = "LPJ dibuat untuk kegiatan induk; sub-kegiatan ikut dilaporkan di dalamnya";
+        public const string LPJ_DOCUMENT_REQUIRED = "Dokumen PDF LPJ final harus ada";
 
         // Tim Pelaksana
         public const string COMMITTEE_SECTION_MISMATCH = "Sie bukan milik kegiatan ini";
@@ -121,6 +125,7 @@ namespace GWAShared.Results
         public const string ATTENDANCE_ALREADY_CHECKED_OUT = "Anda sudah check-out pada sesi ini";
         public const string USER_NOT_MEMBER = "Akun ini belum terhubung ke data anggota";
         public const string LOGIN_INVALID = "Username atau password salah";
+        public const string PASSWORD_CURRENT_INVALID = "Password lama salah";
 
         // Keuangan
         public const string FINANCIAL_CATEGORY_IN_USE = "Kategori keuangan masih dipakai pengaturan iuran aktif";
@@ -189,6 +194,8 @@ namespace GWAShared.Results
         public const string SALES_HAS_PAYMENT = "Pesanan yang sudah dibayar tidak dapat dibatalkan; batalkan pembayarannya dulu";
         public const string SALES_NOT_PAID = "Pesanan harus lunas sebelum diselesaikan";
         public const string SALES_PAYMENT_VIA_ORDER = "Pembayaran penjualan dicatat lewat pesanan (ReceivePayment)";
+        public const string SALES_GUEST_LIMIT = "Pesanan tanpa login maksimal {0} jenis item dan {1} per item";
+        public const string SALES_GUEST_NOT_FOUND = "Pesanan tidak ditemukan; periksa nomor pesanan dan nomor WhatsApp";
 
         // Inventaris
         public const string ASSET_CATEGORY_IN_USE = "Kategori aset masih dipakai aset yang belum dihapuskan";

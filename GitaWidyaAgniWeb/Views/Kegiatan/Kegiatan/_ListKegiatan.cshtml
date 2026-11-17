@@ -1,0 +1,26 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.KegiatanVM.ListKegiatan
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<KegiatanVM.KegiatanRow>()
+    .ID("tblKegiatan")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Daftar Kegiatan")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Title).Caption("Kegiatan").CellTemplate(new JS("Kegiatan.titleTemplate"));
+        columns.AddFor(m => m.Jenis).Caption("Jenis").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.StartAt).Caption("Mulai").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.EndAt).Caption("Selesai").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm").Visible(false);
+        columns.AddFor(m => m.Location).Caption("Lokasi");
+        columns.AddFor(m => m.Audiens).Caption("Audiens");
+        columns.AddFor(m => m.Program).Caption("Program").Visible(false);
+        columns.AddFor(m => m.Induk).Caption("Kegiatan Induk").Visible(false);
+        columns.AddFor(m => m.JumlahPeserta).Caption("Peserta").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.Publik).Caption("Publik").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Kegiatan.statusTemplate"));
+        columns.AddAction("Kegiatan.actionTemplate");
+    })
+)

@@ -1,0 +1,22 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.DivisiVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Organisasi
+
+@(Html.DevExtreme().DataGrid<DivisiVM.Row>()
+    .ID("tblGrid")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Daftar Divisi")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Nama Divisi").CssClass("fw-medium");
+        columns.AddFor(m => m.Jenis).Caption("Jenis").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.Description).Caption("Keterangan");
+        columns.AddFor(m => m.SortOrder).Caption("Urutan").Alignment(HorizontalAlignment.Center).Width(90);
+        columns.AddFor(m => m.JumlahAnggota).Caption("Anggota Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Divisi.actionTemplate");
+    })
+)

@@ -1,0 +1,38 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.DivisiVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Divisi";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-team-line align-bottom me-1"></i> Daftar Divisi</h5>
+        <p class="gwa-card-intro">Divisi dan tim beserta anggotanya. Anggota bisa dicatat per periode; mengeluarkan anggota mengisi tanggal keluar tanpa menghapus riwayatnya.</p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel("Tambah Divisi", "Divisi.add()",
+            ("btn-outline-success", "ri-group-line", "Anggota divisi"),
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah divisi"),
+            ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan divisi"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.DivisiUrl = {
+            list: '@Url.Action("List")',
+            add: '@Url.Action("Add")',
+            edit: '@Url.Action("Edit")',
+            simpanBaru: '@Url.Action("SimpanBaru")',
+            update: '@Url.Action("Update")',
+            hapus: '@Url.Action("Delete")',
+            anggota: '@Url.Action("Anggota")',
+            anggotaList: '@Url.Action("AnggotaList")',
+            tambahAnggota: '@Url.Action("TambahAnggota")',
+            keluarkanAnggota: '@Url.Action("KeluarkanAnggota")'
+        };
+    </script>
+    <script src="~/Scripts/Organisasi/Divisi.js" asp-append-version="true"></script>
+}

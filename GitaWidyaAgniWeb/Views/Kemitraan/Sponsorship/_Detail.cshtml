@@ -1,0 +1,120 @@
+@model GitaWidyaAgniWeb.Models.Kemitraan.SponsorshipVM.Detail
+@* Benefit (checklist + bukti, maks. 5 MB), MoU (dokumen maks. 10 MB), dana masuk. *@
+
+<div class="gwa-mform" id="sponsorDetail" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-award-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Judul</div>
+            <div class="gwa-mform-info-meta"><span>@Model.Ringkasan</span></div>
+        </div>
+    </div>
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Benefit untuk sponsor</span></div>
+    @if (Model.Aktif)
+    {
+        <div class="gwa-mform-add">
+            <div class="gwa-mform-add-form d-flex flex-wrap gap-2">
+                <input id="benefitJudul" class="form-control flex-grow-1" maxlength="200" placeholder="Benefit, mis. Logo di backdrop" aria-label="Judul benefit" style="min-width:220px" />
+                <input id="benefitUraian" class="form-control flex-grow-1" maxlength="255" placeholder="Uraian (opsional)" aria-label="Uraian benefit" style="min-width:220px" />
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="Sponsorship.addBenefit()"><i class="ri-add-line align-bottom me-1"></i> Tambah</button>
+        </div>
+    }
+    @if (Model.Benefit.Count == 0)
+    {
+        <p class="text-muted">Belum ada benefit.</p>
+    }
+    else
+    {
+        <ul class="list-group mb-3">
+            @foreach (var b in Model.Benefit)
+            {
+                <li class="list-group-item d-flex flex-wrap align-items-center gap-2">
+                    <i class="@(b.Sudah ? "ri-checkbox-circle-fill text-success" : "ri-checkbox-blank-circle-line text-muted") fs-18" aria-hidden="true"></i>
+                    <div class="flex-grow-1">
+                        <div class="fw-medium">@b.Title</div>
+                        <div class="small text-muted">@b.Description @(b.DoneAt.HasValue ? "· diberikan " + b.DoneAt.Value.ToString("dd MMM yyyy") : "") @b.Notes</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(b.ProofFileName))
+                    {
+                        <a href="@Url.Action("BuktiBenefit", new { key = b.EncDecrKey })" target="_blank" class="small">Bukti</a>
+                    }
+                    @if (Model.Aktif)
+                    {
+                        @if (!b.Sudah)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="Sponsorship.doneBenefit('@b.EncDecrKey')"><i class="ri-check-line me-1"></i>Sudah</button>
+                            <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus benefit" aria-label="Hapus benefit" onclick="Sponsorship.removeBenefit('@b.EncDecrKey')"><i class="ri-delete-bin-line"></i></button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="Sponsorship.undoneBenefit('@b.EncDecrKey')">Belum</button>
+                        }
+                    }
+                </li>
+            }
+        </ul>
+    }
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">MoU</span></div>
+    @if (Model.BisaMou)
+    {
+        <div class="gwa-mform-add">
+            <div class="gwa-mform-add-form">
+                <div class="row g-2">
+                    <div class="col-md-4"><input id="mouNomor" class="form-control" maxlength="100" placeholder="Nomor (kosong = otomatis)" aria-label="Nomor MoU" /></div>
+                    <div class="col-md-4"><label class="small text-muted" for="mouTtd">Tanggal TTD</label><input id="mouTtd" type="date" class="form-control" /></div>
+                    <div class="col-md-2"><label class="small text-muted" for="mouMulai">Mulai</label><input id="mouMulai" type="date" class="form-control" /></div>
+                    <div class="col-md-2"><label class="small text-muted" for="mouAkhir">Akhir</label><input id="mouAkhir" type="date" class="form-control" /></div>
+                </div>
+                @(Html.DevExtreme().FileUploader().ID("fileMou").UploadMode(FileUploadMode.UseForm).Multiple(false)
+                    .MaxFileSize(10 * 1024 * 1024).SelectButtonText("Dokumen MoU").LabelText(""))
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="Sponsorship.addMou()"><i class="ri-add-line align-bottom me-1"></i> Tambah</button>
+        </div>
+    }
+    @if (Model.Mou.Count == 0)
+    {
+        <p class="text-muted">Belum ada MoU.</p>
+    }
+    else
+    {
+        <ul class="list-group mb-3">
+            @foreach (var m in Model.Mou)
+            {
+                <li class="list-group-item d-flex align-items-center gap-2">
+                    <span class="gwa-code">@m.MouNumber</span>
+                    <span class="small">@m.Masa</span>
+                    @if (!string.IsNullOrEmpty(m.DocumentFileName))
+                    {
+                        <a href="@Url.Action("DokumenMou", new { key = m.EncDecrKey })" target="_blank" class="small">@m.DocumentFileName</a>
+                    }
+                    @if (Model.BisaMou)
+                    {
+                        <button type="button" class="btn btn-sm btn-icon btn-outline-danger ms-auto" title="Hapus MoU" aria-label="Hapus MoU" onclick="Sponsorship.removeMou('@m.EncDecrKey')"><i class="ri-delete-bin-line"></i></button>
+                    }
+                </li>
+            }
+        </ul>
+    }
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Dana masuk</span></div>
+    @if (Model.Dana.Count == 0)
+    {
+        <p class="text-muted mb-0">Belum ada dana masuk.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var d in Model.Dana)
+            {
+                <li class="list-group-item d-flex gap-2"><span class="gwa-code">@d.Nomor</span><span>@d.Tanggal.ToString("dd MMM yyyy") · @d.Akun</span><span class="ms-auto fw-semibold">@d.Amount.ToString("#,##0")</span></li>
+            }
+        </ul>
+        <p class="gwa-mform-note">Dana masuk dibatalkan dari menu Keuangan › Transaksi.</p>
+    }
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

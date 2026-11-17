@@ -128,8 +128,8 @@ namespace GWALib.Lib.Transaksi.Information
                 EntityId = newrow.EntityId,
                 OldValue = ToJson(newrow.OldValue),
                 NewValue = ToJson(newrow.NewValue),
-                IpAddress = TransaksiHelper.Truncate(newrow.IpAddress, 45),
-                UserAgent = TransaksiHelper.Truncate(newrow.UserAgent, 255),
+                IpAddress = TransaksiHelper.Truncate(newrow.IpAddress ?? RequestInfo.IpAddress, 45),
+                UserAgent = TransaksiHelper.Truncate(newrow.UserAgent ?? RequestInfo.UserAgent, 255),
                 InsDate = DateTime.Now,
                 InsBy = userId
             };

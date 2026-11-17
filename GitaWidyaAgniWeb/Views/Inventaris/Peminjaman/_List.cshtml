@@ -1,0 +1,26 @@
+@model GitaWidyaAgniWeb.Models.Inventaris.PeminjamanVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Inventaris
+
+@(Html.DevExtreme().DataGrid<PeminjamanVM.Row>()
+    .ID("tblGrid")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Peminjaman Alat")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.RequestNumber).Caption("Nomor").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Peminjam).Caption("Peminjam").CellTemplate(new JS("Peminjaman.borrowerTemplate"));
+        columns.AddFor(m => m.Purpose).Caption("Keperluan");
+        columns.AddFor(m => m.BorrowDate).Caption("Pinjam").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.ExpectedReturnDate).Caption("Rencana Kembali").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.ActualReturnDate).Caption("Kembali").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm").Visible(false);
+        columns.AddFor(m => m.Skema).Caption("Skema").Visible(false);
+        columns.AddFor(m => m.Tagihan).Caption("Tagihan").Format("#,##0");
+        columns.AddFor(m => m.PaidAmount).Caption("Dibayar").Format("#,##0");
+        columns.AddFor(m => m.BayarText).Caption("Pembayaran").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Peminjaman.paymentTemplate"));
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Peminjaman.statusTemplate"));
+        columns.AddAction("Peminjaman.actionTemplate");
+    })
+)

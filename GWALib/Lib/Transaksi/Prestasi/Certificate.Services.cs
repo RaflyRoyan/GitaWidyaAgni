@@ -1,4 +1,5 @@
 using GWALib.General;
+using GWALib.Lib.Transaksi.Information;
 using GWALib.General.Utilities;
 using GWALib.Lib.Master.Anggota;
 using GWALib.Lib.Transaksi.Program;
@@ -285,6 +286,8 @@ namespace GWALib.Lib.Transaksi.Prestasi
             }
             GWAShared.Utilities.ValidateUtility.ValidateDAModel(row);
             context.TCertificates.Add(row);
+            NotifyHelper.ToMember(context, row.MemberId, NotifyHelper.TYPE_CERTIFICATE, "Sertifikat terbit: " + row.Title,
+                "Nomor " + row.CertificateNumber, NotifyHelper.LINK_MY_ACHIEVEMENT, "t_certificate", row.Id, userId);
             return row;
         }
         private void SetRow(EF.TCertificate row, int userId)

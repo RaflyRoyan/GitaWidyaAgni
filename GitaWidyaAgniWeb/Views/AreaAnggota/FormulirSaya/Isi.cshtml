@@ -1,0 +1,97 @@
+@model GitaWidyaAgniWeb.Controllers.AreaAnggota.FormulirSayaController.IsiModel
+@using GWAShared.Enums
+@{
+    ViewData["Title"] = Model.Form.Title;
+    ViewData["BreadcrumbArea"] = "Formulir";
+}
+
+<div class="row justify-content-center">
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-1">@Model.Form.Title</h5>
+                @if (!string.IsNullOrWhiteSpace(Model.Form.Description))
+                {
+                    <p class="text-muted mb-1" style="white-space:pre-line">@Model.Form.Description</p>
+                }
+                @if (Model.Form.IsAnonymous == IdentityMode.Anonim)
+                {
+                    <span class="badge badge-soft-info"><i class="ri-spy-line me-1"></i>Anonim: identitas Anda tidak disimpan</span>
+                }
+            </div>
+            <div class="card-body">
+                <form id="frmIsi" novalidate>
+                    @foreach (var q in Model.Pertanyaan)
+                    {
+                        var name = "q" + q.Id;
+                        var wajib = q.IsRequired == AnswerRequirement.Wajib;
+                        <fieldset class="mb-4">
+                            <legend class="fs-15 fw-semibold mb-2">@q.QuestionText @if (wajib) {<span class="text-danger" aria-label="wajib">*</span>}</legend>
+                            @switch (q.QuestionType)
+                            {
+                                case QuestionType.TeksSingkat:
+                                    <input name="@name" class="form-control" maxlength="255" required="@wajib" aria-label="@q.QuestionText" />
+                                    break;
+                                case QuestionType.Paragraf:
+                                    <textarea name="@name" class="form-control" rows="4" maxlength="2000" required="@wajib" aria-label="@q.QuestionText"></textarea>
+                                    break;
+                                case QuestionType.PilihanGanda:
+                                    @for (var i = 0; i < q.Options.Count; i++)
+                                    {
+                                        <div class="form-check"><input class="form-check-input" type="radio" name="@name" id="@(name)_@i" value="@q.Options[i]" required="@wajib" /><label class="form-check-label" for="@(name)_@i">@q.Options[i]</label></div>
+                                    }
+                                    break;
+                                case QuestionType.KotakCentang:
+                                    @for (var i = 0; i < q.Options.Count; i++)
+                                    {
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="@name" id="@(name)_@i" value="@q.Options[i]" /><label class="form-check-label" for="@(name)_@i">@q.Options[i]</label></div>
+                                    }
+                                    break;
+                                case QuestionType.Skala1Sampai5:
+                                    <div class="btn-group" role="group" aria-label="@q.QuestionText">
+                                        @for (var s = 1; s <= 5; s++)
+                                        {
+                                            <input type="radio" class="btn-check" name="@name" id="@(name)_@s" value="@s" required="@wajib" />
+                                            <label class="btn btn-outline-primary" for="@(name)_@s" style="min-width:44px">@s</label>
+                                        }
+                                    </div>
+                                    <div class="small text-muted mt-1">1 = sangat kurang, 5 = sangat baik</div>
+                                    break;
+                                case QuestionType.Tanggal:
+                                    <input name="@name" type="date" class="form-control" style="max-width:220px" required="@wajib" aria-label="@q.QuestionText" />
+                                    break;
+                                case QuestionType.File:
+                                    <input name="f@(q.Id)" type="file" class="form-control" required="@wajib" aria-label="@q.QuestionText" />
+                                    <div class="small text-muted mt-1">Maks. 5 MB</div>
+                                    break;
+                            }
+                        </fieldset>
+                    }
+                    <div class="d-flex justify-content-between">
+                        <a href="@Url.Action("Index")" class="btn btn-light">Kembali</a>
+                        <button type="submit" class="btn btn-success"><i class="ri-send-plane-line me-1"></i> Kirim Jawaban</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $('#frmIsi').on('submit', function (e) {
+            e.preventDefault();
+            if (!this.checkValidity()) {
+                this.reportValidity();
+                return;
+            }
+            const fd = new FormData(this);
+            // Berkas kosong tidak dikirim.
+            $(this).find('input[type=file]').each(function () { if (!this.files.length) fd.delete(this.name); });
+            AppUI.postForm('@Url.Action("Kirim", new { key = Model.Form.EncDecrKey })', fd).done(function (r) {
+                AppUI.alertSuccess(r.Message);
+                setTimeout(function () { window.location.href = '@Url.Action("Index")'; }, 1000);
+            });
+        });
+    </script>
+}

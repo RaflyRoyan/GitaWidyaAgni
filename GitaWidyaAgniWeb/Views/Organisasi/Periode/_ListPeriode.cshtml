@@ -1,0 +1,20 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.PeriodeVM.ListPeriode
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Organisasi
+
+@(Html.DevExtreme().DataGrid<PeriodeVM.PeriodeRow>()
+    .ID("tblPeriode")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Periode Kepengurusan")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Nama Periode").CssClass("fw-medium");
+        columns.AddFor(m => m.StartDate).Caption("Mulai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.EndDate).Caption("Selesai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Periode.periodStatusTemplate"));
+        columns.AddFor(m => m.JumlahPengurus).Caption("Penugasan").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddAction("Periode.periodActionTemplate");
+    })
+)

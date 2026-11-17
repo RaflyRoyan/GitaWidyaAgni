@@ -1,0 +1,187 @@
+@model GitaWidyaAgniWeb.Models.Pengadaan.PengadaanVM.Detail
+@using GitaWidyaAgniWeb.Models.Pengadaan
+@* Detail pengadaan: barang, penawaran, persetujuan, penerimaan, pembayaran. Tombol muncul sesuai status. *@
+
+<div class="gwa-mform" id="pengadaanDetail" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-shopping-cart-2-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Judul</div>
+            <div class="gwa-mform-info-meta"><span>@Model.Ringkasan</span></div>
+        </div>
+    </div>
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Barang</span></div>
+    @if (Model.BisaUbahItem)
+    {
+        <div class="gwa-mform-add">
+            <div class="gwa-mform-add-form">
+                @(Html.DevExtreme().Form<PengadaanVM.ItemInput>()
+                    .ID("frmItemPengadaan")
+                    .FormData(Model.ItemInput)
+                    .LabelLocation(FormLabelLocation.Top)
+                    .ShowColonAfterLabel(false)
+                    .ColCount(4)
+                    .ColCountByScreen(c => c.Xs(1).Sm(2))
+                    .Items(items =>
+                    {
+                        items.AddSimpleFor(m => m.ItemName).ColSpan(2).Editor(e => e.TextBox().MaxLength(200));
+                        items.AddSimpleFor(m => m.IsAsset).Editor(e => e.SelectBox().DataSource(Model.JenisOpsi).ValueExpr("Value").DisplayExpr("Text"));
+                        items.AddSimpleFor(m => m.AssetCategoryId).Editor(e => e.SelectBox().DataSource(Model.KategoriAsetOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Untuk barang aset"));
+                        items.AddSimpleFor(m => m.Quantity).Editor(e => e.NumberBox().Min(1).ShowSpinButtons(true).Format("#0"));
+                        items.AddSimpleFor(m => m.Unit).Editor(e => e.TextBox().MaxLength(30));
+                        items.AddSimpleFor(m => m.EstimatedUnitPrice).Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+                        items.AddSimpleFor(m => m.ExternalPartyId).Editor(e => e.SelectBox().DataSource(Model.MitraOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+                        items.AddSimpleFor(m => m.Specification).ColSpan(4).Editor(e => e.TextBox().MaxLength(255));
+                    })
+                )
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="Pengadaan.addItem()"><i class="ri-add-line align-bottom me-1"></i> Tambah</button>
+        </div>
+    }
+    <div class="table-responsive mb-3">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light"><tr><th>Barang</th><th class="text-center">Jml</th><th class="text-end">Estimasi</th><th class="text-end">Aktual</th><th>Vendor</th><th class="text-center">Diterima</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var i in Model.Items)
+                {
+                    <tr>
+                        <td><div class="fw-medium">@i.ItemName @if (i.Aset) {<span class="badge badge-soft-info ms-1">Aset</span>}</div><div class="small text-muted">@i.Specification</div></td>
+                        <td class="text-center">@i.Quantity @i.Unit</td>
+                        <td class="text-end">@i.EstimatedUnitPrice.ToString("#,##0")</td>
+                        <td class="text-end">@(i.ActualUnitPrice?.ToString("#,##0") ?? "-")</td>
+                        <td>@i.Vendor</td>
+                        <td class="text-center">@i.ReceivedQuantity</td>
+                        <td class="text-end text-nowrap">
+                            @if (Model.BisaHargaAktual)
+                            {
+                                <button type="button" class="btn btn-sm btn-icon btn-outline-warning" title="Harga aktual" aria-label="Harga aktual" onclick="Pengadaan.actualPrice('@i.EncDecrKey', @(i.ActualUnitPrice ?? i.EstimatedUnitPrice))"><i class="ri-price-tag-3-line"></i></button>
+                            }
+                            @if (Model.BisaUbahItem)
+                            {
+                                <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus barang" aria-label="Hapus barang" onclick="Pengadaan.removeItem('@i.EncDecrKey')"><i class="ri-delete-bin-line"></i></button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Penawaran vendor</span></div>
+    @if (Model.BisaPenawaran)
+    {
+        <div class="gwa-mform-add">
+            <div class="gwa-mform-add-form">
+                @(Html.DevExtreme().Form<PengadaanVM.PenawaranInput>()
+                    .ID("frmPenawaran")
+                    .FormData(Model.PenawaranInput)
+                    .LabelLocation(FormLabelLocation.Top)
+                    .ShowColonAfterLabel(false)
+                    .ColCount(4)
+                    .ColCountByScreen(c => c.Xs(1).Sm(2))
+                    .Items(items =>
+                    {
+                        items.AddSimpleFor(m => m.ItemId).Editor(e => e.SelectBox().DataSource(Model.ItemOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Seluruh pengadaan"));
+                        items.AddSimpleFor(m => m.ExternalPartyId).Editor(e => e.SelectBox().DataSource(Model.MitraOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+                        items.AddSimpleFor(m => m.VendorName).Editor(e => e.TextBox().MaxLength(150));
+                        items.AddSimpleFor(m => m.QuotedAmount).Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+                        items.AddSimpleFor(m => m.Notes).ColSpan(4).Editor(e => e.TextBox().MaxLength(255));
+                    })
+                )
+                @(Html.DevExtreme().FileUploader().ID("filePenawaran").UploadMode(FileUploadMode.UseForm).Multiple(false)
+                    .MaxFileSize(5 * 1024 * 1024).SelectButtonText("Berkas penawaran").LabelText(""))
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="Pengadaan.addQuotation()"><i class="ri-add-line align-bottom me-1"></i> Tambah</button>
+        </div>
+    }
+    @if (Model.Penawaran.Count == 0)
+    {
+        <p class="text-muted">Belum ada penawaran.</p>
+    }
+    else
+    {
+        <ul class="list-group mb-3">
+            @foreach (var q in Model.Penawaran)
+            {
+                <li class="list-group-item d-flex flex-wrap align-items-center gap-2">
+                    @if (q.Dipilih) {<span class="badge bg-success">Dipilih</span>}
+                    <span class="fw-medium">@q.Vendor</span>
+                    <span class="text-muted small">@q.Item</span>
+                    @if (!string.IsNullOrEmpty(q.FileName)) {<a href="@Url.Action("BerkasPenawaran", new { key = q.EncDecrKey })" target="_blank" class="small">@q.FileName</a>}
+                    <span class="ms-auto fw-semibold">@q.QuotedAmount.ToString("#,##0")</span>
+                    @if (Model.BisaPenawaran)
+                    {
+                        @if (!q.Dipilih)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="Pengadaan.selectQuotation('@q.EncDecrKey')">Pilih</button>
+                        }
+                        <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus penawaran" aria-label="Hapus penawaran" onclick="Pengadaan.removeQuotation('@q.EncDecrKey')"><i class="ri-delete-bin-line"></i></button>
+                    }
+                </li>
+            }
+        </ul>
+    }
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Persetujuan</span></div>
+    @if (Model.Persetujuan.Count == 0)
+    {
+        <p class="text-muted">Belum ada keputusan.</p>
+    }
+    else
+    {
+        <div class="table-responsive mb-3">
+            <table class="table table-sm mb-0">
+                <thead class="table-light"><tr><th>#</th><th>Langkah</th><th>Penyetuju</th><th>Keputusan</th><th>Catatan</th><th>Waktu</th></tr></thead>
+                <tbody>
+                    @foreach (var a in Model.Persetujuan)
+                    {
+                        <tr><td>@a.Level</td><td>@a.Langkah</td><td>@a.Approver</td><td>@a.Keputusan</td><td>@a.Note</td><td>@a.DecidedAt.ToString("dd MMM yyyy HH:mm")</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Penerimaan</span></div>
+    @if (Model.Penerimaan.Count == 0)
+    {
+        <p class="text-muted">Belum ada penerimaan.</p>
+    }
+    else
+    {
+        <ul class="list-group mb-3">
+            @foreach (var r in Model.Penerimaan)
+            {
+                <li class="list-group-item d-flex align-items-center gap-2">
+                    <span>@r.ReceiptDate.ToString("dd MMM yyyy") · @r.Penerima</span>
+                    <span class="small text-muted flex-grow-1">@r.Rincian</span>
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus penerimaan" aria-label="Hapus penerimaan" onclick="Pengadaan.removeReceipt('@r.EncDecrKey')"><i class="ri-delete-bin-line"></i></button>
+                </li>
+            }
+        </ul>
+    }
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Pembayaran</span></div>
+    @if (Model.Bayar.Count == 0)
+    {
+        <p class="text-muted mb-0">Belum ada pembayaran.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var b in Model.Bayar)
+            {
+                <li class="list-group-item d-flex align-items-center gap-2">
+                    <span class="gwa-code">@b.Nomor</span><span>@b.Tanggal.ToString("dd MMM yyyy") · @b.Akun</span>
+                    <span class="ms-auto fw-semibold">@b.Amount.ToString("#,##0")</span>
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Batalkan pembayaran" aria-label="Batalkan pembayaran" onclick="Pengadaan.cancelPayment(@b.TransactionId)"><i class="ri-close-line"></i></button>
+                </li>
+            }
+        </ul>
+    }
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

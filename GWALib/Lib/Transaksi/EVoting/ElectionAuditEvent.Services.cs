@@ -37,7 +37,7 @@ namespace GWALib.Lib.Transaksi.EVoting
                 ActorUserId = actorUserId,
                 EventType = eventType,
                 Description = TransaksiHelper.Truncate(description, 500),
-                IpAddress = TransaksiHelper.Truncate(ipAddress, 45),
+                IpAddress = TransaksiHelper.Truncate(ipAddress ?? RequestInfo.IpAddress, 45),
                 InsDate = DateTime.Now,
                 InsBy = actorUserId
             });

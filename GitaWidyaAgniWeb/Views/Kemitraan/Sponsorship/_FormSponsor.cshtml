@@ -1,0 +1,47 @@
+@model GitaWidyaAgniWeb.Models.Kemitraan.SponsorshipVM.AddSponsor
+@using GitaWidyaAgniWeb.Models.Kemitraan
+@* Dana wajib nominal > 0 (0 = harga paket); bentuk lain wajib uraian. Mitra Blacklist ditolak. *@
+@{
+    var editModel = Model as SponsorshipVM.EditSponsor;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-award-line"></i></span>
+            <div><div class="gwa-mform-info-title">@editModel!.Nomor</div></div>
+        </div>
+    }
+    @(Html.DevExtreme().Form<SponsorshipVM.NewSponsor>()
+        .ID("frmSponsor")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.ExternalPartyId).Editor(e => e.SelectBox().DataSource(Model.MitraOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).OnValueChanged("Sponsorship.partyChanged"));
+            items.AddSimpleFor(m => m.ContactId).Editor(e => e.SelectBox().DataSource(Model.KontakOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true));
+            if (!isEdit)
+            {
+                items.AddSimpleFor(m => m.PackageId).Editor(e => e.SelectBox().DataSource(Model.PaketOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true));
+            }
+            items.AddSimpleFor(m => m.SponsorshipForm).Editor(e => e.SelectBox().DataSource(Model.BentukOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.Amount).Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+            items.AddSimpleFor(m => m.PicMemberId).Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.InKindDescription).ColSpan(3).Editor(e => e.TextBox().MaxLength(500));
+            items.AddSimpleFor(m => m.StartDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd").ShowClearButton(true));
+            items.AddSimpleFor(m => m.EndDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd").ShowClearButton(true));
+            items.AddSimpleFor(m => m.PeriodId).Editor(e => e.SelectBox().DataSource(Model.PeriodeOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true));
+            items.AddSimpleFor(m => m.ActivityId).ColSpan(3).Editor(e => e.SelectBox().DataSource(Model.KegiatanOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.Notes).ColSpan(3).Editor(e => e.TextBox().MaxLength(500));
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Sponsorship.save('Sponsor', @(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

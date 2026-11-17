@@ -32,6 +32,15 @@ namespace GWALib.Lib.Transaksi.Merchandise
             public List<SalesOrderItem.NewRow> Items { get; set; } = new();
         }
 
+        // Pesanan tamu (tanpa login) dari toko publik: nama dan nomor WhatsApp wajib, tanggal = hari ini, periode = periode aktif.
+        public class GuestRow
+        {
+            public string? BuyerName { get; set; }
+            public string? BuyerPhone { get; set; }
+            public string? Notes { get; set; }
+            public List<SalesOrderItem.NewRow> Items { get; set; } = new();
+        }
+
         public int Id { get; set; }
         public string OrderNumber { get; private set; } = null!;
         public int? PeriodId { get; private set; }

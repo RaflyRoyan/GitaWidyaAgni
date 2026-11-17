@@ -1,0 +1,81 @@
+@model GitaWidyaAgniWeb.Models.Persuratan.SuratVM.Detail
+@* Isi / ringkasan, riwayat persetujuan, disposisi (anggota penerima melihatnya di Area Anggota › Disposisi). *@
+
+<div class="gwa-mform" id="suratDetail" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-mail-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Judul</div>
+            <div class="gwa-mform-info-meta"><span>@Model.Ringkasan</span></div>
+        </div>
+    </div>
+    @if (!string.IsNullOrWhiteSpace(Model.Body))
+    {
+        <div class="border rounded p-3 mb-3 small" style="white-space:pre-line;max-height:240px;overflow:auto">@Model.Body</div>
+    }
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Persetujuan</span></div>
+    @if (Model.Persetujuan.Count == 0)
+    {
+        <p class="text-muted">Belum ada keputusan.</p>
+    }
+    else
+    {
+        <div class="table-responsive mb-3">
+            <table class="table table-sm mb-0">
+                <thead class="table-light"><tr><th>#</th><th>Penyetuju</th><th>Jabatan</th><th>Keputusan</th><th>Catatan</th><th>Waktu</th></tr></thead>
+                <tbody>
+                    @foreach (var a in Model.Persetujuan)
+                    {
+                        <tr><td>@a.ApprovalLevel</td><td>@a.ApproverName</td><td>@a.PositionName</td><td>@a.Decision</td><td>@a.Note</td><td>@a.DecidedAt?.ToString("dd MMM yyyy HH:mm")</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Disposisi</span></div>
+    @if (Model.BisaDisposisi)
+    {
+        <div class="gwa-mform-add">
+            <div class="gwa-mform-add-form row g-2">
+                <div class="col-md-5">
+                    @(Html.DevExtreme().SelectBox().ID("disposisiTujuan").DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).Placeholder("Kepada anggota..."))
+                </div>
+                <div class="col-md-5"><input id="disposisiInstruksi" class="form-control" maxlength="500" placeholder="Instruksi" aria-label="Instruksi" /></div>
+                <div class="col-md-2"><input id="disposisiTenggat" type="date" class="form-control" aria-label="Tenggat" /></div>
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="Surat.addDisposition()"><i class="ri-share-forward-line align-bottom me-1"></i> Kirim</button>
+        </div>
+    }
+    @if (Model.Disposisi.Count == 0)
+    {
+        <p class="text-muted mb-0">Belum ada disposisi.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var d in Model.Disposisi)
+            {
+                var selesai = d.Status == GWAShared.Enums.DispositionStatus.Done;
+                <li class="list-group-item d-flex flex-wrap align-items-center gap-2">
+                    <span class="badge @(selesai ? "badge-soft-success" : "badge-soft-warning")">@(selesai ? "Selesai" : "Terbuka")</span>
+                    <span class="fw-medium">@d.ToMemberName</span>
+                    <span class="flex-grow-1">@d.Instruction @(d.DueDate.HasValue ? "· tenggat " + d.DueDate.Value.ToString("dd MMM yyyy") : "")</span>
+                    @if (selesai)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="Surat.reopenDisposition('@d.EncDecrKey')">Buka lagi</button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="Surat.doneDisposition('@d.EncDecrKey')">Selesai</button>
+                        <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus disposisi" aria-label="Hapus disposisi" onclick="Surat.removeDisposition('@d.EncDecrKey')"><i class="ri-delete-bin-line"></i></button>
+                    }
+                </li>
+            }
+        </ul>
+    }
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

@@ -1,0 +1,37 @@
+@model GitaWidyaAgniWeb.Models.Informasi.BannerVM.Add
+@using GitaWidyaAgniWeb.Models.Informasi
+@* Gambar wajib saat tambah: JPEG / PNG / WebP maks. 5 MB, disimpan tanpa diubah (pakai ukuran lebar, mis. 1600×900). *@
+@{ var isEdit = Model is BannerVM.Edit; }
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<BannerVM.NewRow>()
+        .ID("frmBanner")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Title).Editor(e => e.TextBox().MaxLength(150));
+            items.AddSimpleFor(m => m.Seq).Editor(e => e.NumberBox().Min(0).ShowSpinButtons(true).Format("#0"));
+            items.AddSimpleFor(m => m.Subtitle).ColSpan(2).Editor(e => e.TextBox().MaxLength(255));
+            items.AddSimpleFor(m => m.ButtonText).Editor(e => e.TextBox().MaxLength(50).Placeholder("mis. Daftar Sekarang"));
+            items.AddSimpleFor(m => m.LinkUrl).Editor(e => e.TextBox().MaxLength(255).Placeholder("/rekrutmen"));
+            items.AddSimpleFor(m => m.StartAt).Editor(e => e.DateBox().Type(DateBoxType.DateTime).DisplayFormat("dd MMM yyyy HH:mm").DateSerializationFormat("yyyy-MM-ddTHH:mm:ss").ShowClearButton(true));
+            items.AddSimpleFor(m => m.EndAt).Editor(e => e.DateBox().Type(DateBoxType.DateTime).DisplayFormat("dd MMM yyyy HH:mm").DateSerializationFormat("yyyy-MM-ddTHH:mm:ss").ShowClearButton(true));
+            items.AddSimpleFor(m => m.IsActive).Editor(e => e.SelectBox().DataSource(Model.AktifList).ValueExpr("Value").DisplayExpr("Text"));
+        })
+    )
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Gambar @(isEdit ? "(kosongkan bila tidak diganti)" : "")</span><span class="gwa-mform-section-hint">JPEG / PNG / WebP, maks. 5 MB</span></div>
+    @if (isEdit)
+    {
+        <div class="gwa-mform-note"><img src="@Url.Action("Gambar", new { key = Model.Key })" alt="Gambar banner" style="max-height:120px;max-width:100%;border-radius:6px" /></div>
+    }
+    @(Html.DevExtreme().FileUploader().ID("fileBanner").UploadMode(FileUploadMode.UseForm).Multiple(false).Accept("image/jpeg,image/png,image/webp")
+        .MaxFileSize(5 * 1024 * 1024).SelectButtonText("Pilih gambar").LabelText(""))
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Banner.save(@(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

@@ -1,4 +1,5 @@
 using GWALib.General;
+using GWALib.Lib.Transaksi.Information;
 using GWALib.General.Utilities;
 using GWALib.Lib.Master.Anggota;
 using GWAShared.Enums;
@@ -177,6 +178,9 @@ namespace GWALib.Lib.Transaksi.Surat
             };
             GWAShared.Utilities.ValidateUtility.ValidateDAModel(row);
             context.TLetterDispositions.Add(row);
+            var subject = context.TLetters.Where(x => x.Id == row.LetterId).Select(x => x.Subject).FirstOrDefault();
+            NotifyHelper.ToMember(context, row.ToMemberId, NotifyHelper.TYPE_DISPOSITION, "Disposisi surat: " + subject,
+                row.Instruction, NotifyHelper.LINK_MY_DISPOSITION, "t_letter_disposition", row.Id, userId);
             return row;
         }
         private void SetRow(EF.ModelContext context, EF.TLetterDisposition row, int userId)

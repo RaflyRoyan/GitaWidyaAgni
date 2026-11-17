@@ -225,6 +225,8 @@ public partial class ModelContext : DbContext
 
     public virtual DbSet<TManagementAssignment> TManagementAssignments { get; set; }
 
+    public virtual DbSet<TLpj> TLpjs { get; set; }
+
     public virtual DbSet<TMeetingMinute> TMeetingMinutes { get; set; }
 
     public virtual DbSet<TMemberPoint> TMemberPoints { get; set; }
@@ -2238,6 +2240,21 @@ public partial class ModelContext : DbContext
                 .HasConstraintName("fk_assignment_position");
         });
 
+        modelBuilder.Entity<TLpj>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("t_lpj", tb => tb.HasComment("Laporan pertanggungjawaban kegiatan / kepengurusan"));
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.InsDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValueSql("'1'");
+
+            entity.HasOne(d => d.Activity).WithOne(p => p.TLpj).HasConstraintName("fk_lpj_activity");
+
+            entity.HasOne(d => d.Period).WithOne(p => p.TLpj).HasConstraintName("fk_lpj_period");
+        });
+
         modelBuilder.Entity<TMeetingMinute>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PRIMARY");
@@ -2541,6 +2558,8 @@ public partial class ModelContext : DbContext
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.InsDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.PicMemberId).HasComment("Penanggung jawab");
+            entity.Property(e => e.DivisionId).HasComment("Bidang / divisi pelaksana program");
+            entity.Property(e => e.Term).HasComment("1=JANGKA_PENDEK, 2=JANGKA_PANJANG");
             entity.Property(e => e.PreviousProgramId).HasComment("Program periode sebelumnya yang dilanjutkan");
             entity.Property(e => e.Status)
                 .HasDefaultValueSql("'1'")
@@ -2549,6 +2568,8 @@ public partial class ModelContext : DbContext
             entity.HasOne(d => d.Period).WithMany(p => p.TPrograms)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_program_period");
+
+            entity.HasOne(d => d.Division).WithMany(p => p.TPrograms).HasConstraintName("fk_program_division");
 
             entity.HasOne(d => d.PicMember).WithMany(p => p.TPrograms).HasConstraintName("fk_program_pic");
 

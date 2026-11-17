@@ -1,0 +1,180 @@
+@model GitaWidyaAgniWeb.Controllers.AreaAnggota.TokoController.Model
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@{
+    ViewData["Title"] = "Toko Merchandise";
+}
+
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="ri-store-2-line align-bottom me-1"></i> Merchandise</h5>
+                <p class="gwa-card-intro mb-0">Pilih jumlah lalu tambahkan ke keranjang. Pesanan dibayar ke pengurus danus dan diambil saat siap.</p>
+            </div>
+            <div class="card-body">
+                @if (Model.Katalog.Count == 0)
+                {
+                    <p class="text-muted mb-0">Belum ada produk.</p>
+                }
+                <div class="row g-3">
+                    @foreach (var p in Model.Katalog)
+                    {
+                        var d = p.Data;
+                        var habis = d.TrackStock == StockTracking.Dilacak && p.Varian.Count == 0 && d.Stock <= 0 && d.IsPreorder != SaleMode.PreOrder;
+                        <div class="col-sm-6 col-lg-4">
+                            <div class="border rounded h-100 d-flex flex-column overflow-hidden produk" data-id="@d.Id" data-nama="@d.Name" data-harga="@d.Price">
+                                <div style="aspect-ratio:4/3;background:#f3ede2" class="d-flex align-items-center justify-content-center">
+                                    @if (d.HasPhoto)
+                                    {
+                                        <img src="@Url.Action("Foto", new { key = d.EncDecrKey })" alt="@d.Name" loading="lazy" style="width:100%;height:100%;object-fit:cover" />
+                                    }
+                                    else
+                                    {
+                                        <i class="ri-t-shirt-2-line display-5 text-muted" aria-hidden="true"></i>
+                                    }
+                                </div>
+                                <div class="p-3 d-flex flex-column flex-grow-1">
+                                    <div class="fw-semibold">@d.Name</div>
+                                    <div class="text-primary fw-semibold">Rp @d.Price.ToString("#,##0")</div>
+                                    @if (d.IsPreorder == SaleMode.PreOrder)
+                                    {
+                                        <span class="badge badge-soft-info align-self-start">Pre-order @(d.PreorderCloseAt.HasValue ? "s.d. " + d.PreorderCloseAt.Value.ToString("dd MMM") : "")</span>
+                                    }
+                                    else if (d.TrackStock == StockTracking.Dilacak && p.Varian.Count == 0)
+                                    {
+                                        <span class="small text-muted">Stok @d.Stock</span>
+                                    }
+                                    @if (p.Varian.Count > 0)
+                                    {
+                                        <select class="form-select form-select-sm mt-2 varian" aria-label="Varian @d.Name">
+                                            @foreach (var v in p.Varian)
+                                            {
+                                                var harga = v.Price ?? d.Price;
+                                                <option value="@v.Id" data-harga="@harga" data-nama="@v.Name" disabled="@(d.TrackStock == StockTracking.Dilacak && d.IsPreorder != SaleMode.PreOrder && v.Stock <= 0)">
+                                                    @v.Name · Rp @harga.ToString("#,##0")@(d.TrackStock == StockTracking.Dilacak && d.IsPreorder != SaleMode.PreOrder ? " · stok " + v.Stock : "")
+                                                </option>
+                                            }
+                                        </select>
+                                    }
+                                    <div class="d-flex gap-2 mt-auto pt-2">
+                                        <input type="number" min="1" value="1" class="form-control form-control-sm qty" style="max-width:80px" aria-label="Jumlah @d.Name" />
+                                        <button type="button" class="btn btn-sm btn-primary flex-grow-1" onclick="Toko.add(this)" disabled="@(habis || !Model.Anggota)">
+                                            <i class="ri-shopping-cart-2-line me-1"></i>@(habis ? "Habis" : "Tambah")
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        @if (!Model.Anggota)
+        {
+            <partial name="~/Views/AreaAnggota/_BukanAnggota.cshtml" />
+            <a class="btn btn-outline-primary w-100" href="@Url.Action("Toko", "Landing", new { area = "" })"><i class="ri-store-2-line me-1"></i> Pesan sebagai tamu di toko publik</a>
+        }
+        else
+        {
+            <div class="card">
+                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-shopping-cart-2-line align-bottom me-1"></i> Keranjang</h5></div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-2" id="keranjang"></ul>
+                    <p class="text-muted small mb-2" id="keranjangKosong">Keranjang kosong.</p>
+                    <div class="d-flex justify-content-between fw-semibold border-top pt-2 mb-3"><span>Total</span><span id="keranjangTotal">Rp 0</span></div>
+                    <input id="tokoPhone" class="form-control form-control-sm mb-2" placeholder="No. WhatsApp (opsional)" aria-label="Nomor WhatsApp" maxlength="30" />
+                    <textarea id="tokoNotes" class="form-control form-control-sm mb-2" rows="2" placeholder="Catatan (ukuran, dll.)" aria-label="Catatan" maxlength="500"></textarea>
+                    <button type="button" class="btn btn-success w-100" onclick="Toko.order()"><i class="ri-check-line me-1"></i> Buat Pesanan</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-history-line align-bottom me-1"></i> Pesanan Saya</h5></div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var o in Model.Pesanan)
+                    {
+                        <li class="list-group-item">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="gwa-code">@o.OrderNumber</span>
+                                <span class="ms-auto fw-semibold">Rp @o.TotalAmount.ToString("#,##0")</span>
+                            </div>
+                            <div class="small text-muted d-flex align-items-center gap-2 mt-1">
+                                <span>@o.OrderDate.ToString("dd MMM yyyy")</span>
+                                <span class="badge badge-soft-primary">@EnumHelper.Text(o.FulfillmentStatus)</span>
+                                <span class="badge badge-soft-@(o.PaymentStatus == PaymentStatus.Lunas ? "success" : "warning")">@EnumHelper.Text(o.PaymentStatus)</span>
+                                @if (o.FulfillmentStatus == FulfillmentStatus.Dipesan && o.PaidAmount == 0)
+                                {
+                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-auto" onclick="Toko.cancel('@o.EncDecrKey')">Batalkan</button>
+                                }
+                            </div>
+                        </li>
+                    }
+                    @if (Model.Pesanan.Count == 0) { <li class="list-group-item text-muted small">Belum ada pesanan.</li> }
+                </ul>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.Toko = (function () {
+            const cart = [];
+
+            function render() {
+                const ul = $('#keranjang').empty();
+                let total = 0;
+                cart.forEach(function (it, i) {
+                    total += it.harga * it.qty;
+                    $('<li class="d-flex align-items-center gap-2 mb-1">')
+                        .append($('<span class="flex-grow-1 small">').text(it.nama + ' × ' + it.qty))
+                        .append($('<span class="small">').text(AppUI.rupiah(it.harga * it.qty)))
+                        .append($('<button type="button" class="btn btn-sm btn-icon btn-ghost-danger" aria-label="Hapus">').html('<i class="ri-close-line"></i>')
+                            .on('click', function () { cart.splice(i, 1); render(); }))
+                        .appendTo(ul);
+                });
+                $('#keranjangKosong').prop('hidden', cart.length > 0);
+                $('#keranjangTotal').text(AppUI.rupiah(total));
+            }
+
+            function add(btn) {
+                const card = $(btn).closest('.produk');
+                const qty = parseInt(card.find('.qty').val(), 10) || 0;
+                if (qty < 1) { AppUI.alertWarning('Jumlah minimal 1.'); return; }
+                const sel = card.find('.varian option:selected');
+                const item = {
+                    productId: card.data('id'),
+                    variantId: sel.length ? parseInt(sel.val(), 10) : null,
+                    nama: card.data('nama') + (sel.length ? ' (' + sel.data('nama') + ')' : ''),
+                    harga: parseFloat(sel.length ? sel.data('harga') : card.data('harga')),
+                    qty: qty
+                };
+                const same = cart.find(function (x) { return x.productId === item.productId && x.variantId === item.variantId; });
+                if (same) same.qty += qty; else cart.push(item);
+                render();
+                AppUI.alertSuccess('Ditambahkan ke keranjang.');
+            }
+
+            function order() {
+                if (cart.length === 0) { AppUI.alertWarning('Keranjang masih kosong.'); return; }
+                AppUI.postJson('@Url.Action("Pesan")', {
+                    Phone: $('#tokoPhone').val() || null,
+                    Notes: $('#tokoNotes').val() || null,
+                    Items: cart.map(function (x) { return { ProductId: x.productId, VariantId: x.variantId, Quantity: x.qty }; })
+                }).done(function (r) {
+                    AppUI.alertSuccess(r.Message + ' No. ' + r.Data.OrderNumber);
+                    setTimeout(function () { window.location.reload(); }, 1200);
+                });
+            }
+
+            function cancel(key) {
+                AppUI.confirmPost('Batalkan pesanan?', '', '@Url.Action("Batal")', { Key: key }, 'Batalkan', 'btn-danger').done(function () { window.location.reload(); });
+            }
+
+            return { add: add, order: order, cancel: cancel };
+        })();
+    </script>
+}

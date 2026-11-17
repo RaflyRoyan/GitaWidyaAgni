@@ -1,0 +1,60 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.TimPelaksanaVM.AddRombongan
+@using GitaWidyaAgniWeb.Models.Kegiatan
+@{
+    var editModel = Model as TimPelaksanaVM.EditRombongan;
+    var isEdit = editModel != null;
+    var tamu = isEdit && Model.Row.MemberId == null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-bus-2-line"></i></span>
+            <div><div class="gwa-mform-info-title">@editModel!.Nama</div></div>
+        </div>
+    }
+    @(Html.DevExtreme().Form<TimPelaksanaVM.NewRombongan>()
+        .ID("frmRombongan")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            if (!isEdit)
+            {
+                items.AddSimpleFor(m => m.MemberId).Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true).Placeholder("Pilih anggota atau isi nama tamu"));
+            }
+            if (!isEdit || tamu)
+            {
+                items.AddSimpleFor(m => m.GuestName).Editor(e => e.TextBox().MaxLength(150));
+            }
+            items.AddSimpleFor(m => m.TripRole).Editor(e => e.SelectBox().DataSource(Model.PeranOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.PermissionStatus).Editor(e => e.SelectBox().DataSource(Model.IzinOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.Vehicle).Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.Room).Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.EmergencyContactName).Editor(e => e.TextBox().MaxLength(150));
+            items.AddSimpleFor(m => m.EmergencyContactPhone).Editor(e => e.TextBox().MaxLength(30));
+            items.AddSimpleFor(m => m.Notes).ColSpan(2).Editor(e => e.TextBox().MaxLength(255));
+        })
+    )
+    <div class="gwa-mform-section">
+        <span class="gwa-mform-section-title">Surat izin</span>
+        <span class="gwa-mform-section-hint">Unggah mengubah status menjadi Ada</span>
+    </div>
+    @if (!string.IsNullOrEmpty(Model.IzinFile))
+    {
+        <div class="gwa-mform-note d-flex align-items-center gap-2">
+            <i class="ri-file-text-line"></i><span>@Model.IzinFile</span>
+            <label class="ms-auto form-check-label"><input type="checkbox" class="form-check-input me-1" id="chkHapusIzin" /> Hapus berkas</label>
+        </div>
+    }
+    @(Html.DevExtreme().FileUploader().ID("fileIzin").UploadMode(FileUploadMode.UseForm).Multiple(false)
+        .MaxFileSize(5 * 1024 * 1024).SelectButtonText("Pilih berkas").LabelText("atau tarik berkas ke sini"))
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="TimPelaksana.saveTrip(@(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

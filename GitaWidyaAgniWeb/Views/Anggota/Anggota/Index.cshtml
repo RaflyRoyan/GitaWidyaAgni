@@ -1,0 +1,38 @@
+@model GitaWidyaAgniWeb.Models.Anggota.AnggotaVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Data Anggota";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-user-line align-bottom me-1"></i> Data Anggota</h5>
+        <p class="gwa-card-intro">NIM, nomor anggota, dan akun login masing-masing hanya untuk satu anggota. Menonaktifkan anggota mengisi tanggal keluar; riwayatnya tetap tersimpan.</p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel("Tambah Anggota", "Anggota.add()",
+            ("btn-outline-info", "ri-image-line", "Foto anggota"),
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah anggota"),
+            ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan anggota"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.AnggotaUrl = {
+            list: '@Url.Action("List")',
+            add: '@Url.Action("Add")',
+            edit: '@Url.Action("Edit")',
+            simpanBaru: '@Url.Action("SimpanBaru")',
+            update: '@Url.Action("Update")',
+            hapus: '@Url.Action("Delete")',
+            foto: '@Url.Action("Foto")',
+            gambar: '@Url.Action("Gambar")',
+            tambahFoto: '@Url.Action("TambahFoto")',
+            hapusFoto: '@Url.Action("HapusFoto")'
+        };
+    </script>
+    <script src="~/Scripts/Anggota/Anggota.js" asp-append-version="true"></script>
+}

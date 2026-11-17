@@ -1,0 +1,68 @@
+@model GitaWidyaAgniWeb.Models.Landing.VerifikasiSertifikatVM
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = "Verifikasi Sertifikat";
+    ViewData["SolidNav"] = true;
+    var id = new System.Globalization.CultureInfo("id-ID");
+    var s = Model.Sertifikat;
+}
+<section class="page-hero">
+    <div class="gwa-container" style="max-width:860px">
+        <span class="eyebrow">Cek keaslian</span>
+        <h1 class="section-title">Verifikasi Sertifikat</h1>
+        <p class="mb-0 sub">Masukkan kode verifikasi yang tertera pada sertifikat MB Gita Widya Agni.</p>
+    </div>
+</section>
+
+<section class="pb-5">
+    <div class="gwa-container">
+        <div class="article">
+            <form method="get" action="@Url.Action("VerifikasiSertifikat", "Landing")" class="apply-form" role="search">
+                <div class="field full">
+                    <label for="kode">Kode verifikasi</label>
+                    <input id="kode" name="kode" value="@Model.Kode" required maxlength="32" autocomplete="off" spellcheck="false"
+                           style="text-transform:uppercase;letter-spacing:.12em;font-family:ui-monospace,monospace" placeholder="mis. 7KQ2M9XW4HTP" />
+                </div>
+                <div class="full">
+                    <button type="submit" class="btn-gwa btn-flame"><i class="ri-shield-check-line" aria-hidden="true"></i> Periksa</button>
+                </div>
+            </form>
+
+            @if (Model.Dicari)
+            {
+                <div class="mt-4" aria-live="polite">
+                    @if (s == null)
+                    {
+                        <div class="apply-alert err" role="alert">
+                            <i class="ri-error-warning-line" aria-hidden="true"></i>
+                            <div><strong>Kode tidak dikenal.</strong> Periksa kembali kode pada sertifikat, termasuk huruf dan angkanya.</div>
+                        </div>
+                    }
+                    else if (s.Status == CertificateStatus.Dicabut)
+                    {
+                        <div class="apply-alert err" role="status">
+                            <i class="ri-close-circle-line" aria-hidden="true"></i>
+                            <div><strong>Sertifikat dicabut.</strong> Sertifikat @s.CertificateNumber atas nama @s.MemberName sudah tidak berlaku.</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="apply-alert ok" role="status">
+                            <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+                            <div><strong>Sertifikat asli dan berlaku.</strong></div>
+                        </div>
+                        <dl class="verify-list">
+                            <dt>Nama</dt><dd>@s.MemberName</dd>
+                            <dt>Judul</dt><dd>@s.Title</dd>
+                            <dt>Jenis</dt><dd>@EnumHelper.Text(s.CertificateType)</dd>
+                            <dt>Nomor</dt><dd>@s.CertificateNumber</dd>
+                            <dt>Tanggal terbit</dt><dd>@s.IssuedDate.ToString("d MMMM yyyy", id)</dd>
+                        </dl>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</section>

@@ -1,0 +1,20 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.PresensiVM.RekapList
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<PresensiVM.RekapRow>()
+    .ID("tblRekap")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Rekap Presensi")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Nama).Caption("Anggota").CssClass("fw-medium");
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Presensi.recordStatusTemplate"));
+        columns.AddFor(m => m.CheckInAt).Caption("Masuk").DataType(GridColumnDataType.DateTime).Format("HH:mm:ss");
+        columns.AddFor(m => m.CheckOutAt).Caption("Keluar").DataType(GridColumnDataType.DateTime).Format("HH:mm:ss");
+        columns.AddFor(m => m.Notes).Caption("Keterangan");
+        columns.AddAction("Presensi.recordActionTemplate");
+    })
+)

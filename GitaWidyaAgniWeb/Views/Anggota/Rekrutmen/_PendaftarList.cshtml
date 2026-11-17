@@ -1,0 +1,26 @@
+@model GitaWidyaAgniWeb.Models.Anggota.RekrutmenVM.PendaftarList
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Anggota
+
+@(Html.DevExtreme().DataGrid<RekrutmenVM.PendaftarRow>()
+    .ID("tblPendaftar")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Pendaftar Rekrutmen")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Fullname).Caption("Nama").CssClass("fw-medium");
+        columns.AddFor(m => m.Kategori).Caption("Kategori");
+        columns.AddFor(m => m.Nim).Caption("NIM");
+        columns.AddFor(m => m.Prodi).Caption("Prodi / Instansi");
+        columns.AddFor(m => m.Angkatan).Caption("Angkatan").Alignment(HorizontalAlignment.Center).Visible(false);
+        columns.AddFor(m => m.Email).Caption("Email");
+        columns.AddFor(m => m.Phone).Caption("Telepon");
+        columns.AddFor(m => m.Motivation).Caption("Motivasi").Visible(false);
+        columns.AddFor(m => m.InsDate).Caption("Mendaftar").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Rekrutmen.applicantStatusTemplate"));
+        columns.AddFor(m => m.Notes).Caption("Catatan");
+        columns.AddAction("Rekrutmen.applicantActionTemplate");
+    })
+)

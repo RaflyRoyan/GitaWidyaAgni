@@ -1,0 +1,42 @@
+@model GitaWidyaAgniWeb.Models.Pengadaan.PengadaanVM.Add
+@using GitaWidyaAgniWeb.Models.Pengadaan
+@* Kegiatan atau program (bukan keduanya). Periode kosong = periode mata anggaran / periode aktif. *@
+@{
+    var editModel = Model as PengadaanVM.Edit;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-shopping-cart-2-line"></i></span>
+            <div><div class="gwa-mform-info-title">@editModel!.Nomor</div></div>
+        </div>
+    }
+    @(Html.DevExtreme().Form<PengadaanVM.NewRow>()
+        .ID("frmPengadaan")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Title).ColSpan(2).Editor(e => e.TextBox().MaxLength(200));
+            items.AddSimpleFor(m => m.PaymentMethod).Editor(e => e.SelectBox().DataSource(Model.MetodeOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.Reason).ColSpan(3).Editor(e => e.TextArea().Height(70));
+            items.AddSimpleFor(m => m.RequestDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+            items.AddSimpleFor(m => m.NeededByDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd").ShowClearButton(true));
+            items.AddSimpleFor(m => m.RequestedByMemberId).Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.BudgetItemId).Editor(e => e.SelectBox().DataSource(Model.AnggaranOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.ActivityId).Editor(e => e.SelectBox().DataSource(Model.KegiatanOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.ProgramId).Editor(e => e.SelectBox().DataSource(Model.ProgramOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.PeriodId).Editor(e => e.SelectBox().DataSource(Model.PeriodeOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Otomatis"));
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Pengadaan.@(isEdit ? "update" : "save")()"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan Draft")</button>
+    </div>
+</div>

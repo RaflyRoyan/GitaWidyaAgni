@@ -1,0 +1,24 @@
+@model GitaWidyaAgniWeb.Models.Pengadaan.PengadaanVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Pengadaan
+
+@(Html.DevExtreme().DataGrid<PengadaanVM.Row>()
+    .ID("tblGrid")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Pengadaan Barang")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.RequestNumber).Caption("Nomor").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Title).Caption("Pengadaan").CellTemplate(new JS("Pengadaan.titleTemplate"));
+        columns.AddFor(m => m.Pemohon).Caption("Pemohon");
+        columns.AddFor(m => m.RequestDate).Caption("Tanggal").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.NeededByDate).Caption("Dibutuhkan").DataType(GridColumnDataType.Date).Format("dd MMM yyyy").Visible(false);
+        columns.AddFor(m => m.MetodeText).Caption("Pembayaran").Visible(false);
+        columns.AddFor(m => m.TotalEstimate).Caption("Estimasi").Format("#,##0");
+        columns.AddFor(m => m.TotalActual).Caption("Aktual").Format("#,##0");
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Pengadaan.statusTemplate"));
+        columns.AddAction("Pengadaan.actionTemplate");
+    })
+)

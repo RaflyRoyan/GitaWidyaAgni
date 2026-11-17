@@ -1,0 +1,33 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.TimPelaksanaVM.ListChecklist
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+<div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+    <button type="button" class="btn btn-outline-primary" onclick="TimPelaksana.add('Checklist')"><i class="ri-add-line align-bottom me-1"></i> Tambah Checklist</button>
+    <div class="ms-auto d-flex flex-wrap align-items-end gap-2">
+        <div style="min-width:260px">
+            @(Html.DevExtreme().SelectBox().ID("pilihTemplate").DataSource(Model.TemplateOpsi).ValueExpr("Value").DisplayExpr("Text").Placeholder("Pilih template..."))
+        </div>
+        <button type="button" class="btn btn-outline-success" onclick="TimPelaksana.generate()"><i class="ri-magic-line align-bottom me-1"></i> Buat dari Template</button>
+    </div>
+</div>
+
+@(Html.DevExtreme().DataGrid<TimPelaksanaVM.ChecklistRow>()
+    .ID("tblChecklist")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Checklist Persiapan")
+    .OnRowPrepared("TimPelaksana.checklistRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Title).Caption("Pekerjaan").CellTemplate(new JS("TimPelaksana.checklistTitleTemplate"));
+        columns.AddFor(m => m.Seksi).Caption("Seksi");
+        columns.AddFor(m => m.Pic).Caption("PIC");
+        columns.AddFor(m => m.DueDate).Caption("Tenggat").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.Prioritas).Caption("Prioritas").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("TimPelaksana.priorityTemplate"));
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("TimPelaksana.taskStatusTemplate"));
+        columns.AddFor(m => m.DoneAt).Caption("Selesai").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm").Visible(false);
+        columns.AddAction("TimPelaksana.checklistActionTemplate");
+    })
+)

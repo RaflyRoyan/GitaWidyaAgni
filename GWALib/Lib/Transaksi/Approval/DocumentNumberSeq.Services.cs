@@ -134,12 +134,12 @@ VALUES (@id, @type, @period, 0, @now, @user);";
         // Dipanggil transaksi dokumen (surat, pengadaan, ...) dengan context-nya sendiri. Kenaikan nomor langsung dieksekusi
         // ke DB (bukan menunggu SaveChanges); bungkus dengan context.Database.BeginTransaction() supaya nomor ikut
         // di-rollback bila dokumen gagal disimpan, tanpa transaksi nomor tetap terpakai (nomor loncat).
-        internal static string GenerateNumber(EF.ModelContext context, string documentType, DateTime date, int userId)
+        internal static string GenerateNumber(EF.ModelContext context, string documentType, DateTime date, int? userId)
         {
             var source = GetSource(context, documentType, date);
             return Render(source, Increment(context, source, userId), date);
         }
-        internal static async Task<string> GenerateNumberAsync(EF.ModelContext context, string documentType, DateTime date, int userId)
+        internal static async Task<string> GenerateNumberAsync(EF.ModelContext context, string documentType, DateTime date, int? userId)
         {
             var source = await GetSourceAsync(context, documentType, date);
             return Render(source, await IncrementAsync(context, source, userId), date);
@@ -195,7 +195,7 @@ VALUES (@id, @type, @period, 0, @now, @user);";
             }
             return type;
         }
-        private static int Increment(EF.ModelContext context, NumberSource source, int userId)
+        private static int Increment(EF.ModelContext context, NumberSource source, int? userId)
         {
             context.Database.OpenConnection();
             try
@@ -221,7 +221,7 @@ VALUES (@id, @type, @period, 0, @now, @user);";
             }
             throw new InvalidOperationException($"Nomor urut {source.DocumentType} periode {source.PeriodKey} gagal dibuat");
         }
-        private static async Task<int> IncrementAsync(EF.ModelContext context, NumberSource source, int userId)
+        private static async Task<int> IncrementAsync(EF.ModelContext context, NumberSource source, int? userId)
         {
             await context.Database.OpenConnectionAsync();
             try
@@ -248,14 +248,14 @@ VALUES (@id, @type, @period, 0, @now, @user);";
             throw new InvalidOperationException($"Nomor urut {source.DocumentType} periode {source.PeriodKey} gagal dibuat");
         }
         // Command memakai koneksi dan transaksi aktif context, jadi ikut BeginTransaction milik pemanggil.
-        private static DbCommand CreateCommand(EF.ModelContext context, string sql, NumberSource source, int userId)
+        private static DbCommand CreateCommand(EF.ModelContext context, string sql, NumberSource source, int? userId)
         {
             var command = context.Database.GetDbConnection().CreateCommand();
             command.CommandText = sql;
             command.Transaction = context.Database.CurrentTransaction?.GetDbTransaction();
             AddParameter(command, "@type", source.DocumentType);
             AddParameter(command, "@period", source.PeriodKey);
-            AddParameter(command, "@user", userId);
+            AddParameter(command, "@user", (object?)userId ?? DBNull.Value);
             AddParameter(command, "@now", DateTime.Now);
             return command;
         }

@@ -1,0 +1,22 @@
+@model GitaWidyaAgniWeb.Models.Prestasi.PrestasiVM.ListMateri
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Prestasi
+
+@(Html.DevExtreme().DataGrid<PrestasiVM.MateriRow>()
+    .ID("tblMateri")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Materi Lomba")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Title).Caption("Judul").CssClass("fw-medium");
+        columns.AddFor(m => m.Lomba).Caption("Lomba");
+        columns.AddFor(m => m.Jenis).Caption("Jenis");
+        columns.AddFor(m => m.FileName).Caption("Berkas");
+        columns.AddFor(m => m.Url).Caption("URL").Visible(false);
+        columns.AddFor(m => m.Visibility).Caption("Visibilitas").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.InsDate).Caption("Dibuat").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddAction("Prestasi.materialActionTemplate");
+    })
+)

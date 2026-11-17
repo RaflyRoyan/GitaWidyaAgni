@@ -1,0 +1,31 @@
+@model GitaWidyaAgniWeb.Models.Inventaris.AsetVM.Selesai
+@using GitaWidyaAgniWeb.Models.Inventaris
+@* Isi akun + kategori untuk mencatat biaya sebagai transaksi Pengeluaran (hanya bila biaya > 0). *@
+
+<div class="gwa-mform">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-checkbox-circle-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Judul</div>
+            <div class="gwa-mform-info-meta"><span>Biaya Rp @Model.Cost.ToString("#,##0")</span></div>
+        </div>
+    </div>
+    @(Html.DevExtreme().Form<AsetVM.SelesaiInput>()
+        .ID("frmSelesai")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Condition).Editor(e => e.SelectBox().DataSource(Model.KondisiOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Tidak berubah"));
+            items.AddSimpleFor(m => m.AccountId).Editor(e => e.SelectBox().DataSource(Model.AkunOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Tidak dicatat"));
+            items.AddSimpleFor(m => m.CategoryId).Editor(e => e.SelectBox().DataSource(Model.KategoriOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true));
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Aset.finish()"><i class="ri-check-line align-bottom me-1"></i> Selesai</button>
+    </div>
+</div>

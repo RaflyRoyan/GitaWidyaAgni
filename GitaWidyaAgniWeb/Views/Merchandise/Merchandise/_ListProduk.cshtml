@@ -1,0 +1,25 @@
+@model GitaWidyaAgniWeb.Models.Merchandise.MerchandiseVM.ListProduk
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Merchandise
+
+@(Html.DevExtreme().DataGrid<MerchandiseVM.ProdukRow>()
+    .ID("tblProduk")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Produk Merchandise")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Produk").CellTemplate(new JS("Merchandise.productTemplate"));
+        columns.AddFor(m => m.Jenis).Caption("Jenis");
+        columns.AddFor(m => m.Price).Caption("Harga").Format("#,##0");
+        columns.AddFor(m => m.CostPrice).Caption("HPP").Format("#,##0").Visible(false);
+        columns.AddFor(m => m.Stock).Caption("Stok").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Merchandise.stockTemplate"));
+        columns.AddFor(m => m.VariantCount).Caption("Varian").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.PreOrder).Caption("Pre-order").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddFor(m => m.PreorderCloseAt).Caption("PO Ditutup").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm").Visible(false);
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Merchandise.productActionTemplate");
+    })
+)

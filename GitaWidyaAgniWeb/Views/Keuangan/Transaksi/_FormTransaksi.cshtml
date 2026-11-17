@@ -1,0 +1,49 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.TransaksiVM.AddTransaksi
+@using GitaWidyaAgniWeb.Models.Keuangan
+@* Form bersama Add & Edit transaksi (Draft). Kategori mengikuti jenis (Pemasukan / Pengeluaran). *@
+@{
+    var editModel = Model as TransaksiVM.EditTransaksi;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-exchange-dollar-line"></i></span>
+            <div><div class="gwa-mform-info-title">@editModel!.Nomor</div></div>
+        </div>
+    }
+    <script>
+        window.TransaksiKategori = { 1: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MasukOpsi)), 2: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.KeluarOpsi)) };
+    </script>
+    @(Html.DevExtreme().Form<TransaksiVM.NewTransaksi>()
+        .ID("frmTransaksi")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.TransactionType).Editor(e => e.SelectBox().DataSource(Model.JenisOpsi).ValueExpr("Value").DisplayExpr("Text").OnValueChanged("Transaksi.typeChanged"));
+            items.AddSimpleFor(m => m.TransactionDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+            items.AddSimpleFor(m => m.Amount).Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+            items.AddSimpleFor(m => m.CategoryId).Editor(e => e.SelectBox().DataSource(Model.Row.TransactionType == 1 ? Model.MasukOpsi : Model.KeluarOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true));
+            items.AddSimpleFor(m => m.AccountId).Editor(e => e.SelectBox().DataSource(Model.AkunOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.PeriodId).Editor(e => e.SelectBox().DataSource(Model.PeriodeOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Periode aktif"));
+            items.AddSimpleFor(m => m.Description).ColSpan(3).Editor(e => e.TextArea().Height(60).MaxLength(500));
+            items.AddGroup().Caption("Tautan (opsional)").ColSpan(3).ColCount(2).Items(g =>
+            {
+                g.AddSimpleFor(m => m.BudgetItemId).Editor(e => e.SelectBox().DataSource(Model.AnggaranOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+                g.AddSimpleFor(m => m.ProgramId).Editor(e => e.SelectBox().DataSource(Model.ProgramOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+                g.AddSimpleFor(m => m.ActivityId).Editor(e => e.SelectBox().DataSource(Model.KegiatanOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+                g.AddSimpleFor(m => m.CompetitionId).Editor(e => e.SelectBox().DataSource(Model.LombaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            });
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Transaksi.save('Transaksi', @(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan Draft")</button>
+    </div>
+</div>

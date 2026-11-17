@@ -1,0 +1,32 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.HutangVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Hutang";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-bank-card-line align-bottom me-1"></i> Hutang Organisasi</h5>
+        <p class="gwa-card-intro">Pinjaman tunai (diisi akun penerima) langsung tercatat sebagai pemasukan. Setiap pembayaran menjadi transaksi pengeluaran; status Lunas dihitung otomatis.</p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel("Catat Hutang", "Hutang.add()",
+            ("btn-outline-success", "ri-hand-coin-line", "Catat pembayaran"),
+            ("btn-outline-info", "ri-history-line", "Riwayat bayar & lampiran"),
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+            ("btn-outline-secondary", "ri-eraser-line", "Hapuskan"),
+            ("btn-outline-danger", "ri-delete-bin-line", "Hapus (belum ada pembayaran)"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.HutangUrl = {};
+        ['List', 'Add', 'Edit', 'SimpanBaru', 'Update', 'Hapuskan', 'Delete', 'Bayar', 'SimpanBayar', 'HapusBayar', 'Riwayat', 'TambahLampiran', 'HapusLampiran', 'BerkasLampiran'].forEach(function (a) {
+            window.HutangUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Keuangan/Hutang.js" asp-append-version="true"></script>
+}

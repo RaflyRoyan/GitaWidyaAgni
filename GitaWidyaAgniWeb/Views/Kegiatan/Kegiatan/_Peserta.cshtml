@@ -1,0 +1,36 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.KegiatanVM.Peserta
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+<div class="gwa-mform" id="kegiatanPeserta" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-group-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Judul</div>
+            <div class="gwa-mform-info-meta"><span>Mendaftarkan ulang peserta yang dibatalkan mengaktifkan barisnya kembali. Alumni tidak bisa menjadi peserta.</span></div>
+        </div>
+    </div>
+    <div class="gwa-mform-add">
+        <div class="gwa-mform-add-form">
+            @(Html.DevExtreme().Form<KegiatanVM.PesertaInput>()
+                .ID("frmPeserta")
+                .FormData(Model.Input)
+                .LabelLocation(FormLabelLocation.Top)
+                .ShowColonAfterLabel(false)
+                .ColCount(3)
+                .ColCountByScreen(c => c.Xs(1).Sm(1))
+                .Items(items =>
+                {
+                    items.AddSimpleFor(m => m.MemberId).ColSpan(2).Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).Placeholder("Pilih anggota..."));
+                    items.AddSimpleFor(m => m.ParticipantRole).Editor(e => e.TextBox().MaxLength(50).InputAttr(new { style = "text-transform:uppercase" }));
+                })
+            )
+        </div>
+        <button type="button" class="btn btn-outline-primary" onclick="Kegiatan.addParticipant()"><i class="ri-add-line align-bottom me-1"></i> Tambah</button>
+    </div>
+    <div id="kegiatanPesertaTarget">
+        <partial name="~/Views/Kegiatan/Kegiatan/_PesertaList.cshtml" model="Model.List" />
+    </div>
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

@@ -1,0 +1,59 @@
+@model GitaWidyaAgniWeb.Models.Persuratan.SuratVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Persuratan";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-mail-send-line align-bottom me-1"></i> Persuratan</h5>
+        <p class="gwa-card-intro">Surat keluar disetujui lewat alur LETTER; nomor surat dibuat otomatis saat persetujuan terakhir (bila belum diisi). Surat masuk dicatat lalu didisposisikan ke anggota.</p>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs gwa-tabs mb-3" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabKeluar" data-tab="Keluar" type="button" role="tab"><i class="ri-mail-send-line me-1"></i>Surat Keluar</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabMasuk" data-tab="Masuk" type="button" role="tab"><i class="ri-mail-download-line me-1"></i>Surat Masuk</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabTemplate" data-tab="Template" type="button" role="tab"><i class="ri-file-copy-2-line me-1"></i>Template</button></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tabKeluar" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Buat Surat Keluar", "Surat.add(2)",
+                    ("btn-outline-info", "ri-file-list-3-line", "Detail, persetujuan & disposisi"),
+                    ("btn-outline-primary", "ri-send-plane-line", "Ajukan / tandai terkirim"),
+                    ("btn-outline-success", "ri-check-double-line", "Setujui"),
+                    ("btn-outline-secondary", "ri-archive-line", "Arsipkan"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-danger", "ri-close-circle-line", "Tolak / hapus")) { LegendId = "legendKeluar" }' />
+                <div id="targetKeluar" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabMasuk" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Catat Surat Masuk", "Surat.add(1)",
+                    ("btn-outline-info", "ri-file-list-3-line", "Detail & disposisi"),
+                    ("btn-outline-secondary", "ri-archive-line", "Arsipkan"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus")) { LegendId = "legendMasuk" }' />
+                <div id="targetMasuk" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabTemplate" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Template", "Surat.addTemplate()",
+                    ("btn-outline-info", "ri-file-download-line", "Unduh .docx"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan")) { LegendId = "legendTemplate" }' />
+                <div id="targetTemplate" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.SuratUrl = {};
+        ['ListSurat', 'AddSurat', 'EditSurat', 'SimpanSurat', 'UpdateSurat', 'HapusSurat', 'Ajukan', 'Setujui', 'Tolak', 'Kirim', 'Arsip', 'BerkasSurat',
+            'Detail', 'TambahDisposisi', 'SelesaiDisposisi', 'BukaDisposisi', 'HapusDisposisi',
+            'ListTemplate', 'AddTemplate', 'EditTemplate', 'SimpanTemplate', 'UpdateTemplate', 'HapusTemplate', 'BerkasTemplate'].forEach(function (a) {
+            window.SuratUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Persuratan/Surat.js" asp-append-version="true"></script>
+}

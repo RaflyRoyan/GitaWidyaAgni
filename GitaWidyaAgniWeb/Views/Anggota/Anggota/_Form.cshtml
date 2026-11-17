@@ -1,0 +1,73 @@
+@model GitaWidyaAgniWeb.Models.Anggota.AnggotaVM.Add
+@using GitaWidyaAgniWeb.Models.Anggota
+@* Form bersama Add & Edit anggota. Status dan tanggal keluar hanya di Edit. *@
+
+@{
+    var editModel = Model as AnggotaVM.Edit;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-user-line"></i></span>
+            <div>
+                <div class="gwa-mform-info-title">@Model.Row.Fullname</div>
+                <div class="gwa-mform-info-meta">
+                    <span>No. <b>@(Model.Row.MemberNumber ?? "-")</b></span>
+                    <span>Status <b>@editModel!.StatusText</b></span>
+                </div>
+            </div>
+        </div>
+    }
+
+    @(Html.DevExtreme().Form<AnggotaVM.NewRow>()
+        .ID("frmAnggota")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddGroup().Caption("Identitas").ColSpan(3).ColCount(3).Items(g =>
+            {
+                g.AddSimpleFor(m => m.Fullname).ColSpan(2).Editor(e => e.TextBox().MaxLength(150));
+                g.AddSimpleFor(m => m.Gender).Editor(e => e.SelectBox().DataSource(Model.GenderList).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true));
+                g.AddSimpleFor(m => m.MemberCategory).Editor(e => e.SelectBox().DataSource(Model.KategoriList).ValueExpr("Value").DisplayExpr("Text"));
+                g.AddSimpleFor(m => m.Nim).Editor(e => e.TextBox().MaxLength(20));
+                g.AddSimpleFor(m => m.BirthDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+                g.AddSimpleFor(m => m.Fakultas).Editor(e => e.TextBox().MaxLength(100));
+                g.AddSimpleFor(m => m.ProgramStudi).Editor(e => e.TextBox().MaxLength(100));
+                g.AddSimpleFor(m => m.Angkatan).Editor(e => e.NumberBox().Min(1990).Max(2100).Format("#0"));
+                g.AddSimpleFor(m => m.Institution).ColSpan(3).Editor(e => e.TextBox().MaxLength(150).Placeholder("Diisi untuk anggota kategori Umum"));
+            });
+            items.AddGroup().Caption("Kontak").ColSpan(3).ColCount(3).Items(g =>
+            {
+                g.AddSimpleFor(m => m.Phone).Editor(e => e.TextBox().MaxLength(30));
+                g.AddSimpleFor(m => m.Email).ColSpan(2).Editor(e => e.TextBox().MaxLength(100));
+                g.AddSimpleFor(m => m.Address).ColSpan(3).Editor(e => e.TextArea().Height(60).MaxLength(255));
+            });
+            items.AddGroup().Caption("Keanggotaan").ColSpan(3).ColCount(3).Items(g =>
+            {
+                g.AddSimpleFor(m => m.MemberNumber).Editor(e => e.TextBox().MaxLength(30).InputAttr(new { style = "text-transform:uppercase" }));
+                g.AddSimpleFor(m => m.MemberType).Editor(e => e.SelectBox().DataSource(Model.TipeList).ValueExpr("Value").DisplayExpr("Text"));
+                g.AddSimpleFor(m => m.JoinedAt).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+                g.AddSimpleFor(m => m.UserId).Editor(e => e.SelectBox().DataSource(Model.UserList).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true).Placeholder("Belum punya akun"));
+                if (isEdit)
+                {
+                    g.AddSimpleFor(m => m.Status).Editor(e => e.SelectBox().DataSource(Model.StatusList).ValueExpr("Value").DisplayExpr("Text"));
+                    g.AddSimpleFor(m => m.LeftAt).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd").ShowClearButton(true));
+                }
+            });
+        })
+    )
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Anggota.@(isEdit ? "update" : "save")()">
+            <i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")
+        </button>
+    </div>
+</div>

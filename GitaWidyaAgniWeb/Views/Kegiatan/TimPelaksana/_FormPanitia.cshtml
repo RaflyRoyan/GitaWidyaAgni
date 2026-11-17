@@ -1,0 +1,38 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.TimPelaksanaVM.AddPanitia
+@using GitaWidyaAgniWeb.Models.Kegiatan
+@{
+    var editModel = Model as TimPelaksanaVM.EditPanitia;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-user-star-line"></i></span>
+            <div><div class="gwa-mform-info-title">@editModel!.Nama</div></div>
+        </div>
+    }
+    @(Html.DevExtreme().Form<TimPelaksanaVM.NewPanitia>()
+        .ID("frmPanitia")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            if (!isEdit)
+            {
+                items.AddSimpleFor(m => m.MemberId).ColSpan(2).Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).Placeholder("Pilih anggota..."));
+            }
+            items.AddSimpleFor(m => m.CommitteeRole).Editor(e => e.SelectBox().DataSource(Model.PeranOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.SectionId).Editor(e => e.SelectBox().DataSource(Model.SeksiOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Tanpa seksi (peran inti)"));
+            items.AddSimpleFor(m => m.JobDesc).ColSpan(2).Editor(e => e.TextArea().Height(80).MaxLength(500));
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="TimPelaksana.save('Panitia', @(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

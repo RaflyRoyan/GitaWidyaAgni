@@ -1,0 +1,132 @@
+@model GitaWidyaAgniWeb.Controllers.AreaAnggota.PeminjamanSayaController.Model?
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@{
+    ViewData["Title"] = "Peminjaman Saya";
+}
+
+@if (Model == null)
+{
+    <partial name="~/Views/AreaAnggota/_BukanAnggota.cshtml" />
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-xl-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="ri-hand-heart-line align-bottom me-1"></i> Ajukan Peminjaman</h5>
+                    <p class="gwa-card-intro mb-0">Pilih aset dan jumlahnya. Aset diambil setelah pengajuan disetujui pengurus inventaris.</p>
+                </div>
+                <div class="card-body">
+                    <form id="frmPinjam" novalidate>
+                        <div class="mb-3">
+                            <label class="form-label" for="pPurpose">Keperluan</label>
+                            <input id="pPurpose" class="form-control" maxlength="255" required />
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-sm-6">
+                                <label class="form-label" for="pBorrow">Tanggal pinjam</label>
+                                <input id="pBorrow" type="datetime-local" class="form-control" required />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label" for="pReturn">Rencana kembali</label>
+                                <input id="pReturn" type="datetime-local" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="pScheme">Skema sewa</label>
+                            <select id="pScheme" class="form-select">
+                                <option value="@((int)RentalScheme.Gratis)">Gratis</option>
+                                <option value="@((int)RentalScheme.Seikhlasnya)">Seikhlasnya</option>
+                                <option value="@((int)RentalScheme.TarifTetap)">Tarif tetap</option>
+                            </select>
+                        </div>
+                        <label class="form-label">Aset</label>
+                        <div id="pItems" class="d-grid gap-2 mb-2"></div>
+                        <button type="button" class="btn btn-sm btn-outline-primary mb-3" onclick="PeminjamanSaya.addRow()"><i class="ri-add-line me-1"></i> Tambah aset</button>
+                        <div class="mb-3">
+                            <label class="form-label" for="pNotes">Catatan</label>
+                            <textarea id="pNotes" class="form-control" rows="2" maxlength="500"></textarea>
+                        </div>
+                        <div class="text-end"><button type="submit" class="btn btn-success"><i class="ri-send-plane-line me-1"></i> Ajukan</button></div>
+                    </form>
+                    <template id="tplAset">
+                        <div class="d-flex gap-2">
+                            <select class="form-select aset" aria-label="Aset">
+                                @foreach (var a in Model.Aset)
+                                {
+                                    <option value="@a.Id">@a.Name (@a.AssetCode) · @a.Quantity @a.Unit@(a.RentalFeePerDay > 0 ? " · Rp " + a.RentalFeePerDay.ToString("#,##0") + "/hari" : "")</option>
+                                }
+                            </select>
+                            <input type="number" min="1" value="1" class="form-control jumlah" style="max-width:90px" aria-label="Jumlah" />
+                            <button type="button" class="btn btn-icon btn-ghost-danger" aria-label="Hapus baris" onclick="$(this).parent().remove()"><i class="ri-close-line"></i></button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card">
+                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-history-line align-bottom me-1"></i> Riwayat Peminjaman</h5></div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var r in Model.Riwayat)
+                    {
+                        var due = Math.Max(0, r.TotalRentalFee + r.TotalLateFee - r.LateFeeWaived - r.PaidAmount);
+                        <li class="list-group-item">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="gwa-code">@r.RequestNumber</span>
+                                <span class="badge badge-soft-@(r.Status == BorrowRequestStatus.Overdue || r.Status == BorrowRequestStatus.Rejected ? "danger" : r.Status == BorrowRequestStatus.Returned ? "success" : "primary") ms-auto">@EnumHelper.Text(r.Status)</span>
+                            </div>
+                            <div class="small">@r.Purpose</div>
+                            <div class="small text-muted">@r.BorrowDate.ToString("dd MMM yyyy HH:mm") – @r.ExpectedReturnDate.ToString("dd MMM yyyy HH:mm")
+                                @if (due > 0) { <span class="text-danger">· tagihan Rp @due.ToString("#,##0")</span> }</div>
+                            @if (r.Status == BorrowRequestStatus.Pending || (r.Status == BorrowRequestStatus.Approved && r.PaidAmount == 0))
+                            {
+                                <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="PeminjamanSaya.cancel('@r.EncDecrKey')">Batalkan</button>
+                            }
+                        </li>
+                    }
+                    @if (Model.Riwayat.Count == 0) { <li class="list-group-item text-muted">Belum ada peminjaman.</li> }
+                </ul>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @if (Model != null)
+    {
+        <script>
+            window.PeminjamanSaya = (function () {
+                function addRow() {
+                    $('#pItems').append(document.getElementById('tplAset').content.cloneNode(true));
+                }
+                $('#frmPinjam').on('submit', function (e) {
+                    e.preventDefault();
+                    const items = $('#pItems > div').map(function () {
+                        return { AssetId: parseInt($(this).find('.aset').val(), 10), Quantity: parseInt($(this).find('.jumlah').val(), 10) || 0 };
+                    }).get();
+                    if (!$.trim($('#pPurpose').val()) || !$('#pBorrow').val() || !$('#pReturn').val()) { AppUI.alertWarning('Isi keperluan dan tanggal.'); return; }
+                    if (items.length === 0) { AppUI.alertWarning('Tambahkan minimal satu aset.'); return; }
+                    AppUI.postJson('@Url.Action("Ajukan")', {
+                        Purpose: $('#pPurpose').val(),
+                        BorrowDate: $('#pBorrow').val(),
+                        ExpectedReturnDate: $('#pReturn').val(),
+                        RentalScheme: parseInt($('#pScheme').val(), 10),
+                        Notes: $('#pNotes').val() || null,
+                        Items: items
+                    }).done(function (r) {
+                        AppUI.alertSuccess(r.Message + ' No. ' + r.Data);
+                        setTimeout(function () { window.location.reload(); }, 1200);
+                    });
+                });
+                function cancel(key) {
+                    AppUI.confirmPost('Batalkan pengajuan?', '', '@Url.Action("Batal")', { Key: key }, 'Batalkan', 'btn-danger').done(function () { window.location.reload(); });
+                }
+                $(addRow);
+                return { addRow: addRow, cancel: cancel };
+            })();
+        </script>
+    }
+}

@@ -1,0 +1,38 @@
+@model GitaWidyaAgniWeb.Models.Persuratan.SuratVM.AddTemplate
+@using GitaWidyaAgniWeb.Models.Persuratan
+@* Template wajib isi, berkas .docx (maks. 5 MB), atau keduanya. *@
+@{ var isEdit = Model is SuratVM.EditTemplate; }
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<SuratVM.NewTemplate>()
+        .ID("frmTemplateSurat")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Name).ColSpan(isEdit ? 1 : 2).Editor(e => e.TextBox().MaxLength(150));
+            items.AddSimpleFor(m => m.LetterType).Editor(e => e.TextBox().MaxLength(50).InputAttr(new { style = "text-transform:uppercase" }));
+            if (isEdit)
+            {
+                items.AddSimpleFor(m => m.IsActive).Editor(e => e.SelectBox().DataSource(Model.AktifList).ValueExpr("Value").DisplayExpr("Text"));
+            }
+            items.AddSimpleFor(m => m.Body).ColSpan(3).Editor(e => e.TextArea().Height(200));
+        })
+    )
+    @if (!string.IsNullOrEmpty(Model.FileName))
+    {
+        <div class="gwa-mform-note d-flex align-items-center gap-2">
+            <i class="ri-file-word-line"></i><span>@Model.FileName</span>
+            <label class="ms-auto form-check-label"><input type="checkbox" class="form-check-input me-1" id="chkHapusBerkasTemplate" /> Hapus berkas</label>
+        </div>
+    }
+    @(Html.DevExtreme().FileUploader().ID("fileTemplateSurat").UploadMode(FileUploadMode.UseForm).Multiple(false)
+        .AllowedFileExtensions(new[] { ".docx" }).MaxFileSize(5 * 1024 * 1024).SelectButtonText("Berkas .docx").LabelText(""))
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Surat.saveTemplate(@(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

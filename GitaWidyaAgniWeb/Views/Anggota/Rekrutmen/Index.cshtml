@@ -1,0 +1,43 @@
+@model GitaWidyaAgniWeb.Models.Anggota.RekrutmenVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Rekrutmen";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-user-add-line align-bottom me-1"></i> Open Recruitment</h5>
+        <p class="gwa-card-intro">
+            Rekrutmen yang Dibuka tampil di halaman publik <a href="@Url.Action("Rekrutmen", "Landing", new { area = "" })" target="_blank">/rekrutmen</a>.
+            Pendaftar yang Diterima otomatis menjadi anggota; kuota membatasi jumlah yang diterima.
+        </p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel("Tambah Rekrutmen", "Rekrutmen.add()",
+            ("btn-outline-success", "ri-team-line", "Pendaftar"),
+            ("btn-outline-primary", "ri-door-open-line", "Buka / tutup pendaftaran"),
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah rekrutmen"),
+            ("btn-outline-danger", "ri-delete-bin-line", "Hapus (Draft tanpa pendaftar)"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.RekrutmenUrl = {
+            list: '@Url.Action("List")',
+            add: '@Url.Action("Add")',
+            edit: '@Url.Action("Edit")',
+            simpanBaru: '@Url.Action("SimpanBaru")',
+            update: '@Url.Action("Update")',
+            buka: '@Url.Action("Buka")',
+            tutup: '@Url.Action("Tutup")',
+            hapus: '@Url.Action("Delete")',
+            pendaftar: '@Url.Action("Pendaftar")',
+            pendaftarList: '@Url.Action("PendaftarList")',
+            review: '@Url.Action("Review")'
+        };
+    </script>
+    <script src="~/Scripts/Anggota/Rekrutmen.js" asp-append-version="true"></script>
+}

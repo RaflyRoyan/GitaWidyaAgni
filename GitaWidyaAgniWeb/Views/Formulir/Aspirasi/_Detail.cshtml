@@ -1,0 +1,52 @@
+@model GitaWidyaAgniWeb.Models.Formulir.AspirasiVM.Detail
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@{ var a = Model.Data; }
+
+<div class="gwa-mform" id="aspirasiDetail" data-key="@a.EncDecrKey">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-chat-3-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@a.Title</div>
+            <div class="gwa-mform-info-meta"><span>@EnumHelper.Text(a.Category) · @Model.Pengirim · @a.InsDate.ToString("dd MMM yyyy HH:mm") · <b>@EnumHelper.Text(a.Status)</b></span></div>
+        </div>
+    </div>
+    <div class="border rounded p-3 mb-3" style="white-space:pre-line">@a.Content</div>
+    @if (!string.IsNullOrEmpty(a.AttachmentFileName))
+    {
+        <p><i class="ri-attachment-2 me-1"></i><a href="@Url.Action("Lampiran", new { key = a.EncDecrKey })" target="_blank">@a.AttachmentFileName</a></p>
+    }
+    @if (!string.IsNullOrEmpty(a.Response))
+    {
+        <div class="gwa-mform-section"><span class="gwa-mform-section-title">Tanggapan</span><span class="gwa-mform-section-hint">@a.RespondedByName · @a.RespondedAt?.ToString("dd MMM yyyy HH:mm")</span></div>
+        <div class="border rounded p-3 mb-3 bg-light" style="white-space:pre-line">@a.Response</div>
+    }
+    @if (Model.BisaTanggapi)
+    {
+        <div class="gwa-mform-section"><span class="gwa-mform-section-title">Tanggapi</span></div>
+        <div class="row g-2">
+            <div class="col-md-4">
+                <label class="form-label small mb-1" for="aspStatus">Status</label>
+                <select id="aspStatus" class="form-select">
+                    @if (a.Status == AspirationStatus.Baru)
+                    {
+                        <option value="@((int)AspirationStatus.Diproses)">Diproses</option>
+                    }
+                    <option value="@((int)AspirationStatus.Selesai)">Selesai</option>
+                    <option value="@((int)AspirationStatus.Ditolak)">Ditolak</option>
+                </select>
+            </div>
+            <div class="col-md-8">
+                <label class="form-label small mb-1" for="aspTanggapan">Tanggapan (wajib untuk Selesai / Ditolak)</label>
+                <textarea id="aspTanggapan" class="form-control" rows="3" maxlength="2000">@a.Response</textarea>
+            </div>
+        </div>
+    }
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+        @if (Model.BisaTanggapi)
+        {
+            <button type="button" class="btn btn-success" onclick="Aspirasi.respond()"><i class="ri-send-plane-line align-bottom me-1"></i> Simpan Tanggapan</button>
+        }
+    </div>
+</div>

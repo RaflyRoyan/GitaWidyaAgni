@@ -1,0 +1,24 @@
+@model GitaWidyaAgniWeb.Models.Formulir.FormulirVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Formulir
+
+@(Html.DevExtreme().DataGrid<FormulirVM.Row>()
+    .ID("tblFormulir")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Formulir")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Title).Caption("Judul").CssClass("fw-medium");
+        columns.AddFor(m => m.Jenis).Caption("Jenis");
+        columns.AddFor(m => m.Referensi).Caption("Kegiatan / Rekrutmen");
+        columns.AddFor(m => m.Anonim).Caption("Anonim").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddFor(m => m.OpenAt).Caption("Dibuka").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm").Visible(false);
+        columns.AddFor(m => m.CloseAt).Caption("Ditutup").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.QuestionCount).Caption("Pertanyaan").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.ResponseCount).Caption("Jawaban").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Formulir.statusTemplate"));
+        columns.AddAction("Formulir.actionTemplate");
+    })
+)

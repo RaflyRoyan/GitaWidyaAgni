@@ -1,0 +1,60 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.TimPelaksanaVM.ListRekrutmen
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+@* Rekrutmen panitia satu per kegiatan: kartu ringkasan + tombol + grid lamaran. *@
+
+@if (Model.Key == null)
+{
+    <div class="text-center py-4">
+        <p class="text-muted mb-3">Kegiatan ini belum punya rekrutmen panitia.</p>
+        <button type="button" class="btn btn-outline-primary" onclick="TimPelaksana.add('Rekrutmen')"><i class="ri-add-line align-bottom me-1"></i> Buat Rekrutmen Panitia</button>
+    </div>
+}
+else
+{
+    <div class="gwa-mform-info mb-3" id="rekrutmenPanitia" data-key="@Model.Key" data-status="@Model.Status">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-user-add-line"></i></span>
+        <div class="flex-grow-1">
+            <div class="gwa-mform-info-title">Rekrutmen Panitia · <span class="badge badge-soft-@(Model.Status == 2 ? "success" : Model.Status == 3 ? "dark" : "secondary")">@Model.StatusText</span></div>
+            <div class="gwa-mform-info-meta">
+                <span>@Model.OpenAt?.ToString("dd MMM yyyy HH:mm") – @Model.CloseAt?.ToString("dd MMM yyyy HH:mm")</span>
+                <span>Kuota <b>@(Model.Quota?.ToString() ?? "tanpa batas")</b></span>
+                <span>@(Model.AdaFormulir ? "Dengan formulir tambahan" : "Tanpa formulir")</span>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-1">
+            @if (Model.Status != 2)
+            {
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="TimPelaksana.recruitment('buka')"><i class="ri-door-open-line me-1"></i>Buka</button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="TimPelaksana.recruitment('tutup')"><i class="ri-door-closed-line me-1"></i>Tutup</button>
+            }
+            <button type="button" class="btn btn-sm btn-outline-warning" onclick="TimPelaksana.recruitment('ubah')"><i class="ri-edit-2-line me-1"></i>Ubah</button>
+            @if (Model.Status == 1 && Model.Rows.Count == 0)
+            {
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="TimPelaksana.recruitment('hapus')"><i class="ri-delete-bin-line me-1"></i>Hapus</button>
+            }
+        </div>
+    </div>
+
+    @(Html.DevExtreme().DataGrid<TimPelaksanaVM.LamaranRow>()
+        .ID("tblLamaran")
+        .DataSource(Model.Rows)
+        .KeyExpr("EncDecrKey")
+        .ListGrid("Lamaran Panitia")
+        .Columns(columns =>
+        {
+            columns.AddRowNumber();
+            columns.AddFor(m => m.Nama).Caption("Pelamar").CssClass("fw-medium");
+            columns.AddFor(m => m.Pilihan1).Caption("Pilihan 1");
+            columns.AddFor(m => m.Pilihan2).Caption("Pilihan 2");
+            columns.AddFor(m => m.Reason).Caption("Alasan");
+            columns.AddFor(m => m.InsDate).Caption("Melamar").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+            columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("TimPelaksana.applicationStatusTemplate"));
+            columns.AddFor(m => m.ReviewNote).Caption("Catatan");
+            columns.AddAction("TimPelaksana.lamaranActionTemplate");
+        })
+    )
+}

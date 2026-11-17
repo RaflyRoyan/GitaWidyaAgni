@@ -1,0 +1,25 @@
+@model GitaWidyaAgniWeb.Models.Kemitraan.MitraVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kemitraan
+
+@(Html.DevExtreme().DataGrid<MitraVM.Row>()
+    .ID("tblGrid")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Mitra")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Mitra").CellTemplate(new JS("Mitra.nameTemplate"));
+        columns.AddFor(m => m.Jenis).Caption("Jenis");
+        columns.AddFor(m => m.Industry).Caption("Bidang").Visible(false);
+        columns.AddFor(m => m.City).Caption("Kota");
+        columns.AddFor(m => m.KontakUtama).Caption("Kontak Utama");
+        columns.AddFor(m => m.Phone).Caption("Telepon");
+        columns.AddFor(m => m.Email).Caption("Email").Visible(false);
+        columns.AddFor(m => m.Instagram).Caption("Instagram").Visible(false);
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Mitra.statusTemplate"));
+        columns.AddAction("Mitra.actionTemplate");
+    })
+)

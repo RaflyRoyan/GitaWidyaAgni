@@ -1,0 +1,25 @@
+@model GitaWidyaAgniWeb.Models.Informasi.BannerVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Informasi
+
+@(Html.DevExtreme().DataGrid<BannerVM.Row>()
+    .ID("tblBanner")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Banner")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddFor(m => m.Seq).Caption("#").Width(50).Alignment(HorizontalAlignment.Center);
+        columns.Add().Caption("Gambar").Width(120).AllowExporting(false).CellTemplate(new JS("Banner.imageTemplate"));
+        columns.AddFor(m => m.Title).Caption("Judul").CssClass("fw-medium");
+        columns.AddFor(m => m.Subtitle).Caption("Subjudul").Visible(false);
+        columns.AddFor(m => m.ButtonText).Caption("Tombol");
+        columns.AddFor(m => m.LinkUrl).Caption("Tautan").Visible(false);
+        columns.AddFor(m => m.StartAt).Caption("Mulai").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.EndAt).Caption("Sampai").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.Tayang).Caption("Tayang").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Banner.actionTemplate");
+    })
+)

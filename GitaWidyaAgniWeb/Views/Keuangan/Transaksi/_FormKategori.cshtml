@@ -1,0 +1,27 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.TransaksiVM.AddKategori
+@using GitaWidyaAgniWeb.Models.Keuangan
+@{ var isEdit = Model is TransaksiVM.EditKategori; }
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<TransaksiVM.NewKategori>()
+        .ID("frmKategori")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Name).Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.CategoryType).Editor(e => e.SelectBox().DataSource(Model.JenisOpsi).ValueExpr("Value").DisplayExpr("Text").ReadOnly(isEdit));
+            if (isEdit)
+            {
+                items.AddSimpleFor(m => m.IsActive).Editor(e => e.SelectBox().DataSource(Model.AktifList).ValueExpr("Value").DisplayExpr("Text"));
+            }
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Transaksi.save('Kategori', @(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

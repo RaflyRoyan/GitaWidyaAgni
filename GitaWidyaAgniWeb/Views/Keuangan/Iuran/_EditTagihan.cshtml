@@ -1,0 +1,26 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.IuranVM.EditTagihan
+@using GitaWidyaAgniWeb.Models.Keuangan
+
+<div class="gwa-mform">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-bill-line"></i></span>
+        <div><div class="gwa-mform-info-title">@Model.Nama</div></div>
+    </div>
+    @(Html.DevExtreme().Form<IuranVM.TagihanInput>()
+        .ID("frmTagihan")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Amount).Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+            items.AddSimpleFor(m => m.DueDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd").ShowClearButton(true));
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Iuran.updateBill()"><i class="ri-save-3-line align-bottom me-1"></i> Simpan Perubahan</button>
+    </div>
+</div>

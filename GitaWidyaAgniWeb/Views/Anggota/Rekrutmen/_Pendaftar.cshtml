@@ -1,0 +1,20 @@
+@model GitaWidyaAgniWeb.Models.Anggota.RekrutmenVM.Pendaftar
+@* Modal pendaftar rekrutmen: grid _PendaftarList (dimuat ulang setelah review). *@
+
+<div class="gwa-mform" id="rekrutmenPendaftar" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-team-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Judul</div>
+            <div class="gwa-mform-info-meta"><span>@Model.Ringkasan</span><span>Status hanya maju: Terkirim → Seleksi Berkas → Wawancara → Diterima / Ditolak.</span></div>
+        </div>
+    </div>
+
+    <div id="rekrutmenPendaftarTarget">
+        <partial name="~/Views/Anggota/Rekrutmen/_PendaftarList.cshtml" model="Model.List" />
+    </div>
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

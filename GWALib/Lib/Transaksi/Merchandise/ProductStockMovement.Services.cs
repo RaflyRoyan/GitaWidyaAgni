@@ -92,7 +92,7 @@ namespace GWALib.Lib.Transaksi.Merchandise
         }
         // Mencatat mutasi bertanda (positif / negatif) dan mengubah stok produk / varian; stok tidak boleh minus.
         internal static EF.TProductStockMovement Apply(EF.ModelContext context, EF.MProduct product, EF.MProductVariant? variant, StockMovementType movementType,
-            int quantity, DateTime movementDate, int? orderId, int? procurementId, string? notes, int userId)
+            int quantity, DateTime movementDate, int? orderId, int? procurementId, string? notes, int? userId)
         {
             if (product.TrackStock != (int)StockTracking.Dilacak)
             {

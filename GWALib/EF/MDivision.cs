@@ -53,6 +53,9 @@ public partial class MDivision
     public int? UpdBy { get; set; }
 
     [InverseProperty("Division")]
+    public virtual ICollection<TProgram> TPrograms { get; set; } = new List<TProgram>();
+
+    [InverseProperty("Division")]
     public virtual ICollection<TActivity> TActivities { get; set; } = new List<TActivity>();
 
     [InverseProperty("Division")]

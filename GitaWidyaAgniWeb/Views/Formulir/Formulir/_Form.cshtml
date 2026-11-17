@@ -1,0 +1,45 @@
+@model GitaWidyaAgniWeb.Models.Formulir.FormulirVM.Add
+@using GitaWidyaAgniWeb.Models.Formulir
+@* Evaluasi Kegiatan wajib kegiatan. Pendaftaran Rekrutmen: pilih rekrutmen anggota, atau kosongkan untuk rekrutmen tim pelaksana; tidak boleh anonim. Survei Umum tanpa referensi. *@
+@{
+    var editModel = Model as FormulirVM.Edit;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-survey-line"></i></span>
+            <div><div class="gwa-mform-info-title">@Model.Row.Title</div><div class="gwa-mform-info-meta"><span>@editModel!.StatusText</span></div></div>
+        </div>
+        @if (Model.Terkunci)
+        {
+            <p class="gwa-mform-note">Sudah ada jawaban: jenis, referensi, dan mode anonim tidak bisa diubah.</p>
+        }
+    }
+    @(Html.DevExtreme().Form<FormulirVM.NewRow>()
+        .ID("frmFormulir")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .OnInitialized("Formulir.formInit")
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Title).ColSpan(2).Editor(e => e.TextBox().MaxLength(255));
+            items.AddSimpleFor(m => m.FormType).Editor(e => e.SelectBox().DataSource(Model.JenisOpsi).ValueExpr("Value").DisplayExpr("Text").ReadOnly(Model.Terkunci).OnValueChanged("Formulir.typeChanged"));
+            items.AddSimpleFor(m => m.Anonim).Editor(e => e.CheckBox().ReadOnly(Model.Terkunci));
+            items.AddSimpleFor(m => m.ActivityId).ColSpan(2).Editor(e => e.SelectBox().DataSource(Model.KegiatanOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true).ReadOnly(Model.Terkunci));
+            items.AddSimpleFor(m => m.RecruitmentId).ColSpan(2).Editor(e => e.SelectBox().DataSource(Model.RekrutmenOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).ReadOnly(Model.Terkunci));
+            items.AddSimpleFor(m => m.OpenAt).Editor(e => e.DateBox().Type(DateBoxType.DateTime).DisplayFormat("dd MMM yyyy HH:mm").DateSerializationFormat("yyyy-MM-ddTHH:mm:ss").ShowClearButton(true));
+            items.AddSimpleFor(m => m.CloseAt).Editor(e => e.DateBox().Type(DateBoxType.DateTime).DisplayFormat("dd MMM yyyy HH:mm").DateSerializationFormat("yyyy-MM-ddTHH:mm:ss").ShowClearButton(true));
+            items.AddSimpleFor(m => m.Description).ColSpan(2).Editor(e => e.TextArea().Height(90));
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Formulir.save(@(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

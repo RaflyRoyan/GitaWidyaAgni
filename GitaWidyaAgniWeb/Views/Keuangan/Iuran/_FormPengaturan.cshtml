@@ -1,0 +1,31 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.IuranVM.AddPengaturan
+@using GitaWidyaAgniWeb.Models.Keuangan
+@* Periode dan frekuensi terkunci setelah ada tagihan. *@
+@{ var isEdit = Model is IuranVM.EditPengaturan; }
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<IuranVM.NewPengaturan>()
+        .ID("frmPengaturan")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Name).Editor(e => e.TextBox().MaxLength(100).Placeholder("mis. Iuran Bulanan"));
+            items.AddSimpleFor(m => m.Amount).Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+            items.AddSimpleFor(m => m.Frequency).Editor(e => e.SelectBox().DataSource(Model.FrekuensiOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.PeriodId).Editor(e => e.SelectBox().DataSource(Model.PeriodeOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true));
+            items.AddSimpleFor(m => m.CategoryId).Editor(e => e.SelectBox().DataSource(Model.KategoriOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true));
+            if (isEdit)
+            {
+                items.AddSimpleFor(m => m.IsActive).Editor(e => e.SelectBox().DataSource(Model.AktifList).ValueExpr("Value").DisplayExpr("Text"));
+            }
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Iuran.saveSetting(@(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

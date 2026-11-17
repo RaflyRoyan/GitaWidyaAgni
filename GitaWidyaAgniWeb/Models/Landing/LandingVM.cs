@@ -38,4 +38,27 @@ namespace GitaWidyaAgniWeb.Models.Landing
         public int Page { get; set; }
         public bool HasNext { get; set; }
     }
+
+    public class RecruitmentPageVM
+    {
+        public List<Recruitment> Open { get; set; } = new();
+        public Recruitment? Selected { get; set; }
+        public ApplyInput Input { get; set; } = new();
+        public bool Success { get; set; }
+        public string? Error { get; set; }
+    }
+
+    // Form pendaftaran rekrutmen publik (dikirim sebagai form HTML biasa).
+    public class ApplyInput
+    {
+        public GWAShared.Enums.MemberCategory Category { get; set; } = GWAShared.Enums.MemberCategory.Mahasiswa;
+        public string? Nim { get; set; }
+        public string? Fullname { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+        public string? ProgramStudi { get; set; }
+        public short? Angkatan { get; set; }
+        public string? Institution { get; set; }
+        public string? Motivation { get; set; }
+    }
 }

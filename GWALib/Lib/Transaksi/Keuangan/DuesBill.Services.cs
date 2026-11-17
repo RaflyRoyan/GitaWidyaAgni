@@ -1,4 +1,5 @@
 using GWALib.General;
+using GWALib.Lib.Transaksi.Information;
 using GWALib.General.Utilities;
 using GWALib.Lib.Master.Keuangan;
 using GWAShared.Enums;
@@ -315,6 +316,9 @@ namespace GWALib.Lib.Transaksi.Keuangan
                 GWAShared.Utilities.ValidateUtility.ValidateDAModel(row);
                 context.TDuesBills.Add(row);
             }
+            NotifyHelper.ToMembers(context, targets.Select(x => (int?)x), NotifyHelper.TYPE_DUES, $"Tagihan iuran {setting.Name} {period}",
+                $"Rp {setting.Amount:#,##0}" + (dueDate != null ? $", jatuh tempo {dueDate:dd-MM-yyyy}" : ""),
+                NotifyHelper.LINK_MY_DUES, "m_dues_setting", setting.Id, userId);
             return targets.Count;
         }
         private void SetRow(EF.TDuesBill row, int userId)

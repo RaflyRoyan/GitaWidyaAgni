@@ -1,0 +1,77 @@
+@model GitaWidyaAgniWeb.Models.Prestasi.PrestasiVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Lomba & Prestasi";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-trophy-line align-bottom me-1"></i> Lomba &amp; Prestasi</h5>
+        <p class="gwa-card-intro">Kelola lomba dan pesertanya, catat prestasi (anggota otomatis mendapat poin Prestasi), bagikan materi, dan atur poin keaktifan anggota.</p>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs gwa-tabs mb-3" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabLomba" data-tab="Lomba" type="button" role="tab"><i class="ri-flag-2-line me-1"></i>Lomba</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPrestasi" data-tab="Prestasi" type="button" role="tab"><i class="ri-medal-line me-1"></i>Prestasi</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabMateri" data-tab="Materi" type="button" role="tab"><i class="ri-book-open-line me-1"></i>Materi</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPoin" data-tab="Poin" type="button" role="tab"><i class="ri-star-line me-1"></i>Poin</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAturan" data-tab="Aturan" type="button" role="tab"><i class="ri-scales-3-line me-1"></i>Aturan Poin</button></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tabLomba" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Lomba", "Prestasi.add(\"Lomba\")",
+                    ("btn-outline-success", "ri-team-line", "Peserta"),
+                    ("btn-outline-primary", "ri-arrow-right-circle-line", "Ubah status"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus")) { LegendId = "legendLomba" }' />
+                <div id="targetLomba" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabPrestasi" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Catat Prestasi", "Prestasi.add(\"Prestasi\")",
+                    ("btn-outline-info", "ri-file-download-line", "Sertifikat"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus")) { LegendId = "legendPrestasi" }' />
+                <div id="targetPrestasi" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabMateri" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Materi", "Prestasi.add(\"Materi\")",
+                    ("btn-outline-info", "ri-external-link-line", "Buka berkas / tautan"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus")) { LegendId = "legendMateri" }' />
+                <div id="targetMateri" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabPoin" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Poin Manual", "Prestasi.add(\"Poin\")",
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus poin")) { LegendId = "legendPoin" }' />
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <button type="button" class="btn btn-outline-success" onclick="Prestasi.generateActivity()"><i class="ri-calendar-check-line align-bottom me-1"></i> Generate dari Kegiatan</button>
+                    <button type="button" class="btn btn-outline-success" onclick="Prestasi.generatePeriod()"><i class="ri-user-star-line align-bottom me-1"></i> Generate Poin Pengurus</button>
+                    <button type="button" class="btn btn-outline-info" onclick="Prestasi.leaderboard()"><i class="ri-bar-chart-horizontal-line align-bottom me-1"></i> Peringkat</button>
+                </div>
+                <div id="targetPoin" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabAturan" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Aturan", "Prestasi.add(\"Aturan\")",
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan")) { LegendId = "legendAturan" }' />
+                <div id="targetAturan" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.PrestasiUrl = {};
+        ['ListLomba', 'AddLomba', 'EditLomba', 'SimpanLomba', 'UpdateLomba', 'HapusLomba', 'StatusLomba', 'Poster',
+            'Peserta', 'DaftarPeserta', 'IkutPeserta', 'MundurPeserta',
+            'ListPrestasi', 'AddPrestasi', 'EditPrestasi', 'SimpanPrestasi', 'UpdatePrestasi', 'HapusPrestasi', 'SertifikatPrestasi', 'FotoPrestasi',
+            'ListMateri', 'AddMateri', 'EditMateri', 'SimpanMateri', 'UpdateMateri', 'HapusMateri', 'BerkasMateri',
+            'ListPoin', 'AddPoin', 'SimpanPoin', 'HapusPoin', 'Peringkat', 'OpsiKegiatan', 'OpsiPeriode', 'GenerateKegiatan', 'GeneratePeriode',
+            'ListAturan', 'AddAturan', 'EditAturan', 'SimpanAturan', 'UpdateAturan', 'HapusAturan'].forEach(function (a) {
+            window.PrestasiUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Prestasi/Prestasi.js" asp-append-version="true"></script>
+}

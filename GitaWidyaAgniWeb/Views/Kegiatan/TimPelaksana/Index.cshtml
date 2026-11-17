@@ -1,0 +1,94 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.TimPelaksanaVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Tim Pelaksana";
+    var tabs = new (string Id, string Icon, string Name)[]
+    {
+        ("Seksi", "ri-layout-grid-line", "Seksi"), ("Panitia", "ri-team-line", "Panitia"), ("Rekrutmen", "ri-user-add-line", "Rekrutmen Panitia"),
+        ("Rundown", "ri-time-line", "Rundown"), ("Checklist", "ri-checkbox-multiple-line", "Checklist"), ("Rombongan", "ri-bus-2-line", "Rombongan"),
+        ("Template", "ri-file-copy-2-line", "Template Checklist")
+    };
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-team-line align-bottom me-1"></i> Tim Pelaksana Kegiatan</h5>
+        <p class="gwa-card-intro">Pilih kegiatan, lalu atur seksi, panitia, rekrutmen panitia, rundown, checklist persiapan, dan rombongan perjalanan. Peran inti (Ketua Pelaksana, Wakil, Sekretaris, Bendahara) hanya satu orang per kegiatan.</p>
+    </div>
+    <div class="card-body">
+        <div class="row g-2 align-items-end mb-3">
+            <div class="col-md-8 col-lg-6">
+                <label class="form-label mb-1 fw-medium" for="pilihKegiatan">Kegiatan</label>
+                @(Html.DevExtreme().SelectBox().ID("pilihKegiatan").DataSource(Model.KegiatanOpsi).ValueExpr("Value").DisplayExpr("Text")
+                    .SearchEnabled(true).Value(Model.ActivityId).Placeholder("Pilih kegiatan...").OnValueChanged("TimPelaksana.changeActivity"))
+            </div>
+        </div>
+
+        <ul class="nav nav-tabs gwa-tabs mb-3 flex-nowrap overflow-auto" role="tablist">
+            @foreach (var t in tabs)
+            {
+                <li class="nav-item"><button class="nav-link text-nowrap @(t.Id == "Seksi" ? "active" : "")" data-bs-toggle="tab" data-bs-target="#tab@(t.Id)" data-tab="@t.Id" type="button" role="tab"><i class="@t.Icon me-1"></i>@t.Name</button></li>
+            }
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tabSeksi" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Seksi", "TimPelaksana.add(\"Seksi\")",
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah seksi"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus seksi (belum dipakai)")) { LegendId = "legendSeksi" }' />
+                <div id="targetSeksi" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabPanitia" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Panitia", "TimPelaksana.add(\"Panitia\")",
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah peran / seksi"),
+                    ("btn-outline-secondary", "ri-logout-box-r-line", "Catat mundur"),
+                    ("btn-outline-danger", "ri-user-unfollow-line", "Keluarkan")) { LegendId = "legendPanitia" }' />
+                <div id="targetPanitia" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabRekrutmen" role="tabpanel">
+                <div id="targetRekrutmen"></div>
+            </div>
+            <div class="tab-pane fade" id="tabRundown" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Acara", "TimPelaksana.add(\"Rundown\")",
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah acara"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus acara")) { LegendId = "legendRundown" }' />
+                <div id="targetRundown" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabChecklist" role="tabpanel">
+                <div id="targetChecklist"></div>
+            </div>
+            <div class="tab-pane fade" id="tabRombongan" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Anggota Rombongan", "TimPelaksana.add(\"Rombongan\")",
+                    ("btn-outline-info", "ri-file-download-line", "Unduh surat izin"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus")) { LegendId = "legendRombongan" }' />
+                <div id="targetRombongan" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabTemplate" role="tabpanel">
+                <p class="gwa-mform-note mt-0 mb-2">Template dipakai tombol "Buat dari template" di tab Checklist. Tenggat item = tanggal mulai kegiatan + H±.</p>
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Template", "TimPelaksana.add(\"Template\")",
+                    ("btn-outline-success", "ri-list-check-2", "Item template"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah template"),
+                    ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan")) { LegendId = "legendTemplate" }' />
+                <div id="targetTemplate" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.TimPelaksanaUrl = {};
+        ['Seksi', 'Panitia', 'Rekrutmen', 'Rundown', 'Checklist', 'Rombongan', 'Template'].forEach(function (t) {
+            ['List', 'Add', 'Edit', 'Simpan', 'Update', 'Hapus', 'Status'].forEach(function (a) {
+                window.TimPelaksanaUrl[a.toLowerCase() + t] = '@Url.Action("__")'.replace('__', a + t);
+            });
+        });
+        ['MundurPanitia', 'KeluarkanPanitia', 'BukaRekrutmen', 'TutupRekrutmen', 'TerimaLamaran', 'TolakLamaran', 'OpsiSeksi',
+            'GenerateChecklist', 'SuratIzin', 'Item', 'ItemList', 'TambahItem', 'HapusItem'].forEach(function (a) {
+            window.TimPelaksanaUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Kegiatan/TimPelaksana.js" asp-append-version="true"></script>
+}

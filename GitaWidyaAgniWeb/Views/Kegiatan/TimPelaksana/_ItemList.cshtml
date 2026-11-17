@@ -1,0 +1,19 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.TimPelaksanaVM.ItemList
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<TimPelaksanaVM.ItemRow>()
+    .ID("tblItem")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .DetailGrid("Belum ada item.")
+    .Columns(columns =>
+    {
+        columns.AddFor(m => m.SeqNo).Caption("#").Width(50).Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.Title).Caption("Pekerjaan").CssClass("fw-medium");
+        columns.AddFor(m => m.SectionName).Caption("Seksi");
+        columns.AddFor(m => m.OffsetDay).Caption("H±").Alignment(HorizontalAlignment.Center).Width(70);
+        columns.AddFor(m => m.Prioritas).Caption("Prioritas");
+        columns.AddAction("TimPelaksana.itemActionTemplate");
+    })
+)

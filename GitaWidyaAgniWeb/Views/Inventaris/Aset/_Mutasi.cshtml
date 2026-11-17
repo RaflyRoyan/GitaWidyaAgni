@@ -1,0 +1,28 @@
+@model GitaWidyaAgniWeb.Models.Inventaris.AsetVM.Mutasi
+@using GitaWidyaAgniWeb.Models.Inventaris
+@* Mutasi stok aset per jumlah. Keluar tidak boleh melebihi stok yang tidak sedang dipinjam; penyesuaian boleh negatif. *@
+
+<div class="gwa-mform">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-arrow-left-right-line"></i></span>
+        <div><div class="gwa-mform-info-title">@Model.Nama</div></div>
+    </div>
+    @(Html.DevExtreme().Form<AsetVM.MutasiInput>()
+        .ID("frmMutasi")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.MovementType).Editor(e => e.SelectBox().DataSource(Model.JenisOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.Quantity).Editor(e => e.NumberBox().ShowSpinButtons(true).Format("#0"));
+            items.AddSimpleFor(m => m.Notes).ColSpan(2).Editor(e => e.TextBox().MaxLength(255));
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Aset.saveMovement()"><i class="ri-save-3-line align-bottom me-1"></i> Simpan</button>
+    </div>
+</div>

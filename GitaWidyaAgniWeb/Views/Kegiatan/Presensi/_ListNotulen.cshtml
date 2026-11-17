@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.PresensiVM.ListNotulen
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<PresensiVM.NotulenRow>()
+    .ID("tblNotulen")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Notulen Rapat")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Sesi).Caption("Rapat / Sesi").CssClass("fw-medium");
+        columns.AddFor(m => m.Tanggal).Caption("Tanggal").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.Agenda).Caption("Agenda");
+        columns.AddFor(m => m.Pimpinan).Caption("Pimpinan");
+        columns.AddFor(m => m.Notulis).Caption("Notulis");
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Presensi.minuteStatusTemplate"));
+        columns.AddAction("Presensi.minuteActionTemplate");
+    })
+)

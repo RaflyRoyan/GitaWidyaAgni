@@ -1,0 +1,53 @@
+@model GitaWidyaAgniWeb.Models.Merchandise.MerchandiseVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Merchandise & Danus";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-t-shirt-line align-bottom me-1"></i> Merchandise & Danus</h5>
+        <p class="gwa-card-intro">Produk ready stock dipotong stoknya saat dipesan; produk pre-order tidak. Pesanan dibatalkan mengembalikan stok. Pembayaran tercatat sebagai transaksi Pemasukan.</p>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs gwa-tabs mb-3" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabPesanan" data-tab="Pesanan" type="button" role="tab"><i class="ri-shopping-basket-2-line me-1"></i>Pesanan</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabProduk" data-tab="Produk" type="button" role="tab"><i class="ri-t-shirt-line me-1"></i>Produk</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabMutasi" data-tab="Mutasi" type="button" role="tab"><i class="ri-history-line me-1"></i>Mutasi Stok</button></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tabPesanan" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Catat Pesanan", "Merchandise.addOrder()",
+                    ("btn-outline-info", "ri-file-list-3-line", "Detail & pembayaran"),
+                    ("btn-outline-dark", "ri-money-dollar-circle-line", "Catat pembayaran"),
+                    ("btn-outline-primary", "ri-inbox-unarchive-line", "Siap diambil"),
+                    ("btn-outline-success", "ri-checkbox-circle-line", "Selesai (lunas)"),
+                    ("btn-outline-danger", "ri-close-circle-line", "Batalkan")) { LegendId = "legendPesanan" }' />
+                <div id="targetPesanan" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabProduk" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Produk", "Merchandise.addProduct()",
+                    ("btn-outline-success", "ri-list-check-2", "Varian"),
+                    ("btn-outline-primary", "ri-stack-line", "Mutasi stok"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan")) { LegendId = "legendProduk" }' />
+                <div id="targetProduk" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabMutasi" role="tabpanel">
+                <div id="targetMutasi"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.MerchandiseUrl = {};
+        ['ListProduk', 'AddProduk', 'EditProduk', 'SimpanProduk', 'UpdateProduk', 'HapusProduk', 'FotoProduk', 'Varian', 'TambahVarian', 'HapusVarian', 'Stok', 'SimpanStok',
+            'ListMutasi', 'ListPesanan', 'AddPesanan', 'SimpanPesanan', 'Detail', 'Siap', 'Selesai', 'Batal', 'Bayar', 'SimpanBayar', 'BatalBayar'].forEach(function (a) {
+            window.MerchandiseUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Merchandise/Merchandise.js" asp-append-version="true"></script>
+}

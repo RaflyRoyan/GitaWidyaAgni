@@ -7,6 +7,9 @@
     var roleText = profile == null || profile.RoleNames.Count == 0 ? "Pengguna" : string.Join(", ", profile.RoleNames);
     var initials = string.Join("", (string.IsNullOrWhiteSpace(displayName) ? "-" : displayName)
         .Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(s => char.ToUpperInvariant(s[0])));
+    // Jumlah notifikasi belum dibaca untuk lonceng; gagal baca DB tidak boleh merusak header.
+    var unread = 0;
+    try { unread = GWALib.Lib.Transaksi.Information.Notification.GetUnreadCount(User.GetLibUser()); } catch { }
 }
 <header id="page-topbar" class="topbar-shadow">
     <div class="layout-width">
@@ -26,6 +29,16 @@
                 <div class="ms-1 header-item d-none d-sm-flex">
                     <a href="@Url.Action("Index", "Landing", new { area = "" })" class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle" title="Lihat beranda publik" aria-label="Lihat beranda publik">
                         <i class="ri-global-line fs-22" aria-hidden="true"></i>
+                    </a>
+                </div>
+                <div class="ms-1 header-item">
+                    <a href="@Url.Action("Index", "Notifikasi", new { area = "AreaAnggota" })" class="btn btn-icon btn-topbar btn-ghost-secondary rounded-circle position-relative"
+                       title="Notifikasi" aria-label="Notifikasi@(unread > 0 ? $", {unread} belum dibaca" : "")">
+                        <i class="ri-notification-3-line fs-22" aria-hidden="true"></i>
+                        @if (unread > 0)
+                        {
+                            <span class="position-absolute topbar-badge fs-10 translate-middle badge rounded-pill bg-danger" aria-hidden="true">@(unread > 99 ? "99+" : unread.ToString())</span>
+                        }
                     </a>
                 </div>
                 <div class="ms-1 header-item d-none d-sm-flex">

@@ -1,0 +1,52 @@
+@model GitaWidyaAgniWeb.Models.Informasi.BeritaVM.Add
+@using GitaWidyaAgniWeb.Models.Informasi
+@* Slug kosong dibuat dari judul (a-z, 0-9, tanda hubung). Disorot wajib publik. Sampul JPG / PNG, diubah ukurannya oleh sistem. *@
+@{
+    var editModel = Model as BeritaVM.Edit;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-newspaper-line"></i></span>
+            <div><div class="gwa-mform-info-title">@Model.Row.Title</div><div class="gwa-mform-info-meta"><span>@editModel!.StatusText</span></div></div>
+        </div>
+    }
+    @(Html.DevExtreme().Form<BeritaVM.NewRow>()
+        .ID("frmBerita")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Title).ColSpan(2).Editor(e => e.TextBox().MaxLength(255));
+            items.AddSimpleFor(m => m.Category).Editor(e => e.SelectBox().DataSource(Model.KategoriOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.Slug).ColSpan(2).Editor(e => e.TextBox().MaxLength(255).Placeholder("otomatis dari judul"));
+            items.AddGroup().ColCount(2).Items(g =>
+            {
+                g.AddSimpleFor(m => m.Publik).Editor(e => e.CheckBox());
+                g.AddSimpleFor(m => m.Disorot).Editor(e => e.CheckBox());
+            });
+            items.AddSimpleFor(m => m.Excerpt).ColSpan(3).Editor(e => e.TextArea().Height(60).MaxLength(500));
+            items.AddSimpleFor(m => m.Content).ColSpan(3).Editor(e => e.TextArea().Height(260));
+        })
+    )
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Sampul</span><span class="gwa-mform-section-hint">JPG / PNG, maks. 5 MB</span></div>
+    @if (Model.HasCover)
+    {
+        <div class="gwa-mform-note d-flex align-items-center gap-2">
+            <img src="@Url.Action("Sampul", new { key = Model.Key })" alt="Sampul berita" style="height:64px;border-radius:6px" />
+            <label class="ms-auto form-check-label"><input type="checkbox" class="form-check-input me-1" id="chkHapusSampul" /> Hapus sampul</label>
+        </div>
+    }
+    @(Html.DevExtreme().FileUploader().ID("fileSampul").UploadMode(FileUploadMode.UseForm).Multiple(false).Accept("image/*")
+        .MaxFileSize(5 * 1024 * 1024).SelectButtonText("Pilih sampul").LabelText(""))
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Berita.save(@(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan Draft")</button>
+    </div>
+</div>

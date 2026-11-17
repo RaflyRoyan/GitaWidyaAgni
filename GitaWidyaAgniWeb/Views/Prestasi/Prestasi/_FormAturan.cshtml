@@ -1,0 +1,31 @@
+@model GitaWidyaAgniWeb.Models.Prestasi.PrestasiVM.AddAturan
+@using GitaWidyaAgniWeb.Models.Prestasi
+@* Jenis kegiatan hanya untuk Hadir / Panitia / Pemateri; tingkat hanya untuk Prestasi. Kosong = aturan umum. Satu aturan aktif per kombinasi. *@
+@{ var isEdit = Model is PrestasiVM.EditAturan; }
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<PrestasiVM.NewAturan>()
+        .ID("frmAturan")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.SourceType).Editor(e => e.SelectBox().DataSource(Model.SumberOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.Points).Editor(e => e.NumberBox().ShowSpinButtons(true).Format("#0"));
+            items.AddSimpleFor(m => m.ActivityType).Editor(e => e.SelectBox().DataSource(Model.JenisOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Semua jenis"));
+            items.AddSimpleFor(m => m.AchievementLevel).Editor(e => e.SelectBox().DataSource(Model.TingkatOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Semua tingkat"));
+            items.AddSimpleFor(m => m.Description).ColSpan(isEdit ? 1 : 2).Editor(e => e.TextBox().MaxLength(255));
+            if (isEdit)
+            {
+                items.AddSimpleFor(m => m.IsActive).Editor(e => e.SelectBox().DataSource(Model.AktifList).ValueExpr("Value").DisplayExpr("Text"));
+            }
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Prestasi.saveRule(@(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

@@ -1,0 +1,20 @@
+@model GitaWidyaAgniWeb.Models.Inventaris.AsetVM.ListMutasi
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Inventaris
+
+@(Html.DevExtreme().DataGrid<AsetVM.MutasiRow>()
+    .ID("tblMutasi")
+    .DataSource(Model.Rows)
+    .ListGrid("Riwayat Mutasi Aset")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.MovementDate).Caption("Waktu").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.Aset).Caption("Aset").CssClass("fw-medium");
+        columns.AddFor(m => m.UnitCode).Caption("Unit").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Jenis).Caption("Jenis").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.Quantity).Caption("Jumlah").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.Referensi).Caption("Referensi");
+        columns.AddFor(m => m.Notes).Caption("Catatan");
+    })
+)

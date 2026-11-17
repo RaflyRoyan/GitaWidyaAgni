@@ -130,6 +130,9 @@ public partial class TActivity
     public virtual ICollection<TActivity> InverseParentActivity { get; set; } = new List<TActivity>();
 
     [InverseProperty("Activity")]
+    public virtual TLpj? TLpj { get; set; }
+
+    [InverseProperty("Activity")]
     public virtual ICollection<MProduct> MProducts { get; set; } = new List<MProduct>();
 
     [ForeignKey("ParentActivityId")]

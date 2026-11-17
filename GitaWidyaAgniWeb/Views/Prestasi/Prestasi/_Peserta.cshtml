@@ -1,0 +1,72 @@
+@model GitaWidyaAgniWeb.Models.Prestasi.PrestasiVM.Peserta
+@using GitaWidyaAgniWeb.Models.Prestasi
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@* Pendaftaran hanya saat status Pendaftaran dan sebelum batas daftar. Lomba Selesai menandai peserta aktif Selesai. *@
+
+<div class="gwa-mform" id="pesertaLomba" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-team-line"></i></span>
+        <div><div class="gwa-mform-info-title">@Model.Judul</div></div>
+    </div>
+    @if (Model.BisaDaftar)
+    {
+        <div class="gwa-mform-add">
+            <div class="gwa-mform-add-form row g-2">
+                <div class="col-md-5">
+                    @(Html.DevExtreme().SelectBox().ID("pesertaAnggota").DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).Placeholder("Pilih anggota..."))
+                </div>
+                <div class="col-md-4"><input id="pesertaTim" class="form-control" maxlength="150" placeholder="Nama tim (opsional)" aria-label="Nama tim" /></div>
+                <div class="col-md-3">
+                    <select id="pesertaPeran" class="form-select" aria-label="Peran">
+                        @foreach (var p in PrestasiVM.Peserta.PeranList)
+                        {
+                            <option value="@p.Key" selected="@(p.Key == "ANGGOTA")">@p.Value</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="Prestasi.registerParticipant()"><i class="ri-user-add-line align-bottom me-1"></i> Daftarkan</button>
+        </div>
+    }
+    else
+    {
+        <p class="gwa-mform-note">Pendaftaran peserta dibuka saat status lomba Pendaftaran.</p>
+    }
+    @if (Model.Rows.Count == 0)
+    {
+        <p class="text-muted mb-0">Belum ada peserta.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light"><tr><th>Anggota</th><th>Tim</th><th>Peran</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var p in Model.Rows)
+                    {
+                        <tr>
+                            <td class="fw-medium">@p.MemberName</td>
+                            <td>@p.TeamName</td>
+                            <td>@(PrestasiVM.Peserta.PeranList.TryGetValue(p.ParticipantRole, out var peran) ? peran : p.ParticipantRole)</td>
+                            <td>@EnumHelper.Text(p.Status)</td>
+                            <td class="text-end text-nowrap">
+                                @if (p.Status == CompetitionParticipantStatus.Registered)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-success" onclick="Prestasi.participate('@p.EncDecrKey')">Mengikuti</button>
+                                }
+                                @if (p.Status == CompetitionParticipantStatus.Registered || p.Status == CompetitionParticipantStatus.Participating)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="Prestasi.withdraw('@p.EncDecrKey')">Mundur</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

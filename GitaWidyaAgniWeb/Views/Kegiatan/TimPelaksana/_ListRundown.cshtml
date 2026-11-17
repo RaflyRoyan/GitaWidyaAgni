@@ -1,0 +1,22 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.TimPelaksanaVM.ListRundown
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<TimPelaksanaVM.RundownRow>()
+    .ID("tblRundown")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Rundown Acara")
+    .Columns(columns =>
+    {
+        columns.AddFor(m => m.Urut).Visible(false).SortIndex(0).SortOrder(SortOrder.Asc).ShowInColumnChooser(false);
+        columns.AddFor(m => m.Tanggal).Caption("Tanggal").DataType(GridColumnDataType.Date).Format("dddd, dd MMM yyyy").GroupIndex(0);
+        columns.AddFor(m => m.Jam).Caption("Jam").Width(120).CssClass("fw-semibold");
+        columns.AddFor(m => m.Title).Caption("Acara").CssClass("fw-medium");
+        columns.AddFor(m => m.Description).Caption("Keterangan");
+        columns.AddFor(m => m.Lokasi).Caption("Lokasi");
+        columns.AddFor(m => m.Seksi).Caption("Seksi");
+        columns.AddFor(m => m.Pic).Caption("PIC");
+        columns.AddAction("TimPelaksana.rundownActionTemplate");
+    })
+)

@@ -1,0 +1,33 @@
+@model GitaWidyaAgniWeb.Models.Prestasi.SertifikatVM.Add
+@using GitaWidyaAgniWeb.Models.Prestasi
+@* Referensi mengikuti jenis: Peserta / Panitia / Pemateri → kegiatan, Pengurus → jabatan anggota, Prestasi → prestasi anggota, Lainnya → tanpa referensi. *@
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<SertifikatVM.NewRow>()
+        .ID("frmSertifikat")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .OnInitialized("Sertifikat.formInit")
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.MemberId).Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).OnValueChanged("Sertifikat.memberChanged"));
+            items.AddSimpleFor(m => m.CertificateType).Editor(e => e.SelectBox().DataSource(Model.JenisOpsi).ValueExpr("Value").DisplayExpr("Text").OnValueChanged("Sertifikat.typeChanged"));
+            items.AddSimpleFor(m => m.ActivityId).ColSpan(2).Editor(e => e.SelectBox().DataSource(Model.KegiatanOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.AssignmentId).ColSpan(2).Visible(false).Editor(e => e.SelectBox().ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Pilih anggota dulu"));
+            items.AddSimpleFor(m => m.AchievementId).ColSpan(2).Visible(false).Editor(e => e.SelectBox().ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Pilih anggota dulu"));
+            items.AddSimpleFor(m => m.Title).ColSpan(2).Editor(e => e.TextBox().MaxLength(255));
+            items.AddSimpleFor(m => m.CertificateNumber).Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.IssuedDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+        })
+    )
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Berkas sertifikat (opsional)</span></div>
+    @(Html.DevExtreme().FileUploader().ID("fileSertifikat").UploadMode(FileUploadMode.UseForm).Multiple(false)
+        .MaxFileSize(5 * 1024 * 1024).SelectButtonText("Pilih berkas").LabelText(""))
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Sertifikat.save(false)"><i class="ri-save-3-line align-bottom me-1"></i> Terbitkan</button>
+    </div>
+</div>

@@ -1,0 +1,22 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.KegiatanVM.ListLaporan
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<KegiatanVM.LaporanRow>()
+    .ID("tblLaporan")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Laporan Kegiatan")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Title).Caption("Judul").CssClass("fw-medium");
+        columns.AddFor(m => m.Kegiatan).Caption("Kegiatan");
+        columns.AddFor(m => m.Program).Caption("Program");
+        columns.AddFor(m => m.FileName).Caption("Berkas");
+        columns.AddFor(m => m.SubmittedAt).Caption("Diajukan").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.ApprovedAt).Caption("Disetujui").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm").Visible(false);
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Kegiatan.reportStatusTemplate"));
+        columns.AddAction("Kegiatan.reportActionTemplate");
+    })
+)

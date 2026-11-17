@@ -1,0 +1,15 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.PresensiVM.Qr
+@* QR sesi presensi untuk ditampilkan di layar / proyektor. Isi QR = token sesi; "Ganti QR" membuat token baru. *@
+
+<div class="text-center" id="presensiQr" data-key="@Model.Key" data-token="@Model.Token">
+    <div class="fw-semibold fs-5">@Model.Nama</div>
+    <div class="text-muted mb-3">@Model.Kegiatan · ditutup @Model.CloseAt.ToString("dd MMM yyyy HH:mm")</div>
+    <div id="presensiQrCanvas" class="d-inline-block p-3 bg-white border rounded" role="img" aria-label="QR presensi @Model.Nama"></div>
+    <div class="mt-2"><span class="gwa-code">@Model.Token</span></div>
+    <p class="text-muted small mt-2 mb-0">Anggota membuka Area Anggota › Presensi, scan QR ini, lalu mengambil foto.</p>
+    <div class="gwa-mform-footer justify-content-center">
+        <button type="button" class="btn btn-outline-primary" onclick="Presensi.rotateQr()"><i class="ri-refresh-line align-bottom me-1"></i> Ganti QR</button>
+        <button type="button" class="btn btn-outline-secondary" onclick="Presensi.fullscreenQr()"><i class="ri-fullscreen-line align-bottom me-1"></i> Layar Penuh</button>
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

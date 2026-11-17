@@ -1,4 +1,5 @@
 using GWALib.General;
+using GWALib.Lib.Transaksi.Information;
 using GWALib.General.Utilities;
 using GWAShared.Enums;
 using GWAShared.Extensions;
@@ -51,7 +52,7 @@ namespace GWALib.Lib.Transaksi.Formulir
         }
         public Response<Aspiration> Respond(AspirationStatus status, string? response, string user)
         {
-            return Run((context, row, userId) => SetRespond(row, status, response, userId), user);
+            return Run((context, row, userId) => SetRespond(context, row, status, response, userId), user);
         }
         public Response<Aspiration> Delete(string user)
         {
@@ -107,7 +108,7 @@ namespace GWALib.Lib.Transaksi.Formulir
         }
         public Task<Response<Aspiration>> RespondAsync(AspirationStatus status, string? response, string user)
         {
-            return RunAsync((context, row, userId) => SetRespond(row, status, response, userId), user);
+            return RunAsync((context, row, userId) => SetRespond(context, row, status, response, userId), user);
         }
         public async Task<Response<Aspiration>> DeleteAsync(string user)
         {
@@ -260,7 +261,7 @@ namespace GWALib.Lib.Transaksi.Formulir
             row.UpdBy = userId;
         }
         // Baru → Diproses / Selesai / Ditolak; Diproses → Selesai / Ditolak. Selesai / Ditolak wajib tanggapan.
-        private static void SetRespond(EF.TAspiration row, AspirationStatus status, string? response, int userId)
+        private static void SetRespond(EF.ModelContext context, EF.TAspiration row, AspirationStatus status, string? response, int userId)
         {
             var current = (AspirationStatus)row.Status;
             TransaksiHelper.ValidateStatus(current, "menanggapi aspirasi", AspirationStatus.Baru, AspirationStatus.Diproses);
@@ -286,6 +287,9 @@ namespace GWALib.Lib.Transaksi.Formulir
             }
             row.UpdDate = DateTime.Now;
             row.UpdBy = userId;
+            // Aspirasi anonim tidak menyimpan pengirim, jadi tidak ada penerima.
+            NotifyHelper.ToUser(context, row.UserId, NotifyHelper.TYPE_ASPIRATION, $"Aspirasi \"{row.Title}\" {status.GetDescription().ToLowerInvariant()}",
+                text, NotifyHelper.LINK_MY_FORM, "t_aspiration", row.Id, userId);
         }
         // Baru: hanya pengirim (aspirasi anonim tidak bisa dihapus pengirim). Ditolak: boleh dihapus.
         private static void ValidateDelete(EF.TAspiration row, int userId)

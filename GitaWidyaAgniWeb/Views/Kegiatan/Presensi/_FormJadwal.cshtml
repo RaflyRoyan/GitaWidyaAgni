@@ -1,0 +1,39 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.PresensiVM.AddJadwal
+@using GitaWidyaAgniWeb.Models.Kegiatan
+@{ var isEdit = Model is PresensiVM.EditJadwal; }
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<PresensiVM.NewJadwal>()
+        .ID("frmJadwal")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            if (!isEdit)
+            {
+                items.AddSimpleFor(m => m.ActivityId).ColSpan(3).Editor(e => e.SelectBox().DataSource(Model.KegiatanOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true));
+            }
+            items.AddSimpleFor(m => m.DayOfWeek).Editor(e => e.SelectBox().DataSource(Model.HariOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.StartTime).Editor(e => e.DateBox().Type(DateBoxType.Time).DisplayFormat("HH:mm").DateSerializationFormat("yyyy-MM-ddTHH:mm:ss"));
+            items.AddSimpleFor(m => m.EndTime).Editor(e => e.DateBox().Type(DateBoxType.Time).DisplayFormat("HH:mm").DateSerializationFormat("yyyy-MM-ddTHH:mm:ss"));
+            items.AddSimpleFor(m => m.ValidFrom).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+            items.AddSimpleFor(m => m.ValidUntil).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd").ShowClearButton(true));
+            items.AddSimpleFor(m => m.LateToleranceMinute).Editor(e => e.NumberBox().Min(0).Max(240).ShowSpinButtons(true).Format("#0"));
+            items.AddSimpleFor(m => m.Location).Editor(e => e.TextBox().MaxLength(255));
+            items.AddSimpleFor(m => m.Latitude).Editor(e => e.NumberBox().Format("#0.0000000").Step(0));
+            items.AddSimpleFor(m => m.Longitude).Editor(e => e.NumberBox().Format("#0.0000000").Step(0));
+            items.AddSimpleFor(m => m.RadiusMeter).Editor(e => e.NumberBox().Min(10).Format("#0"));
+            if (isEdit)
+            {
+                items.AddSimpleFor(m => m.IsActive).Editor(e => e.SelectBox().DataSource(Model.AktifList).ValueExpr("Value").DisplayExpr("Text"));
+            }
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Presensi.save('Jadwal', @(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

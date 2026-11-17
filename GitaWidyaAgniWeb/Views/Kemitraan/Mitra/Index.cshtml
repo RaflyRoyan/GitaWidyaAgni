@@ -1,0 +1,30 @@
+@model GitaWidyaAgniWeb.Models.Kemitraan.MitraVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Mitra";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-building-line align-bottom me-1"></i> Mitra & Pihak Luar</h5>
+        <p class="gwa-card-intro">Mitra dipakai di sponsorship, kolaborasi kegiatan, peminjaman alat, dan vendor pengadaan. Status Blacklist menolak mitra di semua transaksi baru.</p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel("Tambah Mitra", "Mitra.add()",
+            ("btn-outline-success", "ri-contacts-book-line", "Kontak"),
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah / ganti status"),
+            ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.MitraUrl = {};
+        ['List', 'Add', 'Edit', 'SimpanBaru', 'Update', 'Delete', 'Logo', 'Kontak', 'TambahKontak', 'UtamaKontak', 'HapusKontak'].forEach(function (a) {
+            window.MitraUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Kemitraan/Mitra.js" asp-append-version="true"></script>
+}

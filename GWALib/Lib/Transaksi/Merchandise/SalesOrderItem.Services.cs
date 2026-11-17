@@ -30,7 +30,7 @@ namespace GWALib.Lib.Transaksi.Merchandise
         #endregion
 
         #region INTERNAL
-        internal static EF.TSalesOrderItem CreateRow(EF.ModelContext context, EF.TSalesOrder order, NewRow newrow, int userId)
+        internal static EF.TSalesOrderItem CreateRow(EF.ModelContext context, EF.TSalesOrder order, NewRow newrow, int? userId)
         {
             if (newrow.Quantity <= 0)
             {

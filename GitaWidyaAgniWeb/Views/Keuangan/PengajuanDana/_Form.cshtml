@@ -1,0 +1,39 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.PengajuanDanaVM.Add
+@using GitaWidyaAgniWeb.Models.Keuangan
+@* Periode kosong = periode mata anggaran / periode aktif. Program terisi dari mata anggaran atau kegiatan bila kosong. *@
+@{
+    var editModel = Model as PengajuanDanaVM.Edit;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-hand-coin-line"></i></span>
+            <div><div class="gwa-mform-info-title">@editModel!.Nomor</div></div>
+        </div>
+    }
+    @(Html.DevExtreme().Form<PengajuanDanaVM.NewRow>()
+        .ID("frmPengajuan")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Purpose).ColSpan(2).Editor(e => e.TextArea().Height(70).MaxLength(500));
+            items.AddSimpleFor(m => m.Amount).Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+            items.AddSimpleFor(m => m.BudgetItemId).Editor(e => e.SelectBox().DataSource(Model.AnggaranOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.ActivityId).Editor(e => e.SelectBox().DataSource(Model.KegiatanOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.ProgramId).Editor(e => e.SelectBox().DataSource(Model.ProgramOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.CompetitionId).Editor(e => e.SelectBox().DataSource(Model.LombaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.PeriodId).Editor(e => e.SelectBox().DataSource(Model.PeriodeOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Otomatis"));
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="PengajuanDana.@(isEdit ? "update" : "save")()"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan Draft")</button>
+    </div>
+</div>

@@ -1,0 +1,74 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.HutangVM.Riwayat
+@* Riwayat pembayaran hutang (hapus = void transaksi) dan lampiran (maks. 5 MB). *@
+
+<div class="gwa-mform" id="hutangRiwayat" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-history-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Nomor</div>
+            <div class="gwa-mform-info-meta"><span>@Model.Ringkasan</span></div>
+        </div>
+    </div>
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Pembayaran</span></div>
+    @if (Model.Bayar.Count == 0)
+    {
+        <p class="text-muted">Belum ada pembayaran.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-3">
+                <thead class="table-light"><tr><th>Tanggal</th><th>No. Transaksi</th><th>Akun</th><th class="text-end">Nominal</th><th>Catatan</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var b in Model.Bayar)
+                    {
+                        <tr>
+                            <td>@b.PaidDate.ToString("dd MMM yyyy")</td>
+                            <td><span class="gwa-code">@b.TransactionNumber</span></td>
+                            <td>@b.Akun</td>
+                            <td class="text-end">@b.Amount.ToString("#,##0")</td>
+                            <td>@b.Notes</td>
+                            <td class="text-end">
+                                @if (Model.BisaUbah)
+                                {
+                                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus pembayaran" aria-label="Hapus pembayaran" onclick="Hutang.removePayment('@b.EncDecrKey')"><i class="ri-delete-bin-line"></i></button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Lampiran</span></div>
+    <div class="gwa-mform-add">
+        <div class="gwa-mform-add-form">
+            @(Html.DevExtreme().FileUploader().ID("fileLampiranHutang").UploadMode(FileUploadMode.UseForm).Multiple(false)
+                .MaxFileSize(5 * 1024 * 1024).SelectButtonText("Pilih berkas").LabelText(""))
+        </div>
+        <button type="button" class="btn btn-outline-primary" onclick="Hutang.addAttachment()"><i class="ri-upload-2-line align-bottom me-1"></i> Unggah</button>
+    </div>
+    @if (Model.Lampiran.Count == 0)
+    {
+        <p class="text-muted mb-0">Belum ada lampiran.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var l in Model.Lampiran)
+            {
+                <li class="list-group-item d-flex align-items-center gap-2">
+                    <i class="ri-file-text-line fs-18" aria-hidden="true"></i>
+                    <a href="@Url.Action("BerkasLampiran", new { key = l.EncDecrKey })" target="_blank" class="flex-grow-1 text-truncate">@l.FileName</a>
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus lampiran" aria-label="Hapus lampiran" onclick="Hutang.removeAttachment('@l.EncDecrKey')"><i class="ri-delete-bin-line"></i></button>
+                </li>
+            }
+        </ul>
+    }
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

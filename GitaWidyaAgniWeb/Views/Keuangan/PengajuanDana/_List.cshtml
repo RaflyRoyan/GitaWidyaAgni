@@ -1,0 +1,25 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.PengajuanDanaVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Keuangan
+
+@(Html.DevExtreme().DataGrid<PengajuanDanaVM.Row>()
+    .ID("tblGrid")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Pengajuan Dana")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.RequestNumber).Caption("Nomor").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Purpose).Caption("Keperluan").CssClass("fw-medium");
+        columns.AddFor(m => m.Pengaju).Caption("Pengaju");
+        columns.AddFor(m => m.InsDate).Caption("Dibuat").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.Amount).Caption("Dana").Format("#,##0");
+        columns.AddFor(m => m.RealizedAmount).Caption("Realisasi").Format("#,##0");
+        columns.AddFor(m => m.ReturnedAmount).Caption("Dikembalikan").Format("#,##0").Visible(false);
+        columns.AddFor(m => m.Periode).Caption("Periode").Visible(false);
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("PengajuanDana.statusTemplate"));
+        columns.AddFor(m => m.LpjText).Caption("LPJ").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("PengajuanDana.lpjTemplate"));
+        columns.AddAction("PengajuanDana.actionTemplate");
+    })
+)

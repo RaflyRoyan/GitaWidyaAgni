@@ -1,0 +1,23 @@
+@model GitaWidyaAgniWeb.Models.Persuratan.SuratVM.ListSurat
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Persuratan
+@{ var masuk = Model.Arah == 1; }
+
+@(Html.DevExtreme().DataGrid<SuratVM.SuratRow>()
+    .ID(masuk ? "tblSuratMasuk" : "tblSuratKeluar")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid(masuk ? "Surat Masuk" : "Surat Keluar")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.LetterNumber).Caption("Nomor").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Subject).Caption("Perihal").CssClass("fw-medium");
+        columns.AddFor(m => m.LetterType).Caption("Jenis");
+        columns.AddFor(m => m.Pihak).Caption(masuk ? "Pengirim" : "Tujuan");
+        columns.AddFor(m => m.LetterDate).Caption("Tanggal Surat").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.ReceivedDate).Caption("Diterima").DataType(GridColumnDataType.Date).Format("dd MMM yyyy").Visible(masuk);
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Surat.statusTemplate"));
+        columns.AddAction("Surat.letterActionTemplate");
+    })
+)

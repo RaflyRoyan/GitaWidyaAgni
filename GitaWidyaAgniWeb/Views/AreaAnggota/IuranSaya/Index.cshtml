@@ -1,0 +1,64 @@
+@model List<GWALib.Lib.Transaksi.Keuangan.DuesBill>?
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@{
+    ViewData["Title"] = "Iuran Saya";
+}
+
+@if (Model == null)
+{
+    <partial name="~/Views/AreaAnggota/_BukanAnggota.cshtml" />
+}
+else
+{
+    var tunggakan = Model.Where(x => x.Status == DuesBillStatus.Unpaid).Sum(x => x.Amount);
+    var lunas = Model.Where(x => x.Status == DuesBillStatus.Paid).Sum(x => x.Amount);
+    <div class="row g-3 mb-3">
+        <div class="col-sm-6">
+            <div class="card mb-0"><div class="card-body">
+                <p class="text-muted mb-1">Belum dibayar</p>
+                <h4 class="mb-0 @(tunggakan > 0 ? "text-danger" : "")">Rp @tunggakan.ToString("#,##0")</h4>
+            </div></div>
+        </div>
+        <div class="col-sm-6">
+            <div class="card mb-0"><div class="card-body">
+                <p class="text-muted mb-1">Sudah dibayar</p>
+                <h4 class="mb-0 text-success">Rp @lunas.ToString("#,##0")</h4>
+            </div></div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0"><i class="ri-wallet-3-line align-bottom me-1"></i> Tagihan Iuran</h5>
+            <p class="gwa-card-intro mb-0">Bayar iuran ke bendahara; status berubah setelah pembayaran dicatat.</p>
+        </div>
+        @if (Model.Count == 0)
+        {
+            <div class="card-body text-muted">Belum ada tagihan iuran.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light"><tr><th>Iuran</th><th>Periode</th><th class="text-end">Nominal</th><th>Jatuh Tempo</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var b in Model)
+                        {
+                            var telat = b.Status == DuesBillStatus.Unpaid && b.DueDate.HasValue && b.DueDate.Value < DateOnly.FromDateTime(DateTime.Today);
+                            <tr>
+                                <td>@b.DuesSettingName</td>
+                                <td><span class="gwa-code">@b.BillPeriod</span></td>
+                                <td class="text-end">@b.Amount.ToString("#,##0")</td>
+                                <td class="@(telat ? "text-danger fw-semibold" : "")">@(b.DueDate?.ToString("dd MMM yyyy") ?? "-")</td>
+                                <td>
+                                    <span class="badge @(b.Status == DuesBillStatus.Paid ? "badge-soft-success" : b.Status == DuesBillStatus.Waived ? "badge-soft-info" : "badge-soft-warning")">@EnumHelper.Text(b.Status)</span>
+                                    @if (b.PaidAt.HasValue) { <span class="small text-muted ms-1">@b.PaidAt.Value.ToString("dd MMM yyyy")</span> }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+}

@@ -1,0 +1,22 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.TimPelaksanaVM.ListPanitia
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<TimPelaksanaVM.PanitiaRow>()
+    .ID("tblPanitia")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Susunan Panitia")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Nama).Caption("Anggota").CssClass("fw-medium");
+        columns.AddFor(m => m.Peran).Caption("Peran");
+        columns.AddFor(m => m.Seksi).Caption("Seksi");
+        columns.AddFor(m => m.JobDesc).Caption("Job Desc");
+        columns.AddFor(m => m.DariLamaran).Caption("Dari Lamaran").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate")).Visible(false);
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("TimPelaksana.memberStatusTemplate"));
+        columns.AddAction("TimPelaksana.panitiaActionTemplate");
+    })
+)

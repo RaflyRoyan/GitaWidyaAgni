@@ -1,0 +1,63 @@
+@model GitaWidyaAgniWeb.Models.Merchandise.MerchandiseVM.Varian
+@using GitaWidyaAgniWeb.Models.Merchandise
+@* Varian baru hanya bisa ditambah selama stok produk induk 0. SKU unik. *@
+
+<div class="gwa-mform" id="produkVarian" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-list-check-2"></i></span>
+        <div><div class="gwa-mform-info-title">@Model.Nama</div></div>
+    </div>
+    <div class="gwa-mform-add">
+        <div class="gwa-mform-add-form">
+            @(Html.DevExtreme().Form<MerchandiseVM.VarianInput>()
+                .ID("frmVarian")
+                .FormData(Model.Input)
+                .LabelLocation(FormLabelLocation.Top)
+                .ShowColonAfterLabel(false)
+                .ColCount(4)
+                .ColCountByScreen(c => c.Xs(1).Sm(2))
+                .Items(items =>
+                {
+                    items.AddSimpleFor(m => m.Name).Editor(e => e.TextBox().MaxLength(100));
+                    items.AddSimpleFor(m => m.Price).Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+                    items.AddSimpleFor(m => m.Stock).Editor(e => e.NumberBox().Min(0).ShowSpinButtons(true).Format("#0").ReadOnly(!Model.Dilacak));
+                    items.AddSimpleFor(m => m.Sku).Editor(e => e.TextBox().MaxLength(50));
+                })
+            )
+        </div>
+        <button type="button" class="btn btn-outline-primary" onclick="Merchandise.addVariant()"><i class="ri-add-line align-bottom me-1"></i> Tambah</button>
+    </div>
+    @if (Model.Rows.Count == 0)
+    {
+        <p class="text-muted mb-0">Belum ada varian.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light"><tr><th>Varian</th><th>SKU</th><th class="text-end">Harga</th><th class="text-center">Stok</th><th class="text-center">Aktif</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var v in Model.Rows)
+                    {
+                        <tr class="@(v.Aktif ? "" : "text-muted")">
+                            <td class="fw-medium">@v.Name</td>
+                            <td>@v.Sku</td>
+                            <td class="text-end">@(v.Price?.ToString("#,##0") ?? "-")</td>
+                            <td class="text-center">@v.Stock</td>
+                            <td class="text-center">@(v.Aktif ? "Ya" : "Tidak")</td>
+                            <td class="text-end">
+                                @if (v.Aktif)
+                                {
+                                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Nonaktifkan varian" aria-label="Nonaktifkan varian" onclick="Merchandise.removeVariant('@v.EncDecrKey')"><i class="ri-forbid-line"></i></button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

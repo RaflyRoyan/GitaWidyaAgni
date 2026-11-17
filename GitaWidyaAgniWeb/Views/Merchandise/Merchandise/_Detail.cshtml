@@ -1,0 +1,43 @@
+@model GitaWidyaAgniWeb.Models.Merchandise.MerchandiseVM.Detail
+
+<div class="gwa-mform" id="pesananDetail" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-shopping-basket-2-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Judul</div>
+            <div class="gwa-mform-info-meta"><span>@Model.Ringkasan</span></div>
+        </div>
+    </div>
+    <div class="table-responsive mb-3">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light"><tr><th>Produk</th><th class="text-center">Jml</th><th class="text-end">Harga</th><th class="text-end">Subtotal</th></tr></thead>
+            <tbody>
+                @foreach (var i in Model.Items)
+                {
+                    <tr><td>@i.ProductName @i.VariantName</td><td class="text-center">@i.Quantity</td><td class="text-end">@i.UnitPrice.ToString("#,##0")</td><td class="text-end">@i.Subtotal.ToString("#,##0")</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Pembayaran</span></div>
+    @if (Model.Bayar.Count == 0)
+    {
+        <p class="text-muted mb-0">Belum ada pembayaran.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var b in Model.Bayar)
+            {
+                <li class="list-group-item d-flex align-items-center gap-2">
+                    <span class="gwa-code">@b.Nomor</span><span>@b.Tanggal.ToString("dd MMM yyyy") · @b.Akun</span>
+                    <span class="ms-auto fw-semibold">@b.Amount.ToString("#,##0")</span>
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Batalkan pembayaran" aria-label="Batalkan pembayaran" onclick="Merchandise.cancelPayment(@b.TransactionId)"><i class="ri-close-line"></i></button>
+                </li>
+            }
+        </ul>
+    }
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

@@ -1,0 +1,49 @@
+@model GitaWidyaAgniWeb.Models.Kemitraan.SponsorshipVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Sponsorship";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-award-line align-bottom me-1"></i> Sponsorship</h5>
+        <p class="gwa-card-intro">Sponsorship dengan paket menyalin benefit paket. Dana masuk dicatat sebagai transaksi Pemasukan; tandai benefit sudah diberikan (dengan bukti) sebelum menyelesaikan sponsorship.</p>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs gwa-tabs mb-3" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabSponsor" data-tab="Sponsor" type="button" role="tab"><i class="ri-award-line me-1"></i>Sponsorship</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPaket" data-tab="Paket" type="button" role="tab"><i class="ri-gift-2-line me-1"></i>Paket</button></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tabSponsor" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Catat Sponsorship", "Sponsorship.add(\"Sponsor\")",
+                    ("btn-outline-info", "ri-file-list-3-line", "Benefit, MoU & dana masuk"),
+                    ("btn-outline-dark", "ri-money-dollar-circle-line", "Catat dana masuk"),
+                    ("btn-outline-success", "ri-checkbox-circle-line", "Selesai"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-secondary", "ri-close-circle-line", "Batalkan"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus")) { LegendId = "legendSponsor" }' />
+                <div id="targetSponsor" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabPaket" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Paket", "Sponsorship.add(\"Paket\")",
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah & benefit"),
+                    ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan")) { LegendId = "legendPaket" }' />
+                <div id="targetPaket" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.SponsorshipUrl = {};
+        ['ListSponsor', 'AddSponsor', 'EditSponsor', 'OpsiKontak', 'SimpanSponsor', 'UpdateSponsor', 'HapusSponsor', 'Selesai', 'Batal', 'Terima', 'SimpanTerima',
+            'Detail', 'TambahBenefit', 'HapusBenefit', 'BelumBenefit', 'SelesaiBenefit', 'BuktiBenefit', 'TambahMou', 'HapusMou', 'DokumenMou',
+            'ListPaket', 'AddPaket', 'EditPaket', 'SimpanPaket', 'UpdatePaket', 'HapusPaket', 'TambahBenefitPaket', 'HapusBenefitPaket'].forEach(function (a) {
+            window.SponsorshipUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Kemitraan/Sponsorship.js" asp-append-version="true"></script>
+}

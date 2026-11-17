@@ -1,0 +1,244 @@
+@model GitaWidyaAgniWeb.Models.Landing.TokoPageVM
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@{
+    Layout = "_LayoutLanding";
+    ViewData["Title"] = "Toko Merchandise";
+    ViewData["SolidNav"] = true;
+    var id = new System.Globalization.CultureInfo("id-ID");
+    string Rp(decimal v) => "Rp " + v.ToString("#,##0", id);
+    var dibuat = Model.Dibuat;
+    var wa = Model.WhatsAppAdmin;
+}
+<section class="page-hero">
+    <div class="gwa-container" style="max-width:860px">
+        <span class="eyebrow">Merchandise resmi</span>
+        <h1 class="section-title">Toko Gita Widya Agni</h1>
+        <p class="mb-0 sub">Pesan tanpa perlu akun. Isi jumlah barang, nama dan nomor WhatsApp, lalu bayar ke pengurus saat dihubungi.</p>
+    </div>
+</section>
+
+<section class="pb-5">
+    <div class="gwa-container">
+        @if (Model.AnggotaLogin)
+        {
+            <div class="apply-alert ok" role="note">
+                <i class="ri-user-star-line" aria-hidden="true"></i>
+                <div>Anda login sebagai anggota. <a href="@Url.Action("Index", "Toko", new { area = "AreaAnggota" })">Pesan lewat Area Anggota</a> supaya pesanan tercatat di akun Anda.</div>
+            </div>
+        }
+
+        @if (dibuat != null)
+        {
+            <div class="apply-alert ok" role="status" id="tokoHasil" tabindex="-1">
+                <i class="ri-checkbox-circle-line" aria-hidden="true"></i>
+                <div>
+                    <strong>Pesanan terkirim.</strong> Nomor pesanan <strong class="shop-code">@dibuat.OrderNumber</strong>, total <strong>@Rp(dibuat.TotalAmount)</strong>.
+                    Simpan nomor ini untuk melacak pesanan. Pengurus akan menghubungi WhatsApp @dibuat.BuyerPhone untuk pembayaran dan pengambilan.
+                    @if (!string.IsNullOrWhiteSpace(wa))
+                    {
+                        <div class="mt-2">
+                            <a class="btn-gwa btn-flame" target="_blank" rel="noopener"
+                               href="https://wa.me/@wa?text=@Uri.EscapeDataString("Halo, saya " + dibuat.BuyerName + ". Saya sudah memesan merchandise dengan nomor " + dibuat.OrderNumber + ".")">
+                                <i class="ri-whatsapp-line" aria-hidden="true"></i> Konfirmasi via WhatsApp
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (Model.Katalog.Count == 0)
+        {
+            <div class="empty-state">Belum ada merchandise yang dijual. Pantau Instagram kami untuk info rilis berikutnya.</div>
+        }
+        else
+        {
+            <form method="post" action="@Url.Action("Toko", "Landing")" class="shop-layout" id="frmToko" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="shop-grid">
+                    @foreach (var p in Model.Katalog)
+                    {
+                        var d = p.Data;
+                        <article class="shop-card">
+                            <div class="shop-photo">
+                                @if (d.HasPhoto)
+                                {
+                                    <img src="@Url.Action("ProdukFoto", "Landing", new { key = d.EncDecrKey })" alt="@d.Name" loading="lazy" />
+                                }
+                                else
+                                {
+                                    <i class="ri-t-shirt-2-line" aria-hidden="true"></i>
+                                }
+                                @if (d.IsPreorder == SaleMode.PreOrder)
+                                {
+                                    <span class="shop-tag">Pre-order@(d.PreorderCloseAt.HasValue ? " s.d. " + d.PreorderCloseAt.Value.ToString("d MMM", id) : "")</span>
+                                }
+                            </div>
+                            <div class="shop-body">
+                                <h2 class="shop-name">@d.Name</h2>
+                                @if (!string.IsNullOrWhiteSpace(d.Description))
+                                {
+                                    <p class="shop-desc">@d.Description</p>
+                                }
+                                <ul class="shop-lines">
+                                    @if (p.Varian.Count == 0)
+                                    {
+                                        var key = d.Id + "-0";
+                                        Model.Input.Qty.TryGetValue(key, out var q);
+                                        <li>
+                                            <div>
+                                                <span class="shop-price">@Rp(d.Price)</span>
+                                                @if (p.StokTerlihat) { <span class="shop-stock">@(p.Habis ? "Stok habis" : "Stok " + d.Stock)</span> }
+                                            </div>
+                                            <input type="number" name="Qty[@key]" min="0" max="@Model.MaxQty" value="@(q > 0 ? q : 0)" inputmode="numeric"
+                                                   data-harga="@d.Price.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-nama="@d.Name"
+                                                   aria-label="Jumlah @d.Name" disabled="@p.Habis" />
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        foreach (var v in p.Varian)
+                                        {
+                                            var key = d.Id + "-" + v.Id;
+                                            var harga = v.Price ?? d.Price;
+                                            var habis = p.VarianHabis(v);
+                                            Model.Input.Qty.TryGetValue(key, out var q);
+                                            <li>
+                                                <div>
+                                                    <span class="shop-variant">@v.Name</span>
+                                                    <span class="shop-price">@Rp(harga)</span>
+                                                    @if (p.StokTerlihat) { <span class="shop-stock">@(habis ? "habis" : "stok " + v.Stock)</span> }
+                                                </div>
+                                                <input type="number" name="Qty[@key]" min="0" max="@Model.MaxQty" value="@(q > 0 ? q : 0)" inputmode="numeric"
+                                                       data-harga="@harga.ToString(System.Globalization.CultureInfo.InvariantCulture)" data-nama="@d.Name (@v.Name)"
+                                                       aria-label="Jumlah @d.Name @v.Name" disabled="@habis" />
+                                            </li>
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                        </article>
+                    }
+                </div>
+
+                <aside class="shop-panel" aria-labelledby="ringkasanTitle">
+                    <h2 id="ringkasanTitle" class="shop-panel-title">Pesanan Anda</h2>
+                    @if (Model.Error != null)
+                    {
+                        <div class="apply-alert err" role="alert" id="tokoError" tabindex="-1">
+                            <i class="ri-error-warning-line" aria-hidden="true"></i><div>@Model.Error</div>
+                        </div>
+                    }
+                    <ul class="shop-summary" id="tokoRingkasan" aria-live="polite"></ul>
+                    <p class="shop-empty" id="tokoKosong">Belum ada barang. Isi jumlah pada produk yang ingin dipesan.</p>
+                    <div class="shop-total"><span>Total</span><strong id="tokoTotal">Rp 0</strong></div>
+                    <div class="apply-form shop-form">
+                        <div class="field full">
+                            <label for="BuyerName">Nama <span aria-hidden="true">*</span></label>
+                            <input id="BuyerName" name="BuyerName" value="@Model.Input.BuyerName" required maxlength="150" autocomplete="name" />
+                        </div>
+                        <div class="field full">
+                            <label for="BuyerPhone">No. WhatsApp <span aria-hidden="true">*</span></label>
+                            <input id="BuyerPhone" name="BuyerPhone" type="tel" value="@Model.Input.BuyerPhone" required maxlength="30" autocomplete="tel" placeholder="08xxxxxxxxxx" />
+                        </div>
+                        <div class="field full">
+                            <label for="Notes">Catatan</label>
+                            <textarea id="Notes" name="Notes" rows="2" maxlength="500" placeholder="Ukuran, warna, waktu ambil, dll.">@Model.Input.Notes</textarea>
+                        </div>
+                        <div class="shop-hp" aria-hidden="true">
+                            <label for="Website">Website</label>
+                            <input id="Website" name="Website" tabindex="-1" autocomplete="off" />
+                        </div>
+                        <div class="full">
+                            <button type="submit" class="btn-gwa btn-flame"><i class="ri-shopping-bag-3-line" aria-hidden="true"></i> Kirim Pesanan</button>
+                            <p class="shop-note">Maksimal @Model.MaxBaris jenis barang dan @Model.MaxQty per barang. Pembayaran dilakukan ke pengurus, bukan di situs ini.</p>
+                        </div>
+                    </div>
+                </aside>
+            </form>
+        }
+
+        <div class="article shop-track" id="lacak">
+            <h2 class="shop-panel-title">Lacak pesanan</h2>
+            <form method="get" action="@Url.Action("Toko", "Landing")#lacak" class="apply-form" role="search">
+                <div class="field">
+                    <label for="nomor">Nomor pesanan</label>
+                    <input id="nomor" name="nomor" value="@Model.LacakNomor" required maxlength="50" autocomplete="off" />
+                </div>
+                <div class="field">
+                    <label for="wa">No. WhatsApp saat memesan</label>
+                    <input id="wa" name="wa" type="tel" value="@Model.LacakWa" required maxlength="30" autocomplete="tel" />
+                </div>
+                <div class="full">
+                    <button type="submit" class="btn-gwa btn-outline-ink"><i class="ri-search-line" aria-hidden="true"></i> Lacak</button>
+                </div>
+            </form>
+            @if (Model.LacakDicari)
+            {
+                var o = Model.Lacak;
+                <div class="mt-4" aria-live="polite">
+                    @if (o == null)
+                    {
+                        <div class="apply-alert err" role="alert">
+                            <i class="ri-error-warning-line" aria-hidden="true"></i>
+                            <div>Pesanan tidak ditemukan. Periksa nomor pesanan dan nomor WhatsApp.</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <dl class="verify-list">
+                            <dt>Nomor</dt><dd>@o.OrderNumber</dd>
+                            <dt>Tanggal</dt><dd>@o.OrderDate.ToString("d MMMM yyyy", id)</dd>
+                            <dt>Status</dt><dd>@EnumHelper.Text(o.FulfillmentStatus)</dd>
+                            <dt>Pembayaran</dt><dd>@EnumHelper.Text(o.PaymentStatus) (@Rp(o.PaidAmount) dari @Rp(o.TotalAmount))</dd>
+                            <dt>Barang</dt>
+                            <dd>
+                                @foreach (var it in Model.LacakItem)
+                                {
+                                    <div>@it.ProductName@(it.VariantName != null ? " (" + it.VariantName + ")" : "") × @it.Quantity</div>
+                                }
+                            </dd>
+                        </dl>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var form = document.getElementById('frmToko');
+            var focus = document.getElementById('tokoError') || document.getElementById('tokoHasil');
+            if (focus) focus.focus();
+            if (!form) return;
+            var fmt = new Intl.NumberFormat('id-ID');
+            var list = document.getElementById('tokoRingkasan');
+            var empty = document.getElementById('tokoKosong');
+            var total = document.getElementById('tokoTotal');
+            function render() {
+                var sum = 0;
+                list.textContent = '';
+                form.querySelectorAll('input[data-harga]').forEach(function (input) {
+                    var qty = parseInt(input.value, 10) || 0;
+                    if (qty <= 0 || input.disabled) return;
+                    var sub = qty * parseFloat(input.dataset.harga);
+                    sum += sub;
+                    var li = document.createElement('li');
+                    var name = document.createElement('span');
+                    name.textContent = input.dataset.nama + ' × ' + qty;
+                    var price = document.createElement('span');
+                    price.textContent = 'Rp ' + fmt.format(sub);
+                    li.append(name, price);
+                    list.appendChild(li);
+                });
+                empty.hidden = list.children.length > 0;
+                total.textContent = 'Rp ' + fmt.format(sum);
+            }
+            form.addEventListener('input', render);
+            render();
+        })();
+    </script>
+}

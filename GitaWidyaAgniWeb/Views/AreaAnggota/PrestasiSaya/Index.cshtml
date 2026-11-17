@@ -1,0 +1,99 @@
+@model GitaWidyaAgniWeb.Controllers.AreaAnggota.PrestasiSayaController.Model?
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@{
+    ViewData["Title"] = "Prestasi Saya";
+}
+
+@if (Model == null)
+{
+    <partial name="~/Views/AreaAnggota/_BukanAnggota.cshtml" />
+}
+else
+{
+    var total = Model.Poin.Sum(x => x.Points);
+    <div class="row g-3 mb-3">
+        <div class="col-sm-4"><div class="card mb-0"><div class="card-body">
+            <p class="text-muted mb-1">Total poin</p><h3 class="mb-0 text-primary">@total</h3>
+        </div></div></div>
+        <div class="col-sm-4"><div class="card mb-0"><div class="card-body">
+            <p class="text-muted mb-1">Peringkat</p><h3 class="mb-0">@(Model.Peringkat > 0 ? "#" + Model.Peringkat : "-")</h3>
+        </div></div></div>
+        <div class="col-sm-4"><div class="card mb-0"><div class="card-body">
+            <p class="text-muted mb-1">Prestasi</p><h3 class="mb-0 text-warning">@Model.Prestasi.Count</h3>
+        </div></div></div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-medal-line align-bottom me-1"></i> Prestasi</h5></div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var a in Model.Prestasi)
+                    {
+                        <li class="list-group-item">
+                            <div class="fw-semibold">@a.Title @if (!string.IsNullOrEmpty(a.RankTitle)) { <span class="badge badge-soft-warning ms-1">@a.RankTitle</span> }</div>
+                            <div class="small text-muted">@EnumHelper.Text(a.Level) · @a.AchievedDate.ToString("dd MMM yyyy")</div>
+                        </li>
+                    }
+                    @if (Model.Prestasi.Count == 0) { <li class="list-group-item text-muted">Belum ada prestasi tercatat.</li> }
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-file-paper-2-line align-bottom me-1"></i> Sertifikat</h5></div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var c in Model.Sertifikat)
+                    {
+                        <li class="list-group-item d-flex align-items-center gap-2">
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">@c.Title</div>
+                                <div class="small text-muted">@EnumHelper.Text(c.CertificateType) · @c.CertificateNumber · @c.IssuedDate.ToString("dd MMM yyyy")</div>
+                                <div class="small">Kode verifikasi <span class="gwa-code">@c.VerificationCode</span>
+                                    <a href="@Url.Action("VerifikasiSertifikat", "Landing", new { area = "", kode = c.VerificationCode })" target="_blank" class="ms-1">cek</a></div>
+                            </div>
+                            @if (!string.IsNullOrEmpty(c.FileName))
+                            {
+                                <a class="btn btn-sm btn-outline-info" href="@Url.Action("Sertifikat", new { key = c.EncDecrKey })" target="_blank"><i class="ri-download-2-line me-1"></i>Unduh</a>
+                            }
+                        </li>
+                    }
+                    @if (Model.Sertifikat.Count == 0) { <li class="list-group-item text-muted">Belum ada sertifikat.</li> }
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-flag-2-line align-bottom me-1"></i> Lomba Diikuti</h5></div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var p in Model.Lomba)
+                    {
+                        <li class="list-group-item">
+                            <div class="fw-semibold">@p.CompetitionName</div>
+                            <div class="small text-muted">@(p.TeamName ?? "Perorangan") · @EnumHelper.Text(p.Status)</div>
+                        </li>
+                    }
+                    @if (Model.Lomba.Count == 0) { <li class="list-group-item text-muted">Belum pernah ikut lomba.</li> }
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-star-line align-bottom me-1"></i> Riwayat Poin</h5></div>
+                <div class="table-responsive" style="max-height:360px">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Tanggal</th><th>Sumber</th><th class="text-end">Poin</th></tr></thead>
+                        <tbody>
+                            @foreach (var x in Model.Poin)
+                            {
+                                <tr><td>@x.EarnedDate.ToString("dd MMM yyyy")</td><td>@EnumHelper.Text(x.SourceType) <span class="small text-muted">@x.Notes</span></td><td class="text-end fw-semibold">@x.Points</td></tr>
+                            }
+                            @if (Model.Poin.Count == 0) { <tr><td colspan="3" class="text-muted">Belum ada poin.</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+}

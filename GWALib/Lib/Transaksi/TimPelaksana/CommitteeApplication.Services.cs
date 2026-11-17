@@ -1,4 +1,5 @@
 ﻿using GWALib.General;
+using GWALib.Lib.Transaksi.Information;
 using GWALib.General.Utilities;
 using GWALib.Lib.Master.Anggota;
 using GWAShared.Enums;
@@ -54,6 +55,7 @@ namespace GWALib.Lib.Transaksi.TimPelaksana
                 using var context = DBClass.GetContext();
                 var row = GetRow(context, Id);
                 SetFinal(row, CommitteeApplicationStatus.Ditolak, note, userId, true);
+                NotifyResult(context, row, false, note, userId);
                 context.SaveChanges();
                 return new CommitteeApplication(Reload(row.Id));
             }, data => ResponseFactory.DataUpdated(data), msg => ResponseFactory.DataUpdateFailed<CommitteeApplication>(msg));
@@ -109,6 +111,7 @@ namespace GWALib.Lib.Transaksi.TimPelaksana
                 using var context = DBClass.GetContext();
                 var row = await GetRowAsync(context, Id);
                 SetFinal(row, CommitteeApplicationStatus.Ditolak, note, userId, true);
+                NotifyResult(context, row, false, note, userId);
                 await context.SaveChangesAsync();
                 return new CommitteeApplication(Reload(row.Id));
             }, data => ResponseFactory.DataUpdated(data), msg => ResponseFactory.DataUpdateFailed<CommitteeApplication>(msg));
@@ -225,6 +228,7 @@ namespace GWALib.Lib.Transaksi.TimPelaksana
                 CommitteeRole = CommitteeRole.Staf
             }, row.Id, userId);
             SetFinal(row, CommitteeApplicationStatus.Diterima, note, userId, true);
+            NotifyResult(context, row, true, note, userId);
         }
         private static void SetFinal(EF.TCommitteeApplication row, CommitteeApplicationStatus target, string? note, int userId, bool isReview)
         {
@@ -238,6 +242,13 @@ namespace GWALib.Lib.Transaksi.TimPelaksana
             }
             row.UpdDate = DateTime.Now;
             row.UpdBy = userId;
+        }
+        private static void NotifyResult(EF.ModelContext context, EF.TCommitteeApplication row, bool accepted, string? note, int userId)
+        {
+            var activity = context.TCommitteeRecruitments.Where(x => x.Id == row.RecruitmentId).Select(x => x.Activity.Title).FirstOrDefault();
+            NotifyHelper.ToMember(context, row.MemberId, NotifyHelper.TYPE_COMMITTEE,
+                (accepted ? "Lamaran panitia diterima: " : "Lamaran panitia belum diterima: ") + activity, note,
+                NotifyHelper.LINK_MY_ACTIVITY, "t_committee_application", row.Id, userId);
         }
         #endregion
     }

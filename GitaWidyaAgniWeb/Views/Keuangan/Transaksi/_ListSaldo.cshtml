@@ -1,0 +1,32 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.TransaksiVM.ListSaldo
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Keuangan
+@* Saldo per (periode, akun). Buka membuat baris untuk semua akun aktif yang belum punya; tutup mengunci transaksi akun di periode itu. *@
+
+<div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+    <div style="min-width:240px">
+        <label class="form-label mb-1 fw-medium" for="saldoPeriode">Periode</label>
+        @(Html.DevExtreme().SelectBox().ID("saldoPeriode").DataSource(Model.PeriodeOpsi).ValueExpr("Value").DisplayExpr("Text").Placeholder("Pilih periode..."))
+    </div>
+    <button type="button" class="btn btn-outline-primary" onclick="Transaksi.openBalance()"><i class="ri-add-line align-bottom me-1"></i> Buka Saldo Periode</button>
+</div>
+
+@(Html.DevExtreme().DataGrid<TransaksiVM.SaldoRow>()
+    .ID("tblSaldo")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Saldo Periode")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Periode).Caption("Periode");
+        columns.AddFor(m => m.Akun).Caption("Akun").CssClass("fw-medium");
+        columns.AddFor(m => m.OpeningBalance).Caption("Saldo Awal").Format("#,##0");
+        columns.AddFor(m => m.TotalIncome).Caption("Pemasukan").Format("#,##0").CssClass("text-success");
+        columns.AddFor(m => m.TotalExpense).Caption("Pengeluaran").Format("#,##0").CssClass("text-danger");
+        columns.AddFor(m => m.SaldoBerjalan).Caption("Saldo Berjalan").Format("#,##0").CssClass("fw-semibold");
+        columns.AddFor(m => m.ClosingBalance).Caption("Saldo Akhir").Format("#,##0");
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Transaksi.balanceStatusTemplate"));
+        columns.AddAction("Transaksi.balanceActionTemplate");
+    })
+)

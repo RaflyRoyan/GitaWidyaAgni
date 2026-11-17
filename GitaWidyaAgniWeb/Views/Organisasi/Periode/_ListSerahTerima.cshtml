@@ -1,0 +1,23 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.PeriodeVM.ListSerahTerima
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Organisasi
+
+@(Html.DevExtreme().DataGrid<PeriodeVM.SerahTerimaRow>()
+    .ID("tblSerahTerima")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Serah Terima Periode")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.HandoverNumber).Caption("Nomor").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.FromPeriod).Caption("Periode Asal").CssClass("fw-medium");
+        columns.AddFor(m => m.ToPeriod).Caption("Periode Tujuan").CssClass("fw-medium");
+        columns.AddFor(m => m.HandoverDate).Caption("Tanggal").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.HandedBy).Caption("Diserahkan");
+        columns.AddFor(m => m.ReceivedBy).Caption("Diterima");
+        columns.AddFor(m => m.JumlahItem).Caption("Item").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Periode.handoverStatusTemplate"));
+        columns.AddAction("Periode.handoverActionTemplate");
+    })
+)

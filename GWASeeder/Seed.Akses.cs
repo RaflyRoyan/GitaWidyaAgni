@@ -53,6 +53,7 @@ namespace GWASeeder
             new("Rekrutmen", "Rekrutmen anggota", new[] { PROCESS }),
             new("ProgramKerja", "Program kerja, tugas, timeline", new[] { PROCESS }),
             new("Kegiatan", "Kegiatan, peserta, laporan", new[] { PROCESS, SUBMIT, APPROVE }),
+            new("Lpj", "Laporan pertanggungjawaban kegiatan & kepengurusan", new[] { PROCESS }),
             new("TimPelaksana", "Tim pelaksana kegiatan", new[] { PROCESS }),
             new("Presensi", "Presensi & notulen", new[] { PROCESS }),
             new("Galeri", "Galeri kegiatan", new[] { PROCESS }),
@@ -110,6 +111,7 @@ namespace GWASeeder
                 new MenuDef("Kegiatan", "Daftar Kegiatan", "ri-calendar-line"), new MenuDef("TimPelaksana", "Tim Pelaksana", "ri-team-line"),
                 new MenuDef("Presensi", "Presensi", "ri-qr-scan-2-line"), new MenuDef("Galeri", "Galeri", "ri-gallery-line")
             }),
+            new("Program", "LPJ", "ri-file-chart-line", "Lpj", Array.Empty<MenuDef>()),
             new("Keuangan", "Keuangan", "ri-wallet-3-line", null, new[]
             {
                 new MenuDef("Transaksi", "Transaksi", "ri-exchange-dollar-line"), new MenuDef("Anggaran", "Anggaran", "ri-file-list-3-line"),
@@ -155,7 +157,7 @@ namespace GWASeeder
         // Semua role juga mendapat menu Area Anggota.
         private static readonly string[] KetuaControllers =
         {
-            "Organisasi", "Periode", "Divisi", "Jabatan", "Kepengurusan", "Anggota", "Alumni", "Rekrutmen", "ProgramKerja", "Kegiatan",
+            "Organisasi", "Periode", "Divisi", "Jabatan", "Kepengurusan", "Anggota", "Alumni", "Rekrutmen", "ProgramKerja", "Kegiatan", "Lpj",
             "TimPelaksana", "Presensi", "Galeri", "Transaksi", "Anggaran", "PengajuanDana", "Iuran", "Hutang", "Aset", "Peminjaman",
             "Pengadaan", "Merchandise", "Mitra", "Sponsorship", "Surat", "Dokumen", "Prestasi", "Sertifikat", "Formulir", "Aspirasi",
             "EVoting", "Berita", "Banner"
@@ -166,7 +168,7 @@ namespace GWASeeder
             new("WAKIL", "Wakil Ketua Umum", "Mendampingi ketua umum, akses semua modul operasional", KetuaControllers),
             new("SEKRETARIS", "Sekretaris", "Administrasi anggota, kegiatan, surat, dokumen", new[]
             {
-                "Anggota", "Alumni", "Rekrutmen", "Kegiatan", "Presensi", "Surat", "Dokumen", "Sertifikat", "Formulir", "Aspirasi", "Berita"
+                "Anggota", "Alumni", "Rekrutmen", "Kegiatan", "Lpj", "Presensi", "Surat", "Dokumen", "Sertifikat", "Formulir", "Aspirasi", "Berita"
             }),
             new("BENDAHARA", "Bendahara", "Pengelolaan keuangan, danus, sponsorship", new[]
             {

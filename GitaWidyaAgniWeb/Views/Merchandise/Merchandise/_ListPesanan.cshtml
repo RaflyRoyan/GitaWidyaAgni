@@ -1,0 +1,29 @@
+@model GitaWidyaAgniWeb.Models.Merchandise.MerchandiseVM.ListPesanan
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Merchandise
+
+@(Html.DevExtreme().DataGrid<MerchandiseVM.PesananRow>()
+    .ID("tblPesanan")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Pesanan Merchandise")
+    .Summary(s => s.TotalItems(t =>
+    {
+        t.AddFor(m => m.TotalAmount).SummaryType(SummaryType.Sum).ValueFormat("#,##0").DisplayFormat("{0}");
+        t.AddFor(m => m.PaidAmount).SummaryType(SummaryType.Sum).ValueFormat("#,##0").DisplayFormat("{0}");
+    }))
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.OrderNumber).Caption("Nomor").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.OrderDate).Caption("Tanggal").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.Pembeli).Caption("Pembeli").CssClass("fw-medium");
+        columns.AddFor(m => m.BuyerPhone).Caption("Telepon").Visible(false);
+        columns.AddFor(m => m.Rincian).Caption("Rincian");
+        columns.AddFor(m => m.TotalAmount).Caption("Total").Format("#,##0");
+        columns.AddFor(m => m.PaidAmount).Caption("Dibayar").Format("#,##0");
+        columns.AddFor(m => m.BayarText).Caption("Pembayaran").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Merchandise.paymentTemplate"));
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Merchandise.orderStatusTemplate"));
+        columns.AddAction("Merchandise.orderActionTemplate");
+    })
+)

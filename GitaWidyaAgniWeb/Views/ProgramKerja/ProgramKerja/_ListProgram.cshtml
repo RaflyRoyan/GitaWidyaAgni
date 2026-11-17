@@ -1,0 +1,25 @@
+@model GitaWidyaAgniWeb.Models.ProgramKerja.ProgramKerjaVM.ListProgram
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.ProgramKerja
+
+@(Html.DevExtreme().DataGrid<ProgramKerjaVM.ProgramRow>()
+    .ID("tblProgram")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Program Kerja")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Title).Caption("Program").CssClass("fw-medium");
+        columns.AddFor(m => m.Periode).Caption("Periode");
+        columns.AddFor(m => m.Bidang).Caption("Bidang");
+        columns.AddFor(m => m.Jangka).Caption("Jangka").Visible(false);
+        columns.AddFor(m => m.Pic).Caption("PJ");
+        columns.AddFor(m => m.StartDate).Caption("Mulai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.EndDate).Caption("Selesai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.BudgetAmount).Caption("Anggaran").Format("#,##0");
+        columns.AddFor(m => m.Progres).Caption("Progres").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("ProgramKerja.progressTemplate"));
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("ProgramKerja.programStatusTemplate"));
+        columns.AddAction("ProgramKerja.programActionTemplate");
+    })
+)

@@ -1,0 +1,49 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.DivisiVM.AnggotaIndex
+@using GitaWidyaAgniWeb.Models.Organisasi
+@* Modal anggota divisi: panel tambah + grid _AnggotaList (dimuat ulang setelah tambah / keluarkan). *@
+
+<div class="gwa-mform" id="divisiAnggota" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-team-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Nama</div>
+            <div class="gwa-mform-info-meta"><span>Satu anggota hanya sekali per divisi dan periode. Peran ditulis kode huruf besar, mis. KETUA, KAPTEN, ANGGOTA.</span></div>
+        </div>
+    </div>
+
+    <div class="gwa-mform-section">
+        <span class="gwa-mform-section-title">Tambah anggota</span>
+    </div>
+    <div class="gwa-mform-add">
+        <div class="gwa-mform-add-form">
+            @(Html.DevExtreme().Form<DivisiVM.AnggotaInput>()
+                .ID("frmDivisiAnggota")
+                .FormData(Model.Input)
+                .LabelLocation(FormLabelLocation.Top)
+                .ShowColonAfterLabel(false)
+                .ColCount(4)
+                .ColCountByScreen(c => c.Xs(1).Sm(1))
+                .Items(items =>
+                {
+                    items.AddSimpleFor(m => m.MemberId)
+                        .Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).Placeholder("Pilih anggota..."));
+                    items.AddSimpleFor(m => m.PeriodId)
+                        .Editor(e => e.SelectBox().DataSource(Model.PeriodeOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Tanpa periode"));
+                    items.AddSimpleFor(m => m.MemberRole)
+                        .Editor(e => e.TextBox().MaxLength(50).InputAttr(new { style = "text-transform:uppercase" }));
+                    items.AddSimpleFor(m => m.JoinedAt)
+                        .Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+                })
+            )
+        </div>
+        <button type="button" class="btn btn-outline-primary" onclick="Divisi.addMember()"><i class="ri-add-line align-bottom me-1"></i> Tambah</button>
+    </div>
+
+    <div id="divisiAnggotaTarget">
+        <partial name="~/Views/Organisasi/Divisi/_AnggotaList.cshtml" model="Model.List" />
+    </div>
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

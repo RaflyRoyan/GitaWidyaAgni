@@ -1,0 +1,19 @@
+@model GitaWidyaAgniWeb.Models.Persuratan.DokumenVM.ListKategori
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Persuratan
+
+@(Html.DevExtreme().DataGrid<DokumenVM.KategoriRow>()
+    .ID("tblKategoriDokumen")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Kategori Dokumen")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Kategori").CssClass("fw-medium");
+        columns.AddFor(m => m.Description).Caption("Keterangan");
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Dokumen.categoryActionTemplate");
+    })
+)

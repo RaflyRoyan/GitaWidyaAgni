@@ -1,0 +1,22 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.GaleriVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<GaleriVM.Row>()
+    .ID("tblGrid")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Galeri Kegiatan")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Title).Caption("Galeri").CellTemplate(new JS("Galeri.titleTemplate"));
+        columns.AddFor(m => m.Kegiatan).Caption("Kegiatan");
+        columns.AddFor(m => m.EventDate).Caption("Tanggal").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.JumlahFoto).Caption("Foto").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.Publik).Caption("Publik").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Galeri.statusTemplate"));
+        columns.AddFor(m => m.PublishedAt).Caption("Terbit").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm").Visible(false);
+        columns.AddAction("Galeri.actionTemplate");
+    })
+)

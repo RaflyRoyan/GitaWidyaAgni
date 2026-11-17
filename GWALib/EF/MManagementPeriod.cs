@@ -46,6 +46,9 @@ public partial class MManagementPeriod
     public int? UpdBy { get; set; }
 
     [InverseProperty("Period")]
+    public virtual TLpj? TLpj { get; set; }
+
+    [InverseProperty("Period")]
     public virtual ICollection<MDuesSetting> MDuesSettings { get; set; } = new List<MDuesSetting>();
 
     [InverseProperty("Period")]

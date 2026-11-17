@@ -1,0 +1,35 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.KepengurusanVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Kepengurusan";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-user-star-line align-bottom me-1"></i> Penugasan Pengurus</h5>
+        <p class="gwa-card-intro">Anggota yang ditugaskan sebagai pengurus otomatis bertipe Pengurus. Penugasan diakhiri saat serah terima periode disetujui, atau manual dengan tombol Akhiri.</p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel("Tambah Penugasan", "Kepengurusan.add()",
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah penugasan"),
+            ("btn-outline-secondary", "ri-stop-circle-line", "Akhiri penugasan"),
+            ("btn-outline-danger", "ri-delete-bin-line", "Hapus penugasan"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.KepengurusanUrl = {
+            list: '@Url.Action("List")',
+            add: '@Url.Action("Add")',
+            edit: '@Url.Action("Edit")',
+            simpanBaru: '@Url.Action("SimpanBaru")',
+            update: '@Url.Action("Update")',
+            akhiri: '@Url.Action("Akhiri")',
+            hapus: '@Url.Action("Delete")'
+        };
+    </script>
+    <script src="~/Scripts/Organisasi/Kepengurusan.js" asp-append-version="true"></script>
+}

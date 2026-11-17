@@ -50,7 +50,7 @@ Belum ada project test.
 
 ## Menjalankan web
 
-1. Buat database dari skrip `gitawidyaagni_create.sql` (lihat bagian Database).
+1. Buat database dari skrip `database/gitawidyaagni_create.sql` (lihat bagian Database dan `database/README.md`).
 2. Isi connection string asli di `GitaWidyaAgniWeb/appsettings.Development.json`. File ini di-ignore git, sehingga password tidak ikut ter-commit. Isinya:
    ```json
    { "ConnectionStrings": { "Default": "server=127.0.0.1;port=3306;database=gitawidyaagni;user=root;password=..." } }
@@ -251,9 +251,24 @@ Method berikut disediakan untuk dipanggil job atau scheduler aplikasi. Pakai `Sc
 
 Setiap method di atas juga punya versi `...Async`.
 
+Aplikasi web menjalankan semuanya lewat `ScheduledJobService` (hosted service, dicek tiap menit). Jadwal dan konfigurasinya:
+
+| Job | Interval | Isi |
+|---|---|---|
+| `SEND_OUTBOX` | 1 menit | Kirim `t_message_outbox` yang jatuh tempo (email SMTP, WhatsApp via gateway) |
+| `CLOSE_EXPIRED_ELECTION` | 5 menit | `Election.CloseExpired()` |
+| `MARK_BORROW_OVERDUE` | 30 menit | `BorrowRequest.MarkOverdue` (anggota peminjam mendapat notifikasi) |
+| `GENERATE_ATTENDANCE_SESSIONS` | 6 jam | Sesi presensi hari ini s.d. 7 hari ke depan |
+| `PURGE_OLD_DATA` | harian | Notifikasi dibaca > 90 hari, log aktivitas > 365 hari, token > 30 hari, log job > 90 hari |
+
+- `Jobs:Enabled` (bawaan `true`) dan `Jobs:Username` (kosong = user SUPERADMIN aktif pertama). Bila web berjalan di beberapa instance, aktifkan job di satu instance saja.
+- Email: `Smtp:Host`, `Smtp:Port`, `Smtp:EnableSsl`, `Smtp:Username`, `Smtp:Password`, `Smtp:From`, `Smtp:FromName`.
+- WhatsApp: `WhatsApp:Url` (mis. `https://api.fonnte.com/send`) dan `WhatsApp:Token`.
+- Simpan password dan token di user-secrets, contohnya `dotnet user-secrets set "Smtp:Password" "..." --project GitaWidyaAgniWeb`. Saluran yang belum diisi tidak dikirim, dan pesannya tetap berstatus Menunggu.
+
 ## Database
 
-- Skrip pembuatan database: `gitawidyaagni_create.sql` (MySQL 8.0, database `gitawidyaagni`, collation `utf8mb4_0900_ai_ci`). Skrip ini berisi 131 tabel dan 264 relasi.
+- Skrip pembuatan database: [`database/gitawidyaagni_create.sql`](database/gitawidyaagni_create.sql) (MySQL 8.0, database `gitawidyaagni`, collation `utf8mb4_0900_ai_ci`), berisi 132 tabel dan 267 relasi. Perubahan skema berikutnya ada di `database/migrations/`; cara pakai di [`database/README.md`](database/README.md).
 - ERD: https://claude.ai/artifact/MvmojvM5z8kKz7SEwtjdJV
 - Konvensi:
   - Prefix `m_*` untuk data master dan `t_*` untuk data transaksi.

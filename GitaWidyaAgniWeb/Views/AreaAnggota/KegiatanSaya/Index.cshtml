@@ -1,0 +1,158 @@
+@model GitaWidyaAgniWeb.Controllers.AreaAnggota.KegiatanSayaController.Model?
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@{
+    ViewData["Title"] = "Kegiatan Saya";
+    var id = new System.Globalization.CultureInfo("id-ID");
+}
+
+@if (Model == null)
+{
+    <partial name="~/Views/AreaAnggota/_BukanAnggota.cshtml" />
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-xl-7">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="ri-calendar-event-line align-bottom me-1"></i> Kegiatan Mendatang</h5>
+                    <p class="gwa-card-intro mb-0">Daftar sebagai peserta kegiatan. Kehadiran dicatat lewat menu Presensi.</p>
+                </div>
+                @if (Model.Kegiatan.Count == 0)
+                {
+                    <div class="card-body text-muted">Belum ada kegiatan mendatang.</div>
+                }
+                else
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var k in Model.Kegiatan)
+                        {
+                            Model.Daftar.TryGetValue(k.Id, out var reg);
+                            var aktif = reg != null && reg.RegistrationStatus != RegistrationStatus.Cancelled;
+                            <li class="list-group-item d-flex flex-wrap align-items-center gap-3">
+                                <div class="text-center rounded bg-soft-warning px-2 py-1" style="min-width:56px">
+                                    <div class="fw-bold fs-18 lh-1">@k.StartAt.Day</div>
+                                    <div class="small text-uppercase">@k.StartAt.ToString("MMM", id)</div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-semibold">@k.Title</div>
+                                    <div class="small text-muted">@EnumHelper.Text(k.ActivityType) · @k.StartAt.ToString("dddd, HH:mm", id) @(string.IsNullOrEmpty(k.Location) ? "" : "· " + k.Location)</div>
+                                </div>
+                                @if (aktif)
+                                {
+                                    <span class="badge badge-soft-success">@EnumHelper.Text(reg!.RegistrationStatus)</span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="KegiatanSaya.post('batal','@reg.EncDecrKey','Batalkan pendaftaran?')">Batal</button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="KegiatanSaya.post('daftar','@k.EncDecrKey')"><i class="ri-user-add-line me-1"></i>Daftar</button>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+
+        <div class="col-xl-5">
+            <div class="card">
+                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-team-line align-bottom me-1"></i> Rekrutmen Tim Pelaksana</h5></div>
+                <div class="card-body">
+                    @if (Model.Rekrutmen.Count == 0)
+                    {
+                        <p class="text-muted mb-0">Tidak ada rekrutmen tim pelaksana yang dibuka.</p>
+                    }
+                    @foreach (var r in Model.Rekrutmen)
+                    {
+                        <form class="border rounded p-3 mb-3 lamar-form" data-id="@r.Data.Id" novalidate>
+                            <div class="fw-semibold">@r.Kegiatan</div>
+                            <div class="small text-muted mb-2">Ditutup @r.Data.CloseAt.ToString("dd MMM yyyy HH:mm") @(r.Data.Quota.HasValue ? "· kuota " + r.Data.Quota : "")</div>
+                            @if (r.PerluFormulir)
+                            {
+                                <p class="small mb-2"><i class="ri-information-line me-1"></i>Isi dulu formulir pendaftarannya di menu <a href="@Url.Action("Index", "FormulirSaya")">Formulir</a>.</p>
+                            }
+                            <div class="row g-2">
+                                <div class="col-sm-6">
+                                    <label class="form-label small mb-1">Pilihan seksi 1</label>
+                                    <select class="form-select form-select-sm" name="SectionChoice1Id" required>
+                                        @foreach (var s in r.Seksi) { <option value="@s.Value">@s.Text</option> }
+                                    </select>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label small mb-1">Pilihan seksi 2</label>
+                                    <select class="form-select form-select-sm" name="SectionChoice2Id">
+                                        <option value="">(tidak ada)</option>
+                                        @foreach (var s in r.Seksi) { <option value="@s.Value">@s.Text</option> }
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label small mb-1">Alasan</label>
+                                    <textarea class="form-control form-control-sm" name="Reason" rows="2" maxlength="500"></textarea>
+                                </div>
+                            </div>
+                            <div class="text-end mt-2"><button type="submit" class="btn btn-sm btn-success" disabled="@(r.Seksi.Count == 0)"><i class="ri-send-plane-line me-1"></i>Lamar</button></div>
+                        </form>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-file-user-line align-bottom me-1"></i> Lamaran &amp; Tugas Saya</h5></div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var t in Model.Tim)
+                    {
+                        <li class="list-group-item">
+                            <div class="fw-semibold">@(Model.JudulKegiatan.TryGetValue(t.ActivityId, out var jt) ? jt : "-")</div>
+                            <div class="small"><span class="badge badge-soft-primary">@EnumHelper.Text(t.CommitteeRole)</span> @t.SectionName @t.JobDesc</div>
+                        </li>
+                    }
+                    @foreach (var a in Model.Lamaran)
+                    {
+                        <li class="list-group-item d-flex align-items-center gap-2">
+                            <div class="flex-grow-1">
+                                <div class="small">Lamaran: @a.SectionChoice1Name @(a.SectionChoice2Name != null ? "/ " + a.SectionChoice2Name : "")</div>
+                                <div class="small text-muted">@a.InsDate.ToString("dd MMM yyyy") · @EnumHelper.Text(a.Status) @a.ReviewNote</div>
+                            </div>
+                            @if (a.Status == CommitteeApplicationStatus.Daftar)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="KegiatanSaya.post('mundur','@a.EncDecrKey','Tarik lamaran?')">Tarik</button>
+                            }
+                        </li>
+                    }
+                    @if (Model.Tim.Count == 0 && Model.Lamaran.Count == 0)
+                    {
+                        <li class="list-group-item text-muted">Belum ada lamaran atau tugas tim pelaksana.</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        window.KegiatanSaya = (function () {
+            const URL = { daftar: '@Url.Action("Daftar")', batal: '@Url.Action("Batal")', mundur: '@Url.Action("Mundur")', lamar: '@Url.Action("Lamar")' };
+            const reload = function () { window.location.reload(); };
+            function post(action, key, confirmText) {
+                if (confirmText) {
+                    AppUI.confirmPost(confirmText, '', URL[action], { Key: key }, 'Ya', 'btn-danger').done(reload);
+                } else {
+                    AppUI.postJson(URL[action], { Key: key }).done(function (r) { AppUI.alertSuccess(r.Message); setTimeout(reload, 800); });
+                }
+            }
+            $(document).on('submit', '.lamar-form', function (e) {
+                e.preventDefault();
+                const f = $(this);
+                AppUI.postJson(URL.lamar, {
+                    RecruitmentId: f.data('id'),
+                    SectionChoice1Id: parseInt(f.find('[name=SectionChoice1Id]').val(), 10),
+                    SectionChoice2Id: f.find('[name=SectionChoice2Id]').val() ? parseInt(f.find('[name=SectionChoice2Id]').val(), 10) : null,
+                    Reason: f.find('[name=Reason]').val() || null
+                }).done(function (r) { AppUI.alertSuccess(r.Message); setTimeout(reload, 800); });
+            });
+            return { post: post };
+        })();
+    </script>
+}

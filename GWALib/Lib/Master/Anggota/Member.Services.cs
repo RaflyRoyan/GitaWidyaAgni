@@ -81,6 +81,14 @@ namespace GWALib.Lib.Master.Anggota
                 return new Member(row);
             }, data => ResponseFactory.DataDeleted(data), msg => ResponseFactory.DataDeleteFailed<Member>(msg));
         }
+        // Anggota milik user yang login (Area Anggota); null bila user tidak terhubung ke anggota.
+        public static Member? GetByUser(string user)
+        {
+            var userId = ValidateUtility.ValidateUser(user);
+            using var context = DBClass.GetContext();
+            var id = context.MMembers.Where(x => x.UserId == userId).Select(x => (int?)x.Id).FirstOrDefault();
+            return id.HasValue ? new Member(id.Value) : null;
+        }
         #endregion
 
         #region ASYNC

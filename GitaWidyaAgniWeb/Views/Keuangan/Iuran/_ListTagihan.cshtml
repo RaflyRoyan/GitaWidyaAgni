@@ -1,0 +1,23 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.IuranVM.ListTagihan
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Keuangan
+
+@(Html.DevExtreme().DataGrid<IuranVM.TagihanRow>()
+    .ID("tblTagihan")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Tagihan Iuran")
+    .Summary(s => s.TotalItems(t => t.AddFor(m => m.Amount).SummaryType(SummaryType.Sum).ValueFormat("#,##0").DisplayFormat("{0}")))
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Anggota).Caption("Anggota").CssClass("fw-medium");
+        columns.AddFor(m => m.Iuran).Caption("Iuran");
+        columns.AddFor(m => m.BillPeriod).Caption("Periode").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Amount).Caption("Nominal").Format("#,##0");
+        columns.AddFor(m => m.DueDate).Caption("Jatuh Tempo").DataType(GridColumnDataType.Date).Format("dd MMM yyyy").CellTemplate(new JS("Iuran.dueTemplate"));
+        columns.AddFor(m => m.PaidAt).Caption("Dibayar").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy");
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Iuran.statusTemplate"));
+        columns.AddAction("Iuran.billActionTemplate");
+    })
+)

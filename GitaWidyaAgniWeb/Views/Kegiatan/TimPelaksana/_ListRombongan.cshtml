@@ -1,0 +1,23 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.TimPelaksanaVM.ListRombongan
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<TimPelaksanaVM.RombonganRow>()
+    .ID("tblRombongan")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Rombongan Perjalanan")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Nama).Caption("Nama").CssClass("fw-medium");
+        columns.AddFor(m => m.Tamu).Caption("Tamu").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddFor(m => m.Peran).Caption("Peran");
+        columns.AddFor(m => m.Vehicle).Caption("Kendaraan");
+        columns.AddFor(m => m.Room).Caption("Kamar");
+        columns.AddFor(m => m.KontakDarurat).Caption("Kontak Darurat");
+        columns.AddFor(m => m.Izin).Caption("Surat Izin").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("TimPelaksana.permissionTemplate"));
+        columns.AddFor(m => m.Notes).Caption("Catatan").Visible(false);
+        columns.AddAction("TimPelaksana.rombonganActionTemplate");
+    })
+)

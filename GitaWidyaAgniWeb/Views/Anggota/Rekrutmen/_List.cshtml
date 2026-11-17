@@ -1,0 +1,24 @@
+@model GitaWidyaAgniWeb.Models.Anggota.RekrutmenVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Anggota
+
+@(Html.DevExtreme().DataGrid<RekrutmenVM.Row>()
+    .ID("tblGrid")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Open Recruitment")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Title).Caption("Judul").CssClass("fw-medium");
+        columns.AddFor(m => m.Periode).Caption("Periode");
+        columns.AddFor(m => m.OpenDate).Caption("Dibuka").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.CloseDate).Caption("Ditutup").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.Quota).Caption("Kuota").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.Umum).Caption("Umum").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddFor(m => m.JumlahPendaftar).Caption("Pendaftar").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.JumlahDiterima).Caption("Diterima").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Rekrutmen.statusTemplate"));
+        columns.AddAction("Rekrutmen.actionTemplate");
+    })
+)

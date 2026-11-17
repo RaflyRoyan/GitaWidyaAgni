@@ -1,0 +1,25 @@
+@model GitaWidyaAgniWeb.Models.Prestasi.PrestasiVM.ListLomba
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Prestasi
+
+@(Html.DevExtreme().DataGrid<PrestasiVM.LombaRow>()
+    .ID("tblLomba")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Lomba")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Lomba").CssClass("fw-medium");
+        columns.AddFor(m => m.Organizer).Caption("Penyelenggara");
+        columns.AddFor(m => m.Level).Caption("Tingkat");
+        columns.AddFor(m => m.Category).Caption("Kategori").Visible(false);
+        columns.AddFor(m => m.RegistrationDeadline).Caption("Batas Daftar").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.StartDate).Caption("Mulai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.EndDate).Caption("Selesai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy").Visible(false);
+        columns.AddFor(m => m.Location).Caption("Lokasi").Visible(false);
+        columns.AddFor(m => m.Publik).Caption("Publik").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Prestasi.competitionStatusTemplate"));
+        columns.AddAction("Prestasi.competitionActionTemplate");
+    })
+)

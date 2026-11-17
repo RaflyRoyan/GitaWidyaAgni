@@ -1,0 +1,24 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.PresensiVM.ListSesi
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<PresensiVM.SesiRow>()
+    .ID("tblSesi")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Sesi Presensi")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Sesi").CellTemplate(new JS("Presensi.sessionTemplate"));
+        columns.AddFor(m => m.Kegiatan).Caption("Kegiatan");
+        columns.AddFor(m => m.OpenAt).Caption("Dibuka").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.CloseAt).Caption("Ditutup").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.Location).Caption("Lokasi").Visible(false);
+        columns.AddFor(m => m.Geofence).Caption("Geofence").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddFor(m => m.Hadir).Caption("Hadir").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.TidakHadir).Caption("Izin/Sakit/Alpa").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Presensi.sessionStatusTemplate"));
+        columns.AddAction("Presensi.sessionActionTemplate");
+    })
+)

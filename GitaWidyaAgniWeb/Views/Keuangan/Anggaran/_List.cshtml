@@ -1,0 +1,22 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.AnggaranVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Keuangan
+
+@(Html.DevExtreme().DataGrid<AnggaranVM.Row>()
+    .ID("tblGrid")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Anggaran")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Anggaran").CssClass("fw-medium");
+        columns.AddFor(m => m.Periode).Caption("Periode");
+        columns.AddFor(m => m.JumlahItem).Caption("Item").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.TotalAmount).Caption("Total").Format("#,##0");
+        columns.AddFor(m => m.Realisasi).Caption("Realisasi").Format("#,##0");
+        columns.AddFor(m => m.Persen).Caption("Serapan").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Anggaran.absorptionTemplate"));
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Anggaran.statusTemplate"));
+        columns.AddAction("Anggaran.actionTemplate");
+    })
+)

@@ -1,0 +1,23 @@
+@model GitaWidyaAgniWeb.Models.EVoting.EVotingVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.EVoting
+
+@(Html.DevExtreme().DataGrid<EVotingVM.Row>()
+    .ID("tblEVoting")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Pemilihan")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Title).Caption("Pemilihan").CssClass("fw-medium");
+        columns.AddFor(m => m.PeriodName).Caption("Periode");
+        columns.AddFor(m => m.StartAt).Caption("Mulai").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.EndAt).Caption("Selesai").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.CandidateCount).Caption("Kandidat").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.VoterCount).Caption("Pemilih").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.VotedCount).Caption("Sudah Memilih").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("EVoting.statusTemplate"));
+        columns.AddAction("EVoting.actionTemplate");
+    })
+)

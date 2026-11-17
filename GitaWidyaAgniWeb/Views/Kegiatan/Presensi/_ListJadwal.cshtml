@@ -1,0 +1,24 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.PresensiVM.ListJadwal
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<PresensiVM.JadwalRow>()
+    .ID("tblJadwal")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Jadwal Rutin")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Kegiatan).Caption("Kegiatan").CssClass("fw-medium");
+        columns.AddFor(m => m.HariText).Caption("Hari").CalculateSortValue("Hari");
+        columns.AddFor(m => m.Jam).Caption("Jam");
+        columns.AddFor(m => m.Location).Caption("Lokasi");
+        columns.AddFor(m => m.LateToleranceMinute).Caption("Toleransi").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.ValidFrom).Caption("Berlaku Mulai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.ValidUntil).Caption("Sampai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Presensi.scheduleActionTemplate");
+    })
+)

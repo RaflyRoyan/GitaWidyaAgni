@@ -166,6 +166,11 @@ namespace GWALib.Lib.Transaksi.Information
                 RefId = refId
             }, insBy) > 0;
         }
+        // Banyak penerima sekaligus; mengembalikan jumlah notifikasi yang dibuat.
+        internal static int AddMany(EF.ModelContext context, NewRow newrow, int? insBy)
+        {
+            return AddRows(context, newrow, insBy);
+        }
         #endregion
 
         #region HELPER

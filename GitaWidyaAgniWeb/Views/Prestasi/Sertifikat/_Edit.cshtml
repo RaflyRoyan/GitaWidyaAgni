@@ -1,0 +1,37 @@
+@model GitaWidyaAgniWeb.Models.Prestasi.SertifikatVM.Edit
+@using GitaWidyaAgniWeb.Models.Prestasi
+@* Anggota, jenis, referensi, dan nomor tetap setelah terbit; yang bisa diubah judul, tanggal, dan berkas. *@
+
+<div class="gwa-mform">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-file-paper-2-line"></i></span>
+        <div><div class="gwa-mform-info-title">@Model.Info</div></div>
+    </div>
+    @(Html.DevExtreme().Form<SertifikatVM.NewRow>()
+        .ID("frmSertifikat")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Title).ColSpan(2).Editor(e => e.TextBox().MaxLength(255));
+            items.AddSimpleFor(m => m.IssuedDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+        })
+    )
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Berkas sertifikat</span><span class="gwa-mform-section-hint">maks. 5 MB</span></div>
+    @if (!string.IsNullOrEmpty(Model.FileName))
+    {
+        <div class="gwa-mform-note d-flex align-items-center gap-2">
+            <i class="ri-file-text-line"></i><span>@Model.FileName</span>
+            <label class="ms-auto form-check-label"><input type="checkbox" class="form-check-input me-1" id="chkHapusBerkasSertifikat" /> Hapus berkas</label>
+        </div>
+    }
+    @(Html.DevExtreme().FileUploader().ID("fileSertifikat").UploadMode(FileUploadMode.UseForm).Multiple(false)
+        .MaxFileSize(5 * 1024 * 1024).SelectButtonText("Pilih berkas").LabelText(""))
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Sertifikat.save(true)"><i class="ri-save-3-line align-bottom me-1"></i> Simpan Perubahan</button>
+    </div>
+</div>

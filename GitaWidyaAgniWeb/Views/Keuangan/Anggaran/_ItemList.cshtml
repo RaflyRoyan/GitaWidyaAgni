@@ -1,0 +1,33 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.AnggaranVM.ItemList
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Keuangan
+
+@(Html.DevExtreme().DataGrid<AnggaranVM.ItemRow>()
+    .ID("tblItemAnggaran")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Rincian Anggaran")
+    .Summary(s => s.TotalItems(t =>
+    {
+        t.AddFor(m => m.Amount).SummaryType(SummaryType.Sum).ValueFormat("#,##0").DisplayFormat("{0}");
+        t.AddFor(m => m.Realisasi).SummaryType(SummaryType.Sum).ValueFormat("#,##0").DisplayFormat("{0}");
+        t.AddFor(m => m.Sisa).SummaryType(SummaryType.Sum).ValueFormat("#,##0").DisplayFormat("{0}");
+    }))
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Uraian").CssClass("fw-medium");
+        columns.AddFor(m => m.Kategori).Caption("Kategori");
+        columns.AddFor(m => m.Program).Caption("Program");
+        columns.AddFor(m => m.Quantity).Caption("Jml").Format("#,##0.##").Width(70);
+        columns.AddFor(m => m.Unit).Caption("Satuan").Width(80);
+        columns.AddFor(m => m.UnitPrice).Caption("Harga").Format("#,##0");
+        columns.AddFor(m => m.Amount).Caption("Jumlah").Format("#,##0");
+        columns.AddFor(m => m.Realisasi).Caption("Realisasi").Format("#,##0");
+        columns.AddFor(m => m.Sisa).Caption("Sisa").Format("#,##0");
+        if (Model.BisaUbah)
+        {
+            columns.AddAction("Anggaran.itemActionTemplate");
+        }
+    })
+)

@@ -1,0 +1,22 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.JabatanVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Organisasi
+
+@(Html.DevExtreme().DataGrid<JabatanVM.Row>()
+    .ID("tblGrid")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Daftar Jabatan")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Nama Jabatan").CssClass("fw-medium");
+        columns.AddFor(m => m.Inti).Caption("Inti").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddFor(m => m.Description).Caption("Keterangan");
+        columns.AddFor(m => m.SortOrder).Caption("Urutan").Alignment(HorizontalAlignment.Center).Width(90);
+        columns.AddFor(m => m.JumlahPemegang).Caption("Pemegang Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Jabatan.actionTemplate");
+    })
+)

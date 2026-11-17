@@ -134,6 +134,43 @@ window.AppUI = (function () {
         });
     }
 
+    /**
+     * Dialog satu isian (opts: { title, text, input: 'date'|'number'|'text'|'textarea'|'select', options ({ nilai: teks } untuk select),
+     * placeholder, label, value, required, confirmText, confirmCss }).
+     * Return Promise<string|null>: nilai yang diisi ('' bila kosong dan tidak wajib), atau null bila dibatalkan.
+     */
+    function promptInput(opts) {
+        return Swal.fire({
+            title: opts.title,
+            text: opts.text,
+            input: opts.input || 'text',
+            inputOptions: opts.options,
+            inputPlaceholder: opts.placeholder,
+            inputLabel: opts.label,
+            inputValue: opts.value === undefined || opts.value === null ? '' : opts.value,
+            showCancelButton: true,
+            confirmButtonText: opts.confirmText || 'Simpan',
+            cancelButtonText: 'Batal',
+            customClass: { confirmButton: 'btn ' + (opts.confirmCss || 'btn-success') + ' me-2', cancelButton: 'btn btn-light' },
+            buttonsStyling: false,
+            inputValidator: function (value) {
+                if (opts.required && (!value || !String(value).trim())) return (opts.label || 'Isian') + ' harus diisi!';
+            }
+        }).then(function (result) {
+            return result.isConfirmed ? String(result.value || '').trim() : null;
+        });
+    }
+
+    /** promptInput lalu POST JSON { ...data, [field]: nilai }; sukses → notifikasi. Batal → promise ditolak. */
+    function inputPost(opts, url, data, field) {
+        return promptInput(opts).then(function (value) {
+            if (value === null) return $.Deferred().reject().promise();
+            const body = $.extend({}, data);
+            body[field] = value === '' ? null : value;
+            return postJson(url, body).done(function (resp) { alertSuccess(resp.Message); });
+        });
+    }
+
     /** Dialog konfirmasi Ya/Batal. Return Promise<boolean>. */
     function confirm(title, text, confirmText, confirmCss) {
         return Swal.fire({
@@ -391,7 +428,18 @@ window.AppUI = (function () {
         remeasure(e.target);
     });
 
+    /** Halaman viewer DevExpress Reports (Views/Shared/_ReportViewer) di iframe modal layar penuh. */
+    function openReport(title, src) {
+        const $modal = $('#staticBackdropFullScreen');
+        const $body = $modal.find('.modal-body').removeClass('p-4').addClass('p-0');
+        $body.empty().append($('<iframe>', { src: src, title: title, style: 'border:0;width:100%;height:calc(100vh - 62px);display:block' }));
+        $modal.find('.modal-title').text(title);
+        $modal.one('hidden.bs.modal', function () { $body.empty().removeClass('p-0').addClass('p-4'); });
+        bootstrap.Modal.getOrCreateInstance($modal[0]).show();
+    }
+
     return {
+        openReport: openReport,
         COLOR_PRIMARY: COLOR_PRIMARY,
         COLOR_DANGER: COLOR_DANGER,
         showLoading: showLoading,
@@ -409,6 +457,8 @@ window.AppUI = (function () {
         confirmPost: confirmPost,
         promptReason: promptReason,
         reasonPost: reasonPost,
+        promptInput: promptInput,
+        inputPost: inputPost,
         toIsoDate: toIsoDate,
         toQuery: toQuery,
         getFormQuery: getFormQuery,

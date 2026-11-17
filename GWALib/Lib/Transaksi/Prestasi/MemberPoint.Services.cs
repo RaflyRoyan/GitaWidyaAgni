@@ -232,8 +232,10 @@ namespace GWALib.Lib.Transaksi.Prestasi
             return DBClass.GetContext().TMemberPoints
                 .Where(x => periodId == null || x.PeriodId == periodId)
                 .GroupBy(x => new { x.MemberId, x.Member.Fullname })
-                .Select(g => new LeaderboardRow(g.Key.MemberId, g.Key.Fullname, g.Sum(x => x.Points)))
-                .OrderByDescending(x => x.TotalPoints).ThenBy(x => x.MemberName);
+                // Urutkan sebelum diproyeksikan ke record: EF Core tidak bisa menerjemahkan OrderBy pada properti record.
+                .Select(g => new { g.Key.MemberId, g.Key.Fullname, Total = g.Sum(x => x.Points) })
+                .OrderByDescending(x => x.Total).ThenBy(x => x.Fullname)
+                .Select(x => new LeaderboardRow(x.MemberId, x.Fullname, x.Total));
         }
         private static EF.TMemberPoint GetRow(EF.ModelContext context, int id)
         {

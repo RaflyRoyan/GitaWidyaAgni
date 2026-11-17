@@ -1,0 +1,40 @@
+@model GitaWidyaAgniWeb.Models.Prestasi.PrestasiVM.Peringkat
+@* 20 anggota dengan poin terbanyak; periode kosong = semua periode. *@
+
+<div class="gwa-mform">
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <label for="peringkatPeriode" class="form-label mb-0 text-nowrap">Periode</label>
+        <select id="peringkatPeriode" class="form-select" onchange="Prestasi.leaderboard(this.value)">
+            <option value="">Semua periode</option>
+            @foreach (var p in Model.PeriodeOpsi)
+            {
+                <option value="@p.Value" selected="@(p.Value == Model.PeriodId)">@p.Text</option>
+            }
+        </select>
+    </div>
+    @if (Model.Rows.Count == 0)
+    {
+        <p class="text-muted mb-0">Belum ada poin.</p>
+    }
+    else
+    {
+        var max = Math.Max(1, Model.Rows.Max(r => r.TotalPoints));
+        <ol class="list-unstyled mb-0">
+            @for (var i = 0; i < Model.Rows.Count; i++)
+            {
+                var r = Model.Rows[i];
+                <li class="d-flex align-items-center gap-2 py-1">
+                    <span class="badge @(i < 3 ? "bg-warning text-dark" : "bg-light text-dark")" style="min-width:2rem">@(i + 1)</span>
+                    <span class="flex-shrink-0" style="width:40%">@r.MemberName</span>
+                    <div class="progress flex-grow-1" style="height:10px" role="img" aria-label="@r.TotalPoints poin">
+                        <div class="progress-bar bg-primary" style="width:@(Math.Max(0, r.TotalPoints) * 100 / max)%"></div>
+                    </div>
+                    <span class="fw-semibold text-end" style="min-width:3.5rem">@r.TotalPoints</span>
+                </li>
+            }
+        </ol>
+    }
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

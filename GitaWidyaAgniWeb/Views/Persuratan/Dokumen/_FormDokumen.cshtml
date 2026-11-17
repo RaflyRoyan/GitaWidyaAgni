@@ -1,0 +1,33 @@
+@model GitaWidyaAgniWeb.Models.Persuratan.DokumenVM.AddDokumen
+@using GitaWidyaAgniWeb.Models.Persuratan
+@* Berkas wajib saat unggah (maks. 20 MB); saat ubah, berkas baru mengganti yang lama. *@
+@{ var isEdit = Model is DokumenVM.EditDokumen; }
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<DokumenVM.NewDokumen>()
+        .ID("frmDokumen")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Title).ColSpan(2).Editor(e => e.TextBox().MaxLength(255));
+            items.AddSimpleFor(m => m.CategoryId).Editor(e => e.SelectBox().DataSource(Model.KategoriOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true));
+            items.AddSimpleFor(m => m.Visibility).Editor(e => e.SelectBox().DataSource(Model.VisibilitasOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.Description).ColSpan(2).Editor(e => e.TextArea().Height(70).MaxLength(1000));
+        })
+    )
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Berkas @(isEdit ? "(kosongkan bila tidak diganti)" : "")</span><span class="gwa-mform-section-hint">maks. 20 MB</span></div>
+    @if (!string.IsNullOrEmpty(Model.FileName))
+    {
+        <div class="gwa-mform-note"><i class="ri-file-text-line me-1"></i>@Model.FileName</div>
+    }
+    @(Html.DevExtreme().FileUploader().ID("fileDokumen").UploadMode(FileUploadMode.UseForm).Multiple(false)
+        .MaxFileSize(20 * 1024 * 1024).SelectButtonText("Pilih berkas").LabelText(""))
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Dokumen.saveDocument(@(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Unggah")</button>
+    </div>
+</div>

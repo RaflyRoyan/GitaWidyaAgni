@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Lpj.LpjVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Lpj
+
+@(Html.DevExtreme().DataGrid<LpjVM.Row>()
+    .ID("tblLpj")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("LPJ")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Title).Caption("Judul").CssClass("fw-medium");
+        columns.AddFor(m => m.JenisText).Caption("Jenis").Width(150);
+        columns.AddFor(m => m.Referensi).Caption("Kegiatan / Periode");
+        columns.AddFor(m => m.StatusText).Caption("Status").Width(100).Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Lpj.statusTemplate"));
+        columns.AddFor(m => m.FinalizedAt).Caption("Difinalkan").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm").Width(150);
+        columns.AddFor(m => m.Diperbarui).Caption("Diperbarui").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm").Width(150);
+        columns.AddAction("Lpj.actionTemplate");
+    })
+)

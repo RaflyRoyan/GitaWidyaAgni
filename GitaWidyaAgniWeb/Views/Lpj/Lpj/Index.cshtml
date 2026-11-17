@@ -1,0 +1,46 @@
+@model GitaWidyaAgniWeb.Models.Lpj.LpjVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "LPJ";
+    ViewData["BreadcrumbArea"] = "Laporan";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-file-chart-line align-bottom me-1"></i> Laporan Pertanggungjawaban</h5>
+        <p class="gwa-card-intro">
+            Isi bagian naratif LPJ; data lain diambil otomatis saat dokumen dibuat: jadwal, hasil lomba, galeri, dan realisasi anggaran
+            (RAB qty × harga berdampingan dengan transaksi) untuk LPJ Kegiatan; evaluasi program kerja per bidang, kegiatan, inventaris,
+            susunan pengurus, dan dokumentasi untuk LPJ Kepengurusan. Finalisasi menyimpan PDF dan mengunci LPJ.
+        </p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel("Buat LPJ", "Lpj.add()",
+            ("btn-outline-info", "ri-eye-line", "Pratinjau dokumen"),
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah narasi (Draft)"),
+            ("btn-outline-success", "ri-checkbox-circle-line", "Finalisasi (simpan PDF)"),
+            ("btn-outline-primary", "ri-file-download-line", "Unduh PDF final"),
+            ("btn-outline-secondary", "ri-lock-unlock-line", "Buka lagi (kembali Draft)"),
+            ("btn-outline-danger", "ri-delete-bin-line", "Hapus (Draft)"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.LpjUrl = {
+            list: '@Url.Action("List")',
+            add: '@Url.Action("Add")',
+            edit: '@Url.Action("Edit")',
+            simpanBaru: '@Url.Action("SimpanBaru")',
+            update: '@Url.Action("Update")',
+            delete: '@Url.Action("Delete")',
+            pratinjau: '@Url.Action("Pratinjau")',
+            finalisasi: '@Url.Action("Finalisasi")',
+            bukaLagi: '@Url.Action("BukaLagi")',
+            unduh: '@Url.Action("Unduh")'
+        };
+    </script>
+    <script src="~/Scripts/Lpj/Lpj.js" asp-append-version="true"></script>
+}

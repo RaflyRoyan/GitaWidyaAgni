@@ -1,0 +1,63 @@
+@model GitaWidyaAgniWeb.Models.ProgramKerja.ProgramKerjaVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Program Kerja";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-briefcase-4-line align-bottom me-1"></i> Program Kerja</h5>
+        <p class="gwa-card-intro">Program per periode, tugas pelaksanaannya, dan timeline bulanan. Progres program dihitung dari tugas yang selesai.</p>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs gwa-tabs mb-3" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabProgram" data-tab="Program" type="button" role="tab"><i class="ri-briefcase-4-line me-1"></i>Program</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabTugas" data-tab="Tugas" type="button" role="tab"><i class="ri-task-line me-1"></i>Tugas</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabTimeline" data-tab="Timeline" type="button" role="tab"><i class="ri-calendar-todo-line me-1"></i>Timeline</button></li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tabProgram" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Program", "ProgramKerja.add(\"Program\")",
+                    ("btn-outline-primary", "ri-play-circle-line", "Mulai / selesaikan"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah program"),
+                    ("btn-outline-secondary", "ri-close-circle-line", "Batalkan program"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus (direncanakan, belum dipakai)")) { LegendId = "legendProgram" }' />
+                <div id="targetProgram" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabTugas" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Tugas", "ProgramKerja.add(\"Tugas\")",
+                    ("btn-outline-primary", "ri-play-circle-line", "Proses / selesai / buka lagi"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah tugas"),
+                    ("btn-outline-secondary", "ri-close-circle-line", "Batalkan tugas"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus tugas")) { LegendId = "legendTugas" }' />
+                <div id="targetTugas" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabTimeline" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Rencana", "ProgramKerja.add(\"Timeline\")",
+                    ("btn-outline-success", "ri-links-line", "Tautkan kegiatan"),
+                    ("btn-outline-primary", "ri-check-line", "Tandai selesai"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah rencana"),
+                    ("btn-outline-secondary", "ri-close-circle-line", "Batalkan"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus rencana")) { LegendId = "legendTimeline" }' />
+                <div id="targetTimeline" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.ProgramKerjaUrl = {
+            opsiKegiatan: '@Url.Action("OpsiKegiatan")',
+            tautKegiatan: '@Url.Action("TautKegiatan")'
+        };
+        ['Program', 'Tugas', 'Timeline'].forEach(function (t) {
+            ['List', 'Add', 'Edit', 'Simpan', 'Update', 'Status', 'Hapus'].forEach(function (a) {
+                window.ProgramKerjaUrl[a.toLowerCase() + t] = '@Url.Action("__")'.replace('__', a + t);
+            });
+        });
+    </script>
+    <script src="~/Scripts/ProgramKerja/ProgramKerja.js" asp-append-version="true"></script>
+}

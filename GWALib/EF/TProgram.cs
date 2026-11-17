@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GWALib.EF;
 
 [Table("t_program")]
+[Index("DivisionId", Name = "fk_program_division")]
 [Index("PeriodId", Name = "fk_program_period")]
 [Index("PicMemberId", Name = "fk_program_pic")]
 [Index("PreviousProgramId", Name = "fk_program_previous")]
@@ -30,6 +31,18 @@ public partial class TProgram
     /// </summary>
     [Column("pic_member_id")]
     public int? PicMemberId { get; set; }
+
+    /// <summary>
+    /// Bidang / divisi pelaksana program
+    /// </summary>
+    [Column("division_id")]
+    public int? DivisionId { get; set; }
+
+    /// <summary>
+    /// 1=JANGKA_PENDEK, 2=JANGKA_PANJANG
+    /// </summary>
+    [Column("term")]
+    public int? Term { get; set; }
 
     [Column("title")]
     [StringLength(200)]
@@ -68,6 +81,10 @@ public partial class TProgram
 
     [InverseProperty("PreviousProgram")]
     public virtual ICollection<TProgram> InversePreviousProgram { get; set; } = new List<TProgram>();
+
+    [ForeignKey("DivisionId")]
+    [InverseProperty("TPrograms")]
+    public virtual MDivision? Division { get; set; }
 
     [ForeignKey("PeriodId")]
     [InverseProperty("TPrograms")]

@@ -1,0 +1,66 @@
+@model GitaWidyaAgniWeb.Models.Persuratan.SuratVM.AddSurat
+@using GitaWidyaAgniWeb.Models.Persuratan
+@* Surat keluar: template mengisi jenis & isi bila kosong; nomor kosong = otomatis saat disetujui. Surat masuk: nomor pengirim, tanggal terima, dan pengirim wajib. *@
+@{
+    var editModel = Model as SuratVM.EditSurat;
+    var isEdit = editModel != null;
+    var masuk = Model.Masuk;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-mail-line"></i></span>
+            <div><div class="gwa-mform-info-title">@Model.Row.Subject</div><div class="gwa-mform-info-meta"><span>Status <b>@editModel!.StatusText</b></span></div></div>
+        </div>
+    }
+    @(Html.DevExtreme().Form<SuratVM.NewSurat>()
+        .ID("frmSurat")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Subject).ColSpan(3).Editor(e => e.TextBox().MaxLength(255));
+            if (!masuk)
+            {
+                items.AddSimpleFor(m => m.TemplateId).Editor(e => e.SelectBox().DataSource(Model.TemplateOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true));
+            }
+            items.AddSimpleFor(m => m.LetterType).Editor(e => e.Autocomplete().DataSource(Model.JenisOpsi).MaxLength(50).InputAttr(new { style = "text-transform:uppercase" }));
+            items.AddSimpleFor(m => m.LetterNumber).Editor(e => e.TextBox().MaxLength(100).Placeholder(masuk ? "Nomor dari pengirim" : "Kosong = otomatis"));
+            items.AddSimpleFor(m => m.LetterDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd").ShowClearButton(true));
+            if (masuk)
+            {
+                items.AddSimpleFor(m => m.ReceivedDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+                items.AddSimpleFor(m => m.Sender).Editor(e => e.TextBox().MaxLength(150));
+            }
+            else
+            {
+                items.AddSimpleFor(m => m.Recipient).Editor(e => e.TextBox().MaxLength(150));
+            }
+            items.AddSimpleFor(m => m.PeriodId).Editor(e => e.SelectBox().DataSource(Model.PeriodeOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Periode aktif"));
+            items.AddSimpleFor(m => m.Summary).ColSpan(3).Editor(e => e.TextArea().Height(60).MaxLength(1000));
+            if (!masuk)
+            {
+                items.AddSimpleFor(m => m.Body).ColSpan(3).Editor(e => e.TextArea().Height(160));
+            }
+        })
+    )
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Berkas surat</span><span class="gwa-mform-section-hint">PDF / scan, maks. 10 MB</span></div>
+    @if (!string.IsNullOrEmpty(Model.FileName))
+    {
+        <div class="gwa-mform-note d-flex align-items-center gap-2">
+            <i class="ri-file-text-line"></i><span>@Model.FileName</span>
+            <label class="ms-auto form-check-label"><input type="checkbox" class="form-check-input me-1" id="chkHapusBerkasSurat" /> Hapus berkas</label>
+        </div>
+    }
+    @(Html.DevExtreme().FileUploader().ID("fileSurat").UploadMode(FileUploadMode.UseForm).Multiple(false)
+        .MaxFileSize(10 * 1024 * 1024).SelectButtonText("Pilih berkas").LabelText(""))
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Surat.save(@(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

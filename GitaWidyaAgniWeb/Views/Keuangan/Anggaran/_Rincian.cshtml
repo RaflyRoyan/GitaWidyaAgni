@@ -1,0 +1,81 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.AnggaranVM.Rincian
+@using GitaWidyaAgniWeb.Models.Keuangan
+@* Rincian anggaran: tambah item (Draft / Ditolak), grid item + realisasi, dokumen pendukung (maks. 10 MB). *@
+
+<div class="gwa-mform" id="anggaranRincian" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-file-list-3-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Nama</div>
+            <div class="gwa-mform-info-meta"><span>Status <b>@Model.StatusText</b></span>@if (!Model.BisaUbah) {<span>Item terkunci</span>}</div>
+        </div>
+    </div>
+
+    @if (Model.BisaUbah)
+    {
+        <div class="gwa-mform-add">
+            <div class="gwa-mform-add-form">
+                @(Html.DevExtreme().Form<AnggaranVM.ItemInput>()
+                    .ID("frmItemAnggaran")
+                    .FormData(Model.Input)
+                    .LabelLocation(FormLabelLocation.Top)
+                    .ShowColonAfterLabel(false)
+                    .ColCount(6)
+                    .ColCountByScreen(c => c.Xs(1).Sm(2))
+                    .Items(items =>
+                    {
+                        items.AddSimpleFor(m => m.Name).ColSpan(2).Editor(e => e.TextBox().MaxLength(200));
+                        items.AddSimpleFor(m => m.CategoryId).ColSpan(2).Editor(e => e.SelectBox().DataSource(Model.KategoriOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true));
+                        items.AddSimpleFor(m => m.ProgramId).ColSpan(2).Editor(e => e.SelectBox().DataSource(Model.ProgramOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+                        items.AddSimpleFor(m => m.Quantity).Editor(e => e.NumberBox().Min(0).Format("#,##0.##"));
+                        items.AddSimpleFor(m => m.Unit).Editor(e => e.TextBox().MaxLength(30).Placeholder("pcs, hari"));
+                        items.AddSimpleFor(m => m.UnitPrice).ColSpan(2).Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+                    })
+                )
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="Anggaran.addItem()"><i class="ri-add-line align-bottom me-1"></i> Tambah</button>
+        </div>
+    }
+
+    <div id="anggaranItemTarget">
+        <partial name="~/Views/Keuangan/Anggaran/_ItemList.cshtml" model="Model.List" />
+    </div>
+
+    <div class="gwa-mform-section mt-3">
+        <span class="gwa-mform-section-title">Dokumen pendukung</span>
+    </div>
+    @if (Model.BisaUbah)
+    {
+        <div class="gwa-mform-add">
+            <div class="gwa-mform-add-form">
+                @(Html.DevExtreme().FileUploader().ID("fileDokumenAnggaran").UploadMode(FileUploadMode.UseForm).Multiple(false)
+                    .MaxFileSize(10 * 1024 * 1024).SelectButtonText("Pilih berkas").LabelText(""))
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="Anggaran.addDocument()"><i class="ri-upload-2-line align-bottom me-1"></i> Unggah</button>
+        </div>
+    }
+    @if (Model.Dokumen.Count == 0)
+    {
+        <p class="text-muted mb-0">Belum ada dokumen.</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var d in Model.Dokumen)
+            {
+                <li class="list-group-item d-flex align-items-center gap-2">
+                    <i class="ri-file-text-line fs-18" aria-hidden="true"></i>
+                    <a href="@Url.Action("BerkasDokumen", new { key = d.EncDecrKey })" target="_blank" class="flex-grow-1 text-truncate">@d.FileName</a>
+                    @if (Model.BisaUbah)
+                    {
+                        <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus dokumen" aria-label="Hapus dokumen" onclick="Anggaran.removeDocument('@d.EncDecrKey')"><i class="ri-delete-bin-line"></i></button>
+                    }
+                </li>
+            }
+        </ul>
+    }
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

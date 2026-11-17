@@ -1,4 +1,5 @@
 using GWALib.General;
+using GWALib.Lib.Transaksi.Information;
 using GWALib.General.Utilities;
 using GWALib.Lib.Master.Anggota;
 using GWALib.Lib.Transaksi.Approval;
@@ -475,7 +476,7 @@ namespace GWALib.Lib.Transaksi.Keuangan
         private static void SetSubmit(EF.ModelContext context, EF.TFundingRequest row, int userId)
         {
             TransaksiHelper.ValidateStatus((FundingRequestStatus)row.Status, "mengajukan dana", FundingRequestStatus.Draft);
-            ApprovalHelper.GetActiveSteps(context, DOCUMENT_TYPE);
+            var steps = ApprovalHelper.GetActiveSteps(context, DOCUMENT_TYPE);
             if (row.PeriodId != null)
             {
                 ManagementPeriod.ValidateOpenPeriod(context, row.PeriodId.Value);
@@ -484,6 +485,8 @@ namespace GWALib.Lib.Transaksi.Keuangan
             row.Status = (int)FundingRequestStatus.Submitted;
             row.UpdDate = DateTime.Now;
             row.UpdBy = userId;
+            NotifyHelper.ToApprovers(context, steps[0], $"Pengajuan dana {row.RequestNumber} menunggu persetujuan", row.Purpose,
+                NotifyHelper.LINK_FUNDING, "t_funding_request", row.Id, userId);
         }
         // Langkah berjalan = langkah pertama (urut step_level) yang belum Approved pada putaran pengajuan ini.
         private static void SetDecision(EF.ModelContext context, EF.TFundingRequest row, FundingDecision decision, string? note, int userId)
@@ -517,6 +520,24 @@ namespace GWALib.Lib.Transaksi.Keuangan
             });
             row.UpdDate = DateTime.Now;
             row.UpdBy = userId;
+
+            if (row.Status == (int)FundingRequestStatus.Submitted)
+            {
+                var next = steps[steps.IndexOf(step) + 1];
+                NotifyHelper.ToApprovers(context, next, $"Pengajuan dana {row.RequestNumber} menunggu persetujuan", row.Purpose,
+                    NotifyHelper.LINK_FUNDING, "t_funding_request", row.Id, userId);
+            }
+            else
+            {
+                var result = decision switch
+                {
+                    FundingDecision.Approved => "disetujui",
+                    FundingDecision.Rejected => "ditolak",
+                    _ => "perlu direvisi"
+                };
+                NotifyHelper.ToUser(context, row.InsBy, NotifyHelper.TYPE_APPROVAL_RESULT, $"Pengajuan dana {row.RequestNumber} {result}",
+                    note ?? row.Purpose, NotifyHelper.LINK_FUNDING, "t_funding_request", row.Id, userId);
+            }
         }
         private static void SetDisburse(EF.ModelContext context, EF.TFundingRequest row, int accountId, int categoryId, DateOnly disburseDate, int userId)
         {

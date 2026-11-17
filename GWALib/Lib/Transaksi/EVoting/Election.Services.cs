@@ -1,4 +1,5 @@
 using GWALib.General;
+using GWALib.Lib.Transaksi.Information;
 using GWALib.General.Utilities;
 using GWALib.Lib.Master.Anggota;
 using GWAShared.Enums;
@@ -367,6 +368,11 @@ namespace GWALib.Lib.Transaksi.EVoting
             row.UpdDate = DateTime.Now;
             row.UpdBy = userId;
             ElectionAuditEvent.Add(context, row.Id, ElectionAuditEvent.EVENT_OPENED, $"{candidates.Count} kandidat", userId);
+            var voters = context.TElectionEligibleVoters
+                .Where(x => x.ElectionId == row.Id && x.EligibilityStatus == (int)VoterEligibility.Eligible)
+                .Select(x => (int?)x.MemberId).ToList();
+            NotifyHelper.ToMembers(context, voters, NotifyHelper.TYPE_ELECTION, "Pemungutan suara dibuka: " + row.Title,
+                $"Pilih sampai {row.EndAt:dd-MM-yyyy HH:mm}", NotifyHelper.LINK_MY_ELECTION, "t_election", row.Id, userId);
         }
         private static void SetClose(EF.ModelContext context, EF.TElection row, int? userId, bool automatic)
         {

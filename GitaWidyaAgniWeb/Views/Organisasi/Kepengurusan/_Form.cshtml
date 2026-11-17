@@ -1,0 +1,60 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.KepengurusanVM.Add
+@using GitaWidyaAgniWeb.Models.Organisasi
+@* Form bersama Add & Edit penugasan. Di Edit, periode / anggota / jabatan tetap (ditampilkan di ringkasan). *@
+
+@{
+    var editModel = Model as KepengurusanVM.Edit;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-user-star-line"></i></span>
+            <div>
+                <div class="gwa-mform-info-title">@editModel!.Anggota</div>
+                <div class="gwa-mform-info-meta">
+                    <span>Jabatan <b>@editModel.Jabatan</b></span>
+                    <span>Periode <b>@editModel.Periode</b></span>
+                </div>
+            </div>
+        </div>
+    }
+
+    @(Html.DevExtreme().Form<KepengurusanVM.NewRow>()
+        .ID("frmKepengurusan")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            if (!isEdit)
+            {
+                items.AddSimpleFor(m => m.PeriodId)
+                    .Editor(e => e.SelectBox().DataSource(Model.PeriodeOpsi).ValueExpr("Value").DisplayExpr("Text").Placeholder("Pilih periode..."));
+                items.AddSimpleFor(m => m.MemberId)
+                    .Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).Placeholder("Pilih anggota..."));
+                items.AddSimpleFor(m => m.PositionId)
+                    .Editor(e => e.SelectBox().DataSource(Model.JabatanOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).Placeholder("Pilih jabatan..."));
+            }
+            items.AddSimpleFor(m => m.DivisionId)
+                .Editor(e => e.SelectBox().DataSource(Model.DivisiOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Tidak memimpin divisi"));
+            items.AddSimpleFor(m => m.SkNumber)
+                .Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.StartDate)
+                .Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+            items.AddSimpleFor(m => m.EndDate)
+                .Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd").ShowClearButton(true));
+        })
+    )
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Kepengurusan.@(isEdit ? "update" : "save")()">
+            <i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")
+        </button>
+    </div>
+</div>

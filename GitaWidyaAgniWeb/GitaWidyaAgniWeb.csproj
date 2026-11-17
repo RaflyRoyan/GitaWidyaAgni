@@ -6,6 +6,7 @@
     <UserSecretsId>gitawidyaagni-web-6f1c2a8e</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="DevExpress.AspNetCore.Reporting" Version="23.2.5" />
     <ProjectReference Include="..\GWALib\GWALib.csproj" />
     <ProjectReference Include="..\GWAShared\GWAShared.csproj" />
     <PackageReference Include="DevExtreme.AspNet.Core" Version="23.2.5" />

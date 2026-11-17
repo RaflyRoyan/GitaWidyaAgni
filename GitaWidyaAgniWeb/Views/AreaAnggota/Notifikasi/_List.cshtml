@@ -1,0 +1,28 @@
+@model List<GWALib.Lib.Transaksi.Information.Notification>
+@* Tautan notifikasi hanya dipakai bila path lokal (/...) atau http(s); selain itu diabaikan. *@
+
+@if (Model.Count == 0)
+{
+    <div class="text-center text-muted py-5"><i class="ri-notification-off-line fs-1 d-block mb-2" aria-hidden="true"></i>Tidak ada notifikasi.</div>
+}
+else
+{
+    <ul class="list-group list-group-flush">
+        @foreach (var n in Model)
+        {
+            var link = !string.IsNullOrEmpty(n.LinkUrl) && ((n.LinkUrl.StartsWith("/") && !n.LinkUrl.StartsWith("//")) || n.LinkUrl.StartsWith("https://") || n.LinkUrl.StartsWith("http://")) ? n.LinkUrl : null;
+            <li class="list-group-item d-flex align-items-start gap-3 @(n.IsRead ? "" : "bg-soft-warning")">
+                <i class="@(n.IsRead ? "ri-mail-open-line text-muted" : "ri-mail-unread-line text-warning") fs-20 mt-1" aria-hidden="true"></i>
+                <button type="button" class="btn btn-link text-start text-reset p-0 flex-grow-1 text-decoration-none" data-key="@n.EncDecrKey" data-link="@link" data-read="@(n.IsRead ? "1" : "")" onclick="Notifikasi.open(this)">
+                    <span class="d-block @(n.IsRead ? "" : "fw-semibold")">@n.Title</span>
+                    @if (!string.IsNullOrEmpty(n.Message))
+                    {
+                        <span class="d-block small text-muted">@n.Message</span>
+                    }
+                    <span class="d-block small text-muted">@n.InsDate.ToString("dd MMM yyyy HH:mm")</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-icon btn-ghost-danger" title="Hapus" aria-label="Hapus notifikasi" onclick="Notifikasi.remove('@n.EncDecrKey')"><i class="ri-close-line"></i></button>
+            </li>
+        }
+    </ul>
+}

@@ -1,0 +1,33 @@
+@model GitaWidyaAgniWeb.Models.Formulir.AspirasiVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Aspirasi";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-chat-3-line align-bottom me-1"></i> Aspirasi Anggota</h5>
+        <p class="gwa-card-intro">Aspirasi, pengaduan, dan saran dari anggota. Tandai Diproses saat ditindaklanjuti; Selesai atau Ditolak wajib disertai tanggapan yang bisa dibaca pengirim.</p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel(null, null,
+            ("btn-outline-info", "ri-chat-check-line", "Baca & tanggapi"),
+            ("btn-outline-secondary", "ri-attachment-2", "Lampiran"),
+            ("btn-outline-danger", "ri-delete-bin-line", "Hapus (hanya Ditolak)"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.AspirasiUrl = {
+            list: '@Url.Action("List")',
+            detail: '@Url.Action("Detail")',
+            tanggapi: '@Url.Action("Tanggapi")',
+            delete: '@Url.Action("Delete")',
+            lampiran: '@Url.Action("Lampiran")'
+        };
+    </script>
+    <script src="~/Scripts/Formulir/Aspirasi.js" asp-append-version="true"></script>
+}

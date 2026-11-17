@@ -4,6 +4,7 @@ using GWALib.Lib.Master.Anggota;
 using GWALib.Lib.Master.Approval;
 using GWALib.Lib.Master.Surat;
 using GWALib.Lib.Transaksi.Approval;
+using GWALib.Lib.Transaksi.Information;
 using GWALib.Lib.Transaksi.Keuangan;
 using GWAShared.Enums;
 using GWAShared.Extensions;
@@ -454,6 +455,14 @@ namespace GWALib.Lib.Transaksi.Surat
             row.Status = (int)LetterStatus.WaitingApproval;
             row.UpdDate = DateTime.Now;
             row.UpdBy = userId;
+            var first = context.MApprovalFlows.Include(x => x.MApprovalFlowSteps)
+                .SingleOrDefault(x => x.DocumentType == DOCUMENT_TYPE && x.IsActive == (int)ActiveStatus.Aktif)?
+                .MApprovalFlowSteps.OrderBy(x => x.StepLevel).FirstOrDefault();
+            if (first != null)
+            {
+                NotifyHelper.ToApprovers(context, first, "Surat menunggu persetujuan: " + row.Subject, first.StepName,
+                    NotifyHelper.LINK_LETTER, "t_letter", row.Id, userId);
+            }
         }
         // Dengan alur LETTER aktif: langkah berjalan = langkah pertama yang belum disetujui. Tanpa alur: satu persetujuan level 1.
         private static void SetDecision(EF.ModelContext context, EF.TLetter row, bool approve, string? note, byte[]? signature, int? positionId, int userId)
@@ -500,6 +509,19 @@ namespace GWALib.Lib.Transaksi.Surat
             }
             row.UpdDate = now;
             row.UpdBy = userId;
+
+            if (approve && !isLast && step != null)
+            {
+                var next = steps[steps.IndexOf(step) + 1];
+                NotifyHelper.ToApprovers(context, next, "Surat menunggu persetujuan: " + row.Subject, next.StepName,
+                    NotifyHelper.LINK_LETTER, "t_letter", row.Id, userId);
+            }
+            else
+            {
+                NotifyHelper.ToUser(context, row.InsBy, NotifyHelper.TYPE_APPROVAL_RESULT,
+                    (approve ? "Surat disetujui: " : "Surat ditolak: ") + row.Subject,
+                    approve ? "Nomor " + row.LetterNumber : note, NotifyHelper.LINK_LETTER, "t_letter", row.Id, userId);
+            }
         }
         // Sent dari Approved (surat keluar); Archived dari Sent / Received / Approved.
         private static void SetStatus(EF.TLetter row, LetterStatus target, int userId)

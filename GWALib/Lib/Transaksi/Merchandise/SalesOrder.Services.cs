@@ -1,4 +1,5 @@
 using GWALib.General;
+using GWALib.Lib.Transaksi.Information;
 using GWALib.General.Utilities;
 using GWALib.Lib.Master.Anggota;
 using GWALib.Lib.Transaksi.Keuangan;
@@ -55,6 +56,32 @@ namespace GWALib.Lib.Transaksi.Merchandise
                 return new SalesOrder(Reload(row.Id));
             }, data => ResponseFactory.DataSaved(data), msg => ResponseFactory.DataSaveFailed<SalesOrder>(msg));
         }
+        // Pesanan tamu dari toko publik, tanpa login (ins_by NULL). Jumlah item dan jumlah per item dibatasi.
+        public static Response<SalesOrder> SaveGuest(GuestRow input)
+        {
+            return ServiceHandler.Handle(() =>
+            {
+                var newrow = ToGuestNewRow(input);
+                using var context = DBClass.GetContext();
+                using var transaction = context.Database.BeginTransaction();
+                var row = CreateRow(context, newrow, null);
+                context.SaveChanges();
+                transaction.Commit();
+                return new SalesOrder(Reload(row.Id));
+            }, data => ResponseFactory.DataSaved(data), msg => ResponseFactory.DataSaveFailed<SalesOrder>(msg));
+        }
+        // Lacak pesanan tamu: nomor pesanan + nomor WhatsApp yang dipakai saat memesan (hanya digit yang dibandingkan).
+        public static SalesOrder? FindGuestOrder(string? orderNumber, string? phone)
+        {
+            var number = orderNumber?.Trim();
+            var digits = PhoneDigits(phone);
+            if (string.IsNullOrEmpty(number) || digits.Length < 6)
+            {
+                return null;
+            }
+            var row = _Querys.FirstOrDefault(x => x.OrderNumber == number && x.BuyerMemberId == null);
+            return row != null && PhoneDigits(row.BuyerPhone) == digits ? new SalesOrder(row) : null;
+        }
         // Hanya data pembeli, kegiatan, PIC dan catatan; item tetap.
         public Response<SalesOrder> Update(string user)
         {
@@ -62,11 +89,11 @@ namespace GWALib.Lib.Transaksi.Merchandise
         }
         public Response<SalesOrder> SetReady(string user)
         {
-            return Run((context, row, userId) => SetFulfillment(row, FulfillmentStatus.SiapDiambil, userId), user);
+            return Run((context, row, userId) => SetFulfillment(context, row, FulfillmentStatus.SiapDiambil, userId), user);
         }
         public Response<SalesOrder> Finish(string user)
         {
-            return Run((context, row, userId) => SetFulfillment(row, FulfillmentStatus.Selesai, userId), user);
+            return Run((context, row, userId) => SetFulfillment(context, row, FulfillmentStatus.Selesai, userId), user);
         }
         public Response<SalesOrder> Cancel(string? reason, string user)
         {
@@ -131,11 +158,11 @@ namespace GWALib.Lib.Transaksi.Merchandise
         }
         public Task<Response<SalesOrder>> SetReadyAsync(string user)
         {
-            return RunAsync((context, row, userId) => SetFulfillment(row, FulfillmentStatus.SiapDiambil, userId), user);
+            return RunAsync((context, row, userId) => SetFulfillment(context, row, FulfillmentStatus.SiapDiambil, userId), user);
         }
         public Task<Response<SalesOrder>> FinishAsync(string user)
         {
-            return RunAsync((context, row, userId) => SetFulfillment(row, FulfillmentStatus.Selesai, userId), user);
+            return RunAsync((context, row, userId) => SetFulfillment(context, row, FulfillmentStatus.Selesai, userId), user);
         }
         public Task<Response<SalesOrder>> CancelAsync(string? reason, string user)
         {
@@ -211,6 +238,39 @@ namespace GWALib.Lib.Transaksi.Merchandise
             return await context.TSalesOrders.SingleOrDefaultAsync(x => x.Id == id)
                 ?? throw new ArgumentException(string.Format(ExceptionMessage.DATA_X_NOT_FOUND, "Pesanan Penjualan"));
         }
+        public const int GUEST_MAX_LINES = 10;
+        public const int GUEST_MAX_QUANTITY = 20;
+
+        private static NewRow ToGuestNewRow(GuestRow input)
+        {
+            var name = TransaksiHelper.ToNullable(input.BuyerName);
+            if (name == null)
+            {
+                throw new ArgumentException(string.Format(ExceptionMessage.FIELD_REQUIRED, "Nama Pembeli"));
+            }
+            if (PhoneDigits(input.BuyerPhone).Length < 8)
+            {
+                throw new ArgumentException(string.Format(ExceptionMessage.FIELD_REQUIRED, "Nomor WhatsApp"));
+            }
+            var items = input.Items ?? new();
+            if (items.Count > GUEST_MAX_LINES || items.Any(x => x.Quantity > GUEST_MAX_QUANTITY))
+            {
+                throw new ArgumentException(string.Format(ExceptionMessage.SALES_GUEST_LIMIT, GUEST_MAX_LINES, GUEST_MAX_QUANTITY));
+            }
+            return new NewRow
+            {
+                BuyerName = name,
+                BuyerPhone = input.BuyerPhone!.Trim(),
+                OrderDate = DateOnly.FromDateTime(DateTime.Today),
+                Notes = input.Notes,
+                Items = items.Select(x => new SalesOrderItem.NewRow { ProductId = x.ProductId, VariantId = x.VariantId, Quantity = x.Quantity }).ToList()
+            };
+        }
+        private static string PhoneDigits(string? phone)
+        {
+            var digits = new string((phone ?? "").Where(char.IsDigit).ToArray());
+            return digits.StartsWith("0") ? "62" + digits[1..] : digits;
+        }
         private record Buyer(int? MemberId, string? Name, int? ActivityId, int? PicMemberId);
 
         // Pembeli anggota mengosongkan nama pembeli.
@@ -238,7 +298,7 @@ namespace GWALib.Lib.Transaksi.Merchandise
             }
             return new Buyer(buyerMemberId, name, activityId, picMemberId);
         }
-        private static EF.TSalesOrder CreateRow(EF.ModelContext context, NewRow newrow, int userId)
+        private static EF.TSalesOrder CreateRow(EF.ModelContext context, NewRow newrow, int? userId)
         {
             var buyer = ValidateData(context, newrow.BuyerMemberId, newrow.BuyerName, newrow.ActivityId, newrow.PicMemberId);
             if (newrow.OrderDate == default)
@@ -298,7 +358,7 @@ namespace GWALib.Lib.Transaksi.Merchandise
             GWAShared.Utilities.ValidateUtility.ValidateDAModel(row);
         }
         // SiapDiambil dari Dipesan; Selesai dari Dipesan / SiapDiambil dan harus Lunas.
-        private static void SetFulfillment(EF.TSalesOrder row, FulfillmentStatus target, int userId)
+        private static void SetFulfillment(EF.ModelContext context, EF.TSalesOrder row, FulfillmentStatus target, int userId)
         {
             if (target == FulfillmentStatus.SiapDiambil)
             {
@@ -315,6 +375,12 @@ namespace GWALib.Lib.Transaksi.Merchandise
             row.FulfillmentStatus = (int)target;
             row.UpdDate = DateTime.Now;
             row.UpdBy = userId;
+            if (target == FulfillmentStatus.SiapDiambil)
+            {
+                NotifyHelper.ToMember(context, row.BuyerMemberId, NotifyHelper.TYPE_ORDER, $"Pesanan {row.OrderNumber} siap diambil",
+                    row.PaymentStatus == (int)PaymentStatus.Lunas ? null : "Siapkan pembayaran saat mengambil pesanan.",
+                    NotifyHelper.LINK_MY_ORDER, "t_sales_order", row.Id, userId);
+            }
         }
         // Stok yang terpotong (mutasi Terjual pesanan ini) dikembalikan lewat mutasi Retur.
         private static void SetCancel(EF.ModelContext context, EF.TSalesOrder row, string? reason, int userId)

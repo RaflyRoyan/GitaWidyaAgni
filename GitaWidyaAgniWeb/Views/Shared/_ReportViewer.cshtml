@@ -1,0 +1,37 @@
+@model DevExpress.XtraReports.UI.XtraReport
+@using DevExpress.AspNetCore
+@{
+    // Halaman viewer mandiri untuk semua report (dimuat di iframe modal layar penuh lewat AppUI.openReport): DevExpress Web Document Viewer 23.2.5.
+    // Client viewer di wwwroot/lib/dxreporting-23.2.5 (devexpress-reporting + @@devexpress/analytics-core dari npm),
+    // DevExtreme + jQuery memakai berkas proyek (versi 23.2.5 sama). Endpoint viewer: /DXXRDV (ReportViewerController).
+    Layout = null;
+    var lib = Url.Content("~/lib/dxreporting-23.2.5");
+}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@Model.DisplayName</title>
+    <link href="~/css/devextreme/dx.light.css" rel="stylesheet" />
+    <link href="@lib/css/dx-analytics.common.css" rel="stylesheet" />
+    <link href="@lib/css/dx-analytics.light.css" rel="stylesheet" />
+    <link href="@lib/css/dx-webdocumentviewer.css" rel="stylesheet" />
+    <style>
+        html, body { height: 100%; margin: 0; background: #fff; }
+        #wrapViewer { position: absolute; inset: 0; }
+    </style>
+    <script src="~/js/devextreme/jquery.js"></script>
+    <script src="@lib/js/knockout.min.js"></script>
+    <script src="~/js/devextreme/dx.all.js"></script>
+    <script src="@lib/js/dx-analytics-core.min.js"></script>
+    <script src="@lib/js/dx-webdocumentviewer.min.js"></script>
+</head>
+<body>
+    <div id="wrapViewer">
+        @(Html.DevExpress().WebDocumentViewer("reportViewer")
+            .Height("100%")
+            .Bind(Model))
+    </div>
+</body>
+</html>

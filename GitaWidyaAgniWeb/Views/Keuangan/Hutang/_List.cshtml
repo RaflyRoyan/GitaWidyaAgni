@@ -1,0 +1,30 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.HutangVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Keuangan
+
+@(Html.DevExtreme().DataGrid<HutangVM.Row>()
+    .ID("tblGrid")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Hutang Organisasi")
+    .Summary(s => s.TotalItems(t =>
+    {
+        t.AddFor(m => m.Amount).SummaryType(SummaryType.Sum).ValueFormat("#,##0").DisplayFormat("{0}");
+        t.AddFor(m => m.Sisa).SummaryType(SummaryType.Sum).ValueFormat("#,##0").DisplayFormat("{0}");
+    }))
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.DebtNumber).Caption("Nomor").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.CreditorName).Caption("Pemberi Pinjaman").CssClass("fw-medium");
+        columns.AddFor(m => m.Description).Caption("Keterangan");
+        columns.AddFor(m => m.DebtDate).Caption("Tanggal").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.DueDate).Caption("Jatuh Tempo").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.Amount).Caption("Nominal").Format("#,##0");
+        columns.AddFor(m => m.PaidAmount).Caption("Dibayar").Format("#,##0");
+        columns.AddFor(m => m.Sisa).Caption("Sisa").Format("#,##0").CssClass("fw-semibold");
+        columns.AddFor(m => m.Periode).Caption("Periode").Visible(false);
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Hutang.statusTemplate"));
+        columns.AddAction("Hutang.actionTemplate");
+    })
+)

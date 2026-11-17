@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Inventaris.AsetVM.ListInspeksi
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Inventaris
+
+@(Html.DevExtreme().DataGrid<AsetVM.InspeksiRow>()
+    .ID("tblInspeksi")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Inspeksi Aset")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.InspectedAt).Caption("Waktu").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.Aset).Caption("Aset").CssClass("fw-medium");
+        columns.AddFor(m => m.UnitCode).Caption("Unit").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Kondisi).Caption("Kondisi").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Aset.conditionTemplate"));
+        columns.AddFor(m => m.Notes).Caption("Catatan");
+        columns.AddFor(m => m.DariPengembalian).Caption("Pengembalian").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Aset.inspectionActionTemplate");
+    })
+)

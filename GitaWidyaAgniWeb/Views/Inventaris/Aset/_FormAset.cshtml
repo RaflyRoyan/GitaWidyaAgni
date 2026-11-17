@@ -1,0 +1,68 @@
+@model GitaWidyaAgniWeb.Models.Inventaris.AsetVM.AddAset
+@using GitaWidyaAgniWeb.Models.Inventaris
+@* Pelacakan dan prefix unit tetap setelah dibuat. Aset per unit membuat sejumlah unit (kode prefix + 3 digit) saat disimpan. *@
+@{
+    var editModel = Model as AsetVM.EditAset;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-music-2-line"></i></span>
+            <div>
+                <div class="gwa-mform-info-title">@Model.Row.Name</div>
+                <div class="gwa-mform-info-meta">
+                    <span>Status <b>@editModel!.StatusText</b></span>
+                    <span>@(editModel.PerUnit ? $"Per unit · prefix {Model.Row.UnitPrefix}" : "Per jumlah")</span>
+                    <span>Jumlah <b>@Model.Row.Quantity</b> (ubah lewat unit / mutasi)</span>
+                </div>
+            </div>
+        </div>
+    }
+    @(Html.DevExtreme().Form<AsetVM.NewAset>()
+        .ID("frmAset")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddGroup().Caption("Identitas").ColSpan(3).ColCount(3).Items(g =>
+            {
+                g.AddSimpleFor(m => m.AssetCode).Editor(e => e.TextBox().MaxLength(50).InputAttr(new { style = "text-transform:uppercase" }));
+                g.AddSimpleFor(m => m.Name).ColSpan(2).Editor(e => e.TextBox().MaxLength(150));
+                g.AddSimpleFor(m => m.CategoryId).Editor(e => e.SelectBox().DataSource(Model.KategoriOpsi).ValueExpr("Value").DisplayExpr("Text"));
+                g.AddSimpleFor(m => m.Brand).Editor(e => e.TextBox().MaxLength(100));
+                g.AddSimpleFor(m => m.Location).Editor(e => e.TextBox().MaxLength(150));
+                g.AddSimpleFor(m => m.Specification).ColSpan(3).Editor(e => e.TextArea().Height(60));
+            });
+            items.AddGroup().Caption("Jumlah & pelacakan").ColSpan(3).ColCount(4).Items(g =>
+            {
+                if (!isEdit)
+                {
+                    g.AddSimpleFor(m => m.TrackUnit).Editor(e => e.SelectBox().DataSource(Model.TrackOpsi).ValueExpr("Value").DisplayExpr("Text"));
+                    g.AddSimpleFor(m => m.UnitPrefix).Editor(e => e.TextBox().MaxLength(10).Placeholder("Wajib untuk per unit").InputAttr(new { style = "text-transform:uppercase" }));
+                    g.AddSimpleFor(m => m.Quantity).Editor(e => e.NumberBox().Min(0).ShowSpinButtons(true).Format("#0"));
+                }
+                g.AddSimpleFor(m => m.Unit).Editor(e => e.TextBox().MaxLength(30));
+                g.AddSimpleFor(m => m.AssetCondition).Editor(e => e.SelectBox().DataSource(Model.KondisiOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            });
+            items.AddGroup().Caption("Perolehan & tarif peminjaman").ColSpan(3).ColCount(4).Items(g =>
+            {
+                g.AddSimpleFor(m => m.AcquisitionSource).Editor(e => e.SelectBox().DataSource(Model.SumberOpsi).ValueExpr("Value").DisplayExpr("Text"));
+                g.AddSimpleFor(m => m.AcquisitionDate).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd").ShowClearButton(true));
+                g.AddSimpleFor(m => m.AcquisitionCost).Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+                g.AddEmpty();
+                g.AddSimpleFor(m => m.RentalFeePerDay).Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+                g.AddSimpleFor(m => m.LateFeePerDay).Editor(e => e.NumberBox().Min(0).Format("Rp #,##0"));
+            });
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Aset.save('Aset', @(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

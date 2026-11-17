@@ -1,0 +1,20 @@
+@model GitaWidyaAgniWeb.Models.Kemitraan.SponsorshipVM.ListPaket
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kemitraan
+
+@(Html.DevExtreme().DataGrid<SponsorshipVM.PaketRow>()
+    .ID("tblPaket")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Paket Sponsorship")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddFor(m => m.SeqNo).Caption("#").Width(50).Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.Name).Caption("Paket").CssClass("fw-medium");
+        columns.AddFor(m => m.Price).Caption("Harga").Format("#,##0");
+        columns.AddFor(m => m.Benefit).Caption("Benefit");
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Sponsorship.packageActionTemplate");
+    })
+)

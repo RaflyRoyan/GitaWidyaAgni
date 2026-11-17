@@ -1,0 +1,64 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.TransaksiVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Transaksi Keuangan";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-exchange-dollar-line align-bottom me-1"></i> Transaksi Keuangan</h5>
+        <p class="gwa-card-intro">Transaksi baru berstatus Draft; posting untuk memasukkannya ke saldo. Transaksi yang dibuat dokumen lain (pengajuan dana, iuran, hutang, pengadaan, penjualan, peminjaman) dibatalkan dari dokumennya.</p>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs gwa-tabs mb-3 flex-nowrap overflow-auto" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabTransaksi" data-tab="Transaksi" type="button" role="tab"><i class="ri-exchange-dollar-line me-1"></i>Transaksi</button></li>
+            <li class="nav-item"><button class="nav-link text-nowrap" data-bs-toggle="tab" data-bs-target="#tabSaldo" data-tab="Saldo" type="button" role="tab"><i class="ri-scales-3-line me-1"></i>Saldo Periode</button></li>
+            <li class="nav-item"><button class="nav-link text-nowrap" data-bs-toggle="tab" data-bs-target="#tabAkun" data-tab="Akun" type="button" role="tab"><i class="ri-bank-line me-1"></i>Akun Kas</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabKategori" data-tab="Kategori" type="button" role="tab"><i class="ri-price-tag-3-line me-1"></i>Kategori</button></li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tabTransaksi" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Transaksi", "Transaksi.add(\"Transaksi\")",
+                    ("btn-outline-info", "ri-attachment-2", "Lampiran"),
+                    ("btn-outline-primary", "ri-check-double-line", "Posting"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah (Draft)"),
+                    ("btn-outline-secondary", "ri-close-circle-line", "Batalkan"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus (Draft)")) { LegendId = "legendTransaksi" }' />
+                <div id="targetTransaksi" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabSaldo" role="tabpanel">
+                <div id="targetSaldo"></div>
+            </div>
+            <div class="tab-pane fade" id="tabAkun" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Akun", "Transaksi.add(\"Akun\")",
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah akun"),
+                    ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan")) { LegendId = "legendAkun" }' />
+                <div id="targetAkun" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabKategori" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Kategori", "Transaksi.add(\"Kategori\")",
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah kategori"),
+                    ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan")) { LegendId = "legendKategori" }' />
+                <div id="targetKategori" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.TransaksiUrl = {};
+        ['Transaksi', 'Akun', 'Kategori', 'Saldo'].forEach(function (t) {
+            ['List', 'Add', 'Edit', 'Simpan', 'Update', 'Hapus'].forEach(function (a) {
+                window.TransaksiUrl[a.toLowerCase() + t] = '@Url.Action("__")'.replace('__', a + t);
+            });
+        });
+        ['PostingTransaksi', 'BatalTransaksi', 'Lampiran', 'TambahLampiran', 'HapusLampiran', 'BerkasLampiran',
+            'BukaSaldo', 'SegarkanSaldo', 'TutupSaldo', 'BukaLagiSaldo'].forEach(function (a) {
+            window.TransaksiUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Keuangan/Transaksi.js" asp-append-version="true"></script>
+}

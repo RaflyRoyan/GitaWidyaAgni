@@ -1,0 +1,20 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.TimPelaksanaVM.ListSeksi
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<TimPelaksanaVM.SeksiRow>()
+    .ID("tblSeksi")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Seksi Panitia")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Seksi").CssClass("fw-medium");
+        columns.AddFor(m => m.Description).Caption("Keterangan");
+        columns.AddFor(m => m.Koordinator).Caption("Koordinator");
+        columns.AddFor(m => m.JumlahAnggota).Caption("Anggota").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
+        columns.AddFor(m => m.SeqNo).Caption("Urutan").Alignment(HorizontalAlignment.Center).Width(90);
+        columns.AddAction("TimPelaksana.seksiActionTemplate");
+    })
+)

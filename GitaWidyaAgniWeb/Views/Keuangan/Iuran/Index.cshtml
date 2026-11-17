@@ -1,0 +1,47 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.IuranVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Iuran";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-money-dollar-circle-line align-bottom me-1"></i> Iuran Anggota</h5>
+        <p class="gwa-card-intro">Buat tagihan massal per periode, catat pembayaran (otomatis menjadi transaksi Pemasukan), atau bebaskan tagihan. Hanya tagihan Belum Dibayar yang bisa diubah atau dihapus.</p>
+    </div>
+    <div class="card-body">
+        <ul class="nav nav-tabs gwa-tabs mb-3" role="tablist">
+            <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabTagihan" data-tab="Tagihan" type="button" role="tab"><i class="ri-bill-line me-1"></i>Tagihan</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabPengaturan" data-tab="Pengaturan" type="button" role="tab"><i class="ri-settings-4-line me-1"></i>Pengaturan Iuran</button></li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="tabTagihan" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Buat Tagihan", "Iuran.generate()",
+                    ("btn-outline-success", "ri-hand-coin-line", "Catat bayar"),
+                    ("btn-outline-secondary", "ri-arrow-go-back-line", "Batal bayar"),
+                    ("btn-outline-info", "ri-gift-line", "Bebaskan / batal bebas"),
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah nominal / jatuh tempo"),
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus")) { LegendId = "legendTagihan" }' />
+                <div id="targetTagihan" class="mt-3"></div>
+            </div>
+            <div class="tab-pane fade" id="tabPengaturan" role="tabpanel">
+                <partial name="_Toolbar" model='new ToolbarModel("Tambah Iuran", "Iuran.add()",
+                    ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+                    ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan")) { LegendId = "legendPengaturan" }' />
+                <div id="targetPengaturan" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.IuranUrl = {};
+        ['ListTagihan', 'Generate', 'Buat', 'EditTagihan', 'UpdateTagihan', 'HapusTagihan', 'Bayar', 'SimpanBayar', 'BatalBayar', 'Bebaskan', 'BatalBebas',
+            'ListPengaturan', 'AddPengaturan', 'EditPengaturan', 'SimpanPengaturan', 'UpdatePengaturan', 'HapusPengaturan'].forEach(function (a) {
+            window.IuranUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Keuangan/Iuran.js" asp-append-version="true"></script>
+}

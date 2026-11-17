@@ -1,0 +1,23 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.TransaksiVM.ListAkun
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Keuangan
+
+@(Html.DevExtreme().DataGrid<TransaksiVM.AkunRow>()
+    .ID("tblAkun")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Akun Kas")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Akun").CssClass("fw-medium");
+        columns.AddFor(m => m.Jenis).Caption("Jenis").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.BankName).Caption("Bank / Penyedia");
+        columns.AddFor(m => m.AccountNumber).Caption("Nomor").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.AccountHolder).Caption("Atas Nama");
+        columns.AddFor(m => m.OpeningBalance).Caption("Saldo Awal").Format("#,##0");
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Transaksi.masterActionTemplate('Akun')");
+    })
+)

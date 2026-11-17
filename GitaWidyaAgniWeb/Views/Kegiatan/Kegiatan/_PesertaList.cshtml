@@ -1,0 +1,20 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.KegiatanVM.PesertaList
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<KegiatanVM.PesertaRow>()
+    .ID("tblPeserta")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Peserta Kegiatan")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Nama).Caption("Anggota").CssClass("fw-medium");
+        columns.AddFor(m => m.Peran).Caption("Peran").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.InsDate).Caption("Terdaftar").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Kegiatan.participantStatusTemplate"));
+        columns.AddAction("Kegiatan.participantActionTemplate");
+    })
+)

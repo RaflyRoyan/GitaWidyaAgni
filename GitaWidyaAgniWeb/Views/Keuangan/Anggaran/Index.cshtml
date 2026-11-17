@@ -1,0 +1,34 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.AnggaranVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Anggaran";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-file-list-3-line align-bottom me-1"></i> Anggaran</h5>
+        <p class="gwa-card-intro">Susun rincian anggaran per periode lalu ajukan. Mata anggaran yang disetujui dipakai transaksi dan pengajuan dana; realisasi dihitung dari pengeluaran yang diposting.</p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel("Tambah Anggaran", "Anggaran.add()",
+            ("btn-outline-success", "ri-list-check-2", "Rincian & dokumen"),
+            ("btn-outline-primary", "ri-send-plane-line", "Ajukan"),
+            ("btn-outline-success", "ri-check-double-line", "Setujui"),
+            ("btn-outline-secondary", "ri-close-circle-line", "Tolak"),
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
+            ("btn-outline-danger", "ri-delete-bin-line", "Hapus"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.AnggaranUrl = {};
+        ['List', 'Add', 'Edit', 'SimpanBaru', 'Update', 'Ajukan', 'Setujui', 'Tolak', 'Delete', 'Rincian', 'ItemList', 'TambahItem', 'HapusItem',
+            'TambahDokumen', 'HapusDokumen', 'BerkasDokumen'].forEach(function (a) {
+            window.AnggaranUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Keuangan/Anggaran.js" asp-append-version="true"></script>
+}

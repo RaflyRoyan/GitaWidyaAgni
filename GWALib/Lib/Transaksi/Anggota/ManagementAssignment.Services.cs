@@ -1,4 +1,5 @@
 ﻿using GWALib.General;
+using GWALib.Lib.Transaksi.Information;
 using GWALib.General.Utilities;
 using GWALib.Lib.Master.Anggota;
 using GWAShared.Enums;
@@ -248,6 +249,9 @@ namespace GWALib.Lib.Transaksi.Anggota
                 member.UpdDate = DateTime.Now;
                 member.UpdBy = userId;
             }
+            var position = context.MPositions.Where(x => x.Id == row.PositionId).Select(x => x.Name).FirstOrDefault();
+            NotifyHelper.ToMember(context, row.MemberId, NotifyHelper.TYPE_ASSIGNMENT, "Anda ditetapkan sebagai " + position,
+                row.SkNumber != null ? "SK " + row.SkNumber : null, NotifyHelper.LINK_MY_PROFILE, "t_management_assignment", row.Id, userId);
             return row;
         }
         // Periode, anggota dan jabatan tetap (salah pilih = hapus lalu buat ulang); penugasan yang sudah berakhir dikunci.

@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.DivisiVM.AnggotaList
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Organisasi
+
+@(Html.DevExtreme().DataGrid<DivisiVM.AnggotaRow>()
+    .ID("tblDivisiAnggota")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .DetailGrid("Belum ada anggota di divisi ini.")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Nama).Caption("Anggota").CssClass("fw-medium");
+        columns.AddFor(m => m.Peran).Caption("Peran").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.Periode).Caption("Periode");
+        columns.AddFor(m => m.JoinedAt).Caption("Bergabung").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.LeftAt).Caption("Keluar").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddAction("Divisi.memberActionTemplate");
+    })
+)

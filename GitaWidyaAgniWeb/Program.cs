@@ -2,6 +2,8 @@ using GitaWidyaAgniWeb.Infrastructure;
 using GWALib.General;
 using GWALib.Lib.Master.Akses;
 using GWALib.Lib.Transaksi.EVoting;
+using DevExpress.AspNetCore;
+using DevExpress.AspNetCore.Reporting;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -30,8 +32,16 @@ if (!string.IsNullOrWhiteSpace(bootstrapUser) && !string.IsNullOrWhiteSpace(boot
 }
 
 builder.Services.AddMemoryCache();
+// DevExpress Reporting: Web Document Viewer (endpoint DXXRDV, Controllers/ReportViewerController.cs). Client viewer
+// 23.2.5 di wwwroot/lib/dxreporting-23.2.5, dimuat halaman viewer mandiri (mis. Views/Inventaris/Aset/LabelQr.cshtml).
+builder.Services.AddDevExpressControls();
+builder.Services.ConfigureReportingServices(cfg => cfg.ConfigureWebDocumentViewer(viewer => viewer.UseCachedReportSourceBuilder()));
 builder.Services.AddSingleton<AccessService>();
 builder.Services.AddScoped<AccessFilter>();
+// Job terjadwal (README "Job terjadwal") dan pengirim t_message_outbox (Smtp:* / WhatsApp:* dari user-secrets).
+builder.Services.AddHttpClient();
+builder.Services.AddSingleton<GitaWidyaAgniWeb.Infrastructure.Jobs.MessageSender>();
+builder.Services.AddHostedService<GitaWidyaAgniWeb.Infrastructure.Jobs.ScheduledJobService>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -69,6 +79,8 @@ builder.Services.AddControllersWithViews(options =>
         options.Filters.Add(new AuthorizeFilter(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build()));
         options.Filters.Add<AccessFilter>();
         options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+        // Aksi tulis yang berhasil dicatat ke t_activity_log.
+        options.Filters.Add<ActivityLogFilter>();
         // Validasi data ada di GWALib; string non-nullable jangan dianggap [Required] oleh model binding.
         options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
         // Form dibaca dengan InvariantCulture (desimal titik, tanggal ISO).
@@ -101,8 +113,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseDevExpressControls();
 
 app.UseRouting();
+app.UseMiddleware<RequestInfoMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

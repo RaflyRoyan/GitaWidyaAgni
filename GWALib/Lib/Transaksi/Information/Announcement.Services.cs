@@ -57,15 +57,15 @@ namespace GWALib.Lib.Transaksi.Information
         }
         public Response<Announcement> Publish(string user)
         {
-            return Run((context, row, userId) => SetStatus(row, PublicationStatus.Published, userId), user);
+            return Run((context, row, userId) => SetStatus(context, row, PublicationStatus.Published, userId), user);
         }
         public Response<Announcement> Unpublish(string user)
         {
-            return Run((context, row, userId) => SetStatus(row, PublicationStatus.Draft, userId), user);
+            return Run((context, row, userId) => SetStatus(context, row, PublicationStatus.Draft, userId), user);
         }
         public Response<Announcement> Archive(string user)
         {
-            return Run((context, row, userId) => SetStatus(row, PublicationStatus.Archived, userId), user);
+            return Run((context, row, userId) => SetStatus(context, row, PublicationStatus.Archived, userId), user);
         }
         public Response<Announcement> Delete(string user)
         {
@@ -125,15 +125,15 @@ namespace GWALib.Lib.Transaksi.Information
         }
         public Task<Response<Announcement>> PublishAsync(string user)
         {
-            return RunAsync((context, row, userId) => SetStatus(row, PublicationStatus.Published, userId), user);
+            return RunAsync((context, row, userId) => SetStatus(context, row, PublicationStatus.Published, userId), user);
         }
         public Task<Response<Announcement>> UnpublishAsync(string user)
         {
-            return RunAsync((context, row, userId) => SetStatus(row, PublicationStatus.Draft, userId), user);
+            return RunAsync((context, row, userId) => SetStatus(context, row, PublicationStatus.Draft, userId), user);
         }
         public Task<Response<Announcement>> ArchiveAsync(string user)
         {
-            return RunAsync((context, row, userId) => SetStatus(row, PublicationStatus.Archived, userId), user);
+            return RunAsync((context, row, userId) => SetStatus(context, row, PublicationStatus.Archived, userId), user);
         }
         public async Task<Response<Announcement>> DeleteAsync(string user)
         {
@@ -331,14 +331,18 @@ namespace GWALib.Lib.Transaksi.Information
             row.UpdDate = DateTime.Now;
             row.UpdBy = userId;
         }
-        private static void SetStatus(EF.TAnnouncement row, PublicationStatus target, int userId)
+        private static void SetStatus(EF.ModelContext context, EF.TAnnouncement row, PublicationStatus target, int userId)
         {
             var current = (PublicationStatus)row.Status;
             switch (target)
             {
                 case PublicationStatus.Published:
                     TransaksiHelper.ValidateStatus(current, "menerbitkan berita", PublicationStatus.Draft, PublicationStatus.Archived);
-                    row.PublishedAt ??= DateTime.Now;
+                    if (row.PublishedAt == null)
+                    {
+                        row.PublishedAt = DateTime.Now;
+                        NotifyPublished(context, row, userId);
+                    }
                     break;
                 case PublicationStatus.Draft:
                     TransaksiHelper.ValidateStatus(current, "membatalkan terbit berita", PublicationStatus.Published);
@@ -354,6 +358,13 @@ namespace GWALib.Lib.Transaksi.Information
         private static void ValidateDelete(EF.TAnnouncement row)
         {
             TransaksiHelper.ValidateStatus((PublicationStatus)row.Status, "menghapus berita", PublicationStatus.Draft, PublicationStatus.Archived);
+        }
+        // Terbit pertama kali: kabari semua anggota aktif yang punya akun.
+        private static void NotifyPublished(EF.ModelContext context, EF.TAnnouncement row, int userId)
+        {
+            var users = context.MMembers.Where(x => x.Status == (int)MemberStatus.Active && x.UserId != null).Select(x => x.UserId).ToList();
+            NotifyHelper.ToUsers(context, users, NotifyHelper.TYPE_NEWS, "Berita baru: " + row.Title, row.Excerpt,
+                NotifyHelper.LINK_NEWS + row.Slug, "t_announcement", row.Id, userId);
         }
         #endregion
     }

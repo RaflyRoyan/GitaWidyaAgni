@@ -1,0 +1,32 @@
+@model GitaWidyaAgniWeb.Models.Merchandise.MerchandiseVM.Stok
+@using GitaWidyaAgniWeb.Models.Merchandise
+@* Masuk = positif; Penyesuaian boleh negatif; Rusak/Hilang diisi positif (dicatat negatif). Stok tidak boleh minus. *@
+
+<div class="gwa-mform">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-stack-line"></i></span>
+        <div><div class="gwa-mform-info-title">@Model.Nama</div></div>
+    </div>
+    @(Html.DevExtreme().Form<MerchandiseVM.StokInput>()
+        .ID("frmStok")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            if (Model.VarianOpsi.Count > 0)
+            {
+                items.AddSimpleFor(m => m.VariantId).Editor(e => e.SelectBox().DataSource(Model.VarianOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            }
+            items.AddSimpleFor(m => m.MovementType).Editor(e => e.SelectBox().DataSource(Model.JenisOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.Quantity).Editor(e => e.NumberBox().ShowSpinButtons(true).Format("#0"));
+            items.AddSimpleFor(m => m.Notes).ColSpan(3).Editor(e => e.TextBox().MaxLength(255));
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Merchandise.saveStock()"><i class="ri-save-3-line align-bottom me-1"></i> Simpan</button>
+    </div>
+</div>

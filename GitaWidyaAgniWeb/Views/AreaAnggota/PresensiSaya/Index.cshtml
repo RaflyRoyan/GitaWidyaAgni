@@ -1,0 +1,148 @@
+@model List<GitaWidyaAgniWeb.Controllers.AreaAnggota.PresensiSayaController.Riwayat>?
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@{
+    ViewData["Title"] = "Presensi";
+}
+
+@if (Model == null)
+{
+    <partial name="~/Views/AreaAnggota/_BukanAnggota.cshtml" />
+}
+else
+{
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><i class="ri-qr-scan-2-line align-bottom me-1"></i> Presensi</h5>
+                    <p class="gwa-card-intro mb-0">Scan QR yang ditampilkan panitia, ambil foto selfie, lalu kirim. Izinkan akses kamera dan lokasi bila diminta.</p>
+                </div>
+                <div class="card-body">
+                    <ol class="list-unstyled mb-0 d-grid gap-3">
+                        <li>
+                            <div class="fw-semibold mb-2">1. Kode sesi</div>
+                            <div id="qrReader" class="rounded overflow-hidden mb-2" style="max-width:360px"></div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-primary" id="btnScan" onclick="PresensiSaya.scan()"><i class="ri-qr-scan-line me-1"></i> Scan QR</button>
+                                <input id="qrToken" class="form-control" placeholder="atau ketik kode" aria-label="Kode sesi" autocomplete="off" />
+                            </div>
+                        </li>
+                        <li>
+                            <label class="fw-semibold mb-2 d-block" for="fotoSelfie">2. Foto selfie</label>
+                            <input id="fotoSelfie" type="file" accept="image/*" capture="user" class="form-control" onchange="PresensiSaya.preview(this)" />
+                            <img id="fotoPreview" alt="Pratinjau foto" class="mt-2 rounded" style="max-height:160px" hidden />
+                        </li>
+                        <li>
+                            <div class="fw-semibold mb-1">3. Lokasi</div>
+                            <div id="lokasiInfo" class="small text-muted" aria-live="polite">Mengambil lokasi...</div>
+                        </li>
+                        <li class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-success flex-grow-1" onclick="PresensiSaya.send(false)"><i class="ri-login-box-line me-1"></i> Check-in</button>
+                            <button type="button" class="btn btn-outline-secondary flex-grow-1" onclick="PresensiSaya.send(true)"><i class="ri-logout-box-r-line me-1"></i> Check-out</button>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-history-line align-bottom me-1"></i> Riwayat Presensi</h5></div>
+                @if (Model.Count == 0)
+                {
+                    <div class="card-body text-muted">Belum ada presensi.</div>
+                }
+                else
+                {
+                    <div class="table-responsive" style="max-height:520px">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead class="table-light"><tr><th>Sesi</th><th>Masuk</th><th>Keluar</th><th>Status</th></tr></thead>
+                            <tbody>
+                                @foreach (var r in Model)
+                                {
+                                    var st = r.Record.Status;
+                                    <tr>
+                                        <td><div>@r.Sesi</div><div class="small text-muted">@r.OpenAt.ToString("dd MMM yyyy")</div></td>
+                                        <td>@(r.Record.CheckInAt?.ToString("HH:mm") ?? "-")</td>
+                                        <td>@(r.Record.CheckOutAt?.ToString("HH:mm") ?? "-")</td>
+                                        <td><span class="badge @(st == AttendanceStatus.Hadir ? "badge-soft-success" : st == AttendanceStatus.Terlambat ? "badge-soft-warning" : st == AttendanceStatus.Alpa ? "badge-soft-danger" : "badge-soft-info")">@EnumHelper.Text(st)</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    @if (Model != null)
+    {
+        <script src="~/js/html5-qrcode.min.js"></script>
+        <script>
+            window.PresensiSaya = (function () {
+                let scanner = null;
+                let pos = null;
+
+                function locate() {
+                    const info = $('#lokasiInfo');
+                    if (!navigator.geolocation) { info.text('Perangkat tidak mendukung lokasi.'); return; }
+                    navigator.geolocation.getCurrentPosition(function (p) {
+                        pos = p.coords;
+                        info.text('Lokasi didapat (akurasi ±' + Math.round(p.coords.accuracy) + ' m).');
+                    }, function () {
+                        info.text('Lokasi tidak diizinkan. Presensi bisa ditolak bila sesi mewajibkan lokasi.');
+                    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+                }
+
+                function stopScan() {
+                    if (!scanner) return;
+                    scanner.stop().catch(function () { }).finally(function () { scanner.clear(); scanner = null; });
+                    $('#btnScan').prop('disabled', false);
+                }
+                function scan() {
+                    if (scanner) { stopScan(); return; }
+                    scanner = new Html5Qrcode('qrReader');
+                    $('#btnScan').prop('disabled', true);
+                    scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 240 }, function (text) {
+                        $('#qrToken').val(text);
+                        AppUI.alertSuccess('QR terbaca.');
+                        stopScan();
+                    }).catch(function () {
+                        AppUI.alertWarning('Kamera tidak bisa dibuka. Ketik kode sesi secara manual.');
+                        scanner = null;
+                        $('#btnScan').prop('disabled', false);
+                    });
+                }
+
+                function preview(input) {
+                    const f = input.files && input.files[0];
+                    const img = $('#fotoPreview');
+                    if (!f) { img.prop('hidden', true); return; }
+                    img.attr('src', URL.createObjectURL(f)).prop('hidden', false);
+                }
+
+                function send(keluar) {
+                    const data = {
+                        token: $.trim($('#qrToken').val() || ''),
+                        keluar: keluar,
+                        foto: ($('#fotoSelfie')[0].files || [])[0] || null,
+                        lat: pos ? pos.latitude.toFixed(7) : null,
+                        lng: pos ? pos.longitude.toFixed(7) : null
+                    };
+                    if (!data.token) { AppUI.alertWarning('Scan QR sesi atau isi kodenya.'); return; }
+                    if (!data.foto) { AppUI.alertWarning('Ambil foto selfie dulu.'); return; }
+                    AppUI.postForm('@Url.Action("Kirim")', AppUI.toFormData(data)).done(function (r) {
+                        AppUI.alertSuccess(r.Message + (r.Data ? ' Status: ' + r.Data + '.' : ''));
+                        setTimeout(function () { window.location.reload(); }, 1200);
+                    });
+                }
+
+                $(locate);
+                return { scan: scan, preview: preview, send: send };
+            })();
+        </script>
+    }
+}

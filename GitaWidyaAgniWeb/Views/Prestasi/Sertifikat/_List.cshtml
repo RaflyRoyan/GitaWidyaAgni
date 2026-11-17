@@ -1,0 +1,23 @@
+@model GitaWidyaAgniWeb.Models.Prestasi.SertifikatVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Prestasi
+
+@(Html.DevExtreme().DataGrid<SertifikatVM.Row>()
+    .ID("tblSertifikat")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Sertifikat")
+    .OnRowPrepared("Sertifikat.rowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.CertificateNumber).Caption("Nomor").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.MemberName).Caption("Anggota").CssClass("fw-medium");
+        columns.AddFor(m => m.Jenis).Caption("Jenis");
+        columns.AddFor(m => m.Title).Caption("Judul");
+        columns.AddFor(m => m.IssuedDate).Caption("Terbit").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.VerificationCode).Caption("Kode Verifikasi").CellTemplate(new JS("AppUI.codeTemplate"));
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Sertifikat.statusTemplate"));
+        columns.AddAction("Sertifikat.actionTemplate");
+    })
+)

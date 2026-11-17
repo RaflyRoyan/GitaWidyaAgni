@@ -22,6 +22,8 @@ namespace GWALib.Lib.Transaksi.Program
             public int PeriodId { get; set; }
             public int? PreviousProgramId { get; set; }
             public int? PicMemberId { get; set; }
+            public int? DivisionId { get; set; }
+            public ProgramTerm? Term { get; set; }
             public string Title { get; set; } = null!;
             public string? Description { get; set; }
             public DateOnly? StartDate { get; set; }
@@ -35,6 +37,10 @@ namespace GWALib.Lib.Transaksi.Program
         public int? PreviousProgramId { get; set; }
         public int? PicMemberId { get; set; }
         public string? PicMemberName { get; private set; }
+        // Bidang / divisi pelaksana dan jangka (pendek / panjang); dipakai pengelompokan evaluasi program di LPJ kepengurusan.
+        public int? DivisionId { get; set; }
+        public string? DivisionName { get; private set; }
+        public ProgramTerm? Term { get; set; }
         public string Title { get; set; } = null!;
         public string? Description { get; set; }
         public DateOnly? StartDate { get; set; }
@@ -51,7 +57,7 @@ namespace GWALib.Lib.Transaksi.Program
         {
             get
             {
-                return DBClass.GetContext().TPrograms.Include(x => x.Period).Include(x => x.PicMember).AsQueryable();
+                return DBClass.GetContext().TPrograms.Include(x => x.Period).Include(x => x.PicMember).Include(x => x.Division).AsQueryable();
             }
         }
         public WorkProgram()
@@ -79,6 +85,9 @@ namespace GWALib.Lib.Transaksi.Program
             PreviousProgramId = row.PreviousProgramId;
             PicMemberId = row.PicMemberId;
             PicMemberName = row.PicMember?.Fullname;
+            DivisionId = row.DivisionId;
+            DivisionName = row.Division?.Name;
+            Term = (ProgramTerm?)row.Term;
             Title = row.Title;
             Description = row.Description;
             StartDate = row.StartDate;

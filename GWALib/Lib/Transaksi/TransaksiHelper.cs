@@ -45,7 +45,7 @@ namespace GWALib.Lib.Transaksi
         }
         // Nomor dokumen dari DocumentNumberSeq bila format jenis dokumen aktif; kalau belum diatur dipakai PREFIX/yyyyMMdd/id.
         // Panggil di dalam BeginTransaction supaya nomor ikut di-rollback bila dokumen gagal disimpan.
-        internal static string GenerateNumber(EF.ModelContext context, string documentType, DateTime date, string fallbackPrefix, int id, int userId)
+        internal static string GenerateNumber(EF.ModelContext context, string documentType, DateTime date, string fallbackPrefix, int id, int? userId)
         {
             if (context.MDocumentNumberFormats.Any(x => x.DocumentType == documentType && x.IsActive == (int)ActiveStatus.Aktif))
             {

@@ -1,0 +1,22 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.IuranVM.ListPengaturan
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Keuangan
+
+@(Html.DevExtreme().DataGrid<IuranVM.PengaturanRow>()
+    .ID("tblPengaturanIuran")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Pengaturan Iuran")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Name).Caption("Iuran").CssClass("fw-medium");
+        columns.AddFor(m => m.Periode).Caption("Periode");
+        columns.AddFor(m => m.Frekuensi).Caption("Frekuensi");
+        columns.AddFor(m => m.Amount).Caption("Nominal").Format("#,##0");
+        columns.AddFor(m => m.Kategori).Caption("Kategori");
+        columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Iuran.settingActionTemplate");
+    })
+)

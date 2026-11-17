@@ -1,0 +1,52 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.PresensiVM.AddNotulen
+@using GitaWidyaAgniWeb.Models.Kegiatan
+@* Form bersama Add & Edit notulen. Sesi tetap setelah dibuat; Final mengunci notulen. Lampiran lewat FormData. *@
+@{
+    var editModel = Model as PresensiVM.EditNotulen;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-file-text-line"></i></span>
+            <div><div class="gwa-mform-info-title">@editModel!.Sesi</div></div>
+        </div>
+    }
+    @(Html.DevExtreme().Form<PresensiVM.NewNotulen>()
+        .ID("frmNotulen")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            if (!isEdit)
+            {
+                items.AddSimpleFor(m => m.SessionId).ColSpan(2).Editor(e => e.SelectBox().DataSource(Model.SesiOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).Placeholder("Sesi Dibuka / Ditutup tanpa notulen"));
+            }
+            items.AddSimpleFor(m => m.ChairedByMemberId).Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.NotulisMemberId).Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true));
+            items.AddSimpleFor(m => m.Agenda).ColSpan(2).Editor(e => e.TextArea().Height(60));
+            items.AddSimpleFor(m => m.Content).ColSpan(2).Editor(e => e.TextArea().Height(140));
+            items.AddSimpleFor(m => m.Decisions).Editor(e => e.TextArea().Height(80));
+            items.AddSimpleFor(m => m.FollowUp).Editor(e => e.TextArea().Height(80));
+        })
+    )
+    <div class="gwa-mform-section"><span class="gwa-mform-section-title">Lampiran</span></div>
+    @if (!string.IsNullOrEmpty(Model.FileName))
+    {
+        <div class="gwa-mform-note d-flex align-items-center gap-2">
+            <i class="ri-file-text-line"></i><span>@Model.FileName</span>
+            <label class="ms-auto form-check-label"><input type="checkbox" class="form-check-input me-1" id="chkHapusBerkasNotulen" /> Hapus berkas</label>
+        </div>
+    }
+    @(Html.DevExtreme().FileUploader().ID("fileNotulen").UploadMode(FileUploadMode.UseForm).Multiple(false)
+        .MaxFileSize(10 * 1024 * 1024).SelectButtonText("Pilih berkas").LabelText("atau tarik berkas ke sini"))
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Presensi.saveMinute(@(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

@@ -1,0 +1,65 @@
+@model GitaWidyaAgniWeb.Models.Inventaris.AsetVM.Unit
+@using GitaWidyaAgniWeb.Models.Inventaris
+@* Unit ber-QR: isi QR = kode unit. Centang unit lalu Cetak Label; setelah dicetak, unit ditandai label tercetak. *@
+
+<div class="gwa-mform" id="asetUnit" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-qr-code-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Nama</div>
+            <div class="gwa-mform-info-meta"><span>Unit Dipinjam / Perawatan tidak bisa dihapus. Nomor unit yang dihapus tidak dipakai ulang.</span></div>
+        </div>
+    </div>
+    <div class="gwa-mform-add">
+        <div class="gwa-mform-add-form">
+            @(Html.DevExtreme().Form<AsetVM.UnitInput>()
+                .ID("frmUnit")
+                .FormData(Model.Input)
+                .LabelLocation(FormLabelLocation.Top)
+                .ShowColonAfterLabel(false)
+                .ColCount(3)
+                .ColCountByScreen(c => c.Xs(1).Sm(1))
+                .Items(items =>
+                {
+                    items.AddSimpleFor(m => m.SerialNumber).Editor(e => e.TextBox().MaxLength(100));
+                    items.AddSimpleFor(m => m.UnitCondition).Editor(e => e.SelectBox().DataSource(Model.KondisiOpsi).ValueExpr("Value").DisplayExpr("Text"));
+                    items.AddSimpleFor(m => m.Notes).Editor(e => e.TextBox().MaxLength(255));
+                })
+            )
+        </div>
+        <button type="button" class="btn btn-outline-primary" onclick="Aset.addUnit()"><i class="ri-add-line align-bottom me-1"></i> Tambah Unit</button>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <label class="form-check-label"><input type="checkbox" class="form-check-input me-1" id="chkSemuaUnit" onchange="$('.chk-unit').prop('checked', this.checked)" /> Pilih semua</label>
+        <button type="button" class="btn btn-sm btn-outline-success ms-auto" onclick="Aset.printLabels()"><i class="ri-printer-line align-bottom me-1"></i> Cetak Label QR</button>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+            <thead class="table-light"><tr><th style="width:36px"></th><th>Kode Unit</th><th>No. Seri</th><th>Kondisi</th><th>Status</th><th>Label</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var u in Model.Rows)
+                {
+                    var bisaHapus = u.Status == 1 || u.Status == 4;
+                    <tr>
+                        <td><input type="checkbox" class="form-check-input chk-unit" value="@u.EncDecrKey" data-code="@u.UnitCode" aria-label="Pilih @u.UnitCode" @(u.Status == 5 ? "disabled" : "") /></td>
+                        <td><span class="gwa-code">@u.UnitCode</span></td>
+                        <td>@u.SerialNumber</td>
+                        <td>@u.Kondisi</td>
+                        <td>@u.StatusText</td>
+                        <td>@(u.LabelPrintedAt?.ToString("dd MMM yyyy") ?? "-")</td>
+                        <td class="text-end">
+                            @if (bisaHapus)
+                            {
+                                <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus unit" aria-label="Hapus unit @u.UnitCode" onclick="Aset.removeUnit('@u.EncDecrKey', '@u.UnitCode')"><i class="ri-delete-bin-line"></i></button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

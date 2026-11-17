@@ -1,0 +1,25 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.PeriodeVM.ItemList
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Organisasi
+
+@(Html.DevExtreme().DataGrid<PeriodeVM.ItemRow>()
+    .ID("tblSerahTerimaItem")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .DetailGrid("Belum ada item serah terima.")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Jenis).Caption("Jenis");
+        columns.AddFor(m => m.Description).Caption("Uraian").CssClass("fw-medium");
+        columns.AddFor(m => m.RefId).Caption("Ref").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.Amount).Caption("Nominal").Format("#,##0.##");
+        columns.AddFor(m => m.Quantity).Caption("Jumlah").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.Kondisi).Caption("Kondisi");
+        columns.AddFor(m => m.Notes).Caption("Catatan");
+        if (Model.BisaUbah)
+        {
+            columns.AddAction("Periode.itemActionTemplate");
+        }
+    })
+)

@@ -1,0 +1,67 @@
+@model GitaWidyaAgniWeb.Models.Kemitraan.MitraVM.Kontak
+@using GitaWidyaAgniWeb.Models.Kemitraan
+@* Menjadikan kontak utama menurunkan kontak utama sebelumnya. *@
+
+<div class="gwa-mform" id="mitraKontak" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-contacts-book-line"></i></span>
+        <div><div class="gwa-mform-info-title">@Model.Nama</div></div>
+    </div>
+    <div class="gwa-mform-add">
+        <div class="gwa-mform-add-form">
+            @(Html.DevExtreme().Form<MitraVM.KontakInput>()
+                .ID("frmKontak")
+                .FormData(Model.Input)
+                .LabelLocation(FormLabelLocation.Top)
+                .ShowColonAfterLabel(false)
+                .ColCount(5)
+                .ColCountByScreen(c => c.Xs(1).Sm(2))
+                .Items(items =>
+                {
+                    items.AddSimpleFor(m => m.Name).Editor(e => e.TextBox().MaxLength(150));
+                    items.AddSimpleFor(m => m.Position).Editor(e => e.TextBox().MaxLength(100));
+                    items.AddSimpleFor(m => m.Phone).Editor(e => e.TextBox().MaxLength(30));
+                    items.AddSimpleFor(m => m.Email).Editor(e => e.TextBox().MaxLength(100));
+                    items.AddSimpleFor(m => m.IsPrimary).Editor(e => e.SelectBox().DataSource(Model.RankOpsi).ValueExpr("Value").DisplayExpr("Text"));
+                })
+            )
+        </div>
+        <button type="button" class="btn btn-outline-primary" onclick="Mitra.addContact()"><i class="ri-add-line align-bottom me-1"></i> Tambah</button>
+    </div>
+    @if (Model.Rows.Count == 0)
+    {
+        <p class="text-muted mb-0">Belum ada kontak.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light"><tr><th>Nama</th><th>Jabatan</th><th>Telepon</th><th>Email</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var k in Model.Rows)
+                    {
+                        <tr class="@(k.Aktif ? "" : "text-muted")">
+                            <td class="fw-medium">@k.Name @if (k.Utama) {<span class="badge badge-soft-success ms-1">Utama</span>} @if (!k.Aktif) {<span class="badge badge-soft-secondary ms-1">Nonaktif</span>}</td>
+                            <td>@k.Position</td>
+                            <td>@k.Phone</td>
+                            <td>@k.Email</td>
+                            <td class="text-end text-nowrap">
+                                @if (k.Aktif)
+                                {
+                                    @if (!k.Utama)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-icon btn-outline-success" title="Jadikan utama" aria-label="Jadikan kontak utama" onclick="Mitra.primaryContact('@k.EncDecrKey')"><i class="ri-star-line"></i></button>
+                                    }
+                                    <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Nonaktifkan kontak" aria-label="Nonaktifkan kontak" onclick="Mitra.removeContact('@k.EncDecrKey')"><i class="ri-forbid-line"></i></button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

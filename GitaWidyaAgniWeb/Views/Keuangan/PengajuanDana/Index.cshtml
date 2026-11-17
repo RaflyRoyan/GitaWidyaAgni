@@ -1,0 +1,35 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.PengajuanDanaVM.Index
+@using GitaWidyaAgniWeb.Infrastructure
+
+@{
+    ViewData["Title"] = "Pengajuan Dana";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-hand-coin-line align-bottom me-1"></i> Pengajuan Dana</h5>
+        <p class="gwa-card-intro">Persetujuan mengikuti alur FUNDING_REQUEST di Pengaturan Sistem. Setelah dicairkan, catat realisasi beserta bukti, ajukan LPJ, lalu selesaikan: sisa dana dikembalikan atau kekurangan dibayar.</p>
+    </div>
+    <div class="card-body">
+        <partial name="_Toolbar" model='new ToolbarModel("Buat Pengajuan", "PengajuanDana.add()",
+            ("btn-outline-info", "ri-file-list-3-line", "Detail, persetujuan & realisasi"),
+            ("btn-outline-primary", "ri-send-plane-line", "Ajukan / ajukan LPJ"),
+            ("btn-outline-success", "ri-check-double-line", "Setujui / selesaikan LPJ"),
+            ("btn-outline-secondary", "ri-arrow-go-back-line", "Minta revisi / kembalikan LPJ"),
+            ("btn-outline-dark", "ri-bank-line", "Cairkan"),
+            ("btn-outline-warning", "ri-edit-2-line", "Ubah (Draft)"),
+            ("btn-outline-danger", "ri-close-circle-line", "Tolak / hapus"))' />
+        <div id="target" class="mt-3"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        window.PengajuanDanaUrl = {};
+        ['List', 'Add', 'Edit', 'SimpanBaru', 'Update', 'Delete', 'Ajukan', 'Setujui', 'Tolak', 'Revisi', 'Cair', 'SimpanCair', 'Detail',
+            'TambahRealisasi', 'HapusRealisasi', 'Bukti', 'AjukanLpj', 'KembalikanLpj', 'Selesai', 'SimpanSelesai'].forEach(function (a) {
+            window.PengajuanDanaUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
+        });
+    </script>
+    <script src="~/Scripts/Keuangan/PengajuanDana.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,24 @@
+@model GitaWidyaAgniWeb.Models.ProgramKerja.ProgramKerjaVM.ListTimeline
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.ProgramKerja
+
+@(Html.DevExtreme().DataGrid<ProgramKerjaVM.TimelineRow>()
+    .ID("tblTimeline")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Timeline Program Kerja")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Bulan).Caption("Bulan").SortIndex(0).SortOrder(SortOrder.Asc).CalculateSortValue("Urut");
+        columns.AddFor(m => m.Title).Caption("Rencana").CssClass("fw-medium");
+        columns.AddFor(m => m.Jenis).Caption("Jenis").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.StartDate).Caption("Mulai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.EndDate).Caption("Selesai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy").Visible(false);
+        columns.AddFor(m => m.Program).Caption("Program");
+        columns.AddFor(m => m.Pic).Caption("PIC");
+        columns.AddFor(m => m.Kegiatan).Caption("Kegiatan");
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("ProgramKerja.timelineStatusTemplate"));
+        columns.AddAction("ProgramKerja.timelineActionTemplate");
+    })
+)

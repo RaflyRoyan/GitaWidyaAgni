@@ -1,0 +1,36 @@
+@model GitaWidyaAgniWeb.Models.Inventaris.AsetVM.Foto
+
+<div class="gwa-mform" id="asetFoto" data-key="@Model.Key">
+    <div class="gwa-mform-add">
+        <div class="gwa-mform-add-form">
+            @(Html.DevExtreme().FileUploader().ID("fileAsetFoto").UploadMode(FileUploadMode.UseForm).Multiple(false)
+                .Accept("image/*").AllowedFileExtensions(new[] { ".jpg", ".jpeg", ".png", ".webp" }).MaxFileSize(10 * 1024 * 1024)
+                .SelectButtonText("Pilih foto").LabelText("atau tarik foto ke sini"))
+        </div>
+        <button type="button" class="btn btn-outline-primary" onclick="Aset.addPhoto()"><i class="ri-upload-2-line align-bottom me-1"></i> Unggah</button>
+    </div>
+    @if (Model.Items.Count == 0)
+    {
+        <p class="text-muted text-center mb-0 py-4">Belum ada foto.</p>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var f in Model.Items)
+            {
+                <div class="col-6 col-md-4">
+                    <div class="border rounded overflow-hidden">
+                        <img src="@Url.Action("Gambar", new { key = Model.Key, seq = f.SeqPhoto, v = f.Stamp.Ticks })" alt="Foto @Model.Nama" class="w-100" style="aspect-ratio:4/3;object-fit:cover" loading="lazy" />
+                        <div class="d-flex justify-content-between align-items-center px-2 py-1 small bg-light">
+                            <span class="text-muted">@((f.FileSize / 1024.0).ToString("0")) KB</span>
+                            <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus foto" aria-label="Hapus foto" onclick="Aset.removePhoto(@f.SeqPhoto)"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

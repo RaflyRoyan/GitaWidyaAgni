@@ -1,0 +1,58 @@
+@model List<GWALib.Lib.Transaksi.Surat.LetterDisposition>?
+@using GWAShared.Enums
+@{
+    ViewData["Title"] = "Disposisi Saya";
+}
+
+@if (Model == null)
+{
+    <partial name="~/Views/AreaAnggota/_BukanAnggota.cshtml" />
+}
+else
+{
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0"><i class="ri-share-forward-line align-bottom me-1"></i> Disposisi untuk Saya</h5>
+            <p class="gwa-card-intro mb-0">Instruksi tindak lanjut surat dari pengurus. Tandai selesai setelah dikerjakan.</p>
+        </div>
+        @if (Model.Count == 0)
+        {
+            <div class="card-body text-muted">Tidak ada disposisi.</div>
+        }
+        else
+        {
+            <ul class="list-group list-group-flush">
+                @foreach (var d in Model)
+                {
+                    var selesai = d.Status == DispositionStatus.Done;
+                    var telat = !selesai && d.DueDate.HasValue && d.DueDate.Value < DateOnly.FromDateTime(DateTime.Today);
+                    <li class="list-group-item d-flex flex-wrap align-items-center gap-3">
+                        <i class="@(selesai ? "ri-checkbox-circle-fill text-success" : "ri-time-line text-warning") fs-20" aria-hidden="true"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">@d.LetterSubject</div>
+                            <div>@d.Instruction</div>
+                            <div class="small text-muted">
+                                Diterima @d.InsDate.ToString("dd MMM yyyy")
+                                @if (d.DueDate.HasValue) { <span class="@(telat ? "text-danger fw-semibold" : "")">· tenggat @d.DueDate.Value.ToString("dd MMM yyyy")</span> }
+                                @if (selesai) { <span>· selesai @d.DoneAt?.ToString("dd MMM yyyy HH:mm")</span> }
+                            </div>
+                        </div>
+                        @if (!selesai)
+                        {
+                            <button type="button" class="btn btn-sm btn-success" onclick="selesaiDisposisi('@d.EncDecrKey')"><i class="ri-check-line me-1"></i> Selesai</button>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function selesaiDisposisi(key) {
+            AppUI.confirmPost('Tandai disposisi selesai?', '', '@Url.Action("Selesai")', { Key: key }, 'Selesai', 'btn-success')
+                .done(function () { window.location.reload(); });
+        }
+    </script>
+}

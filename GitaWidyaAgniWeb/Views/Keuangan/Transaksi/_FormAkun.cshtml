@@ -1,0 +1,32 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.TransaksiVM.AddAkun
+@using GitaWidyaAgniWeb.Models.Keuangan
+@* Bank wajib nama bank + nomor rekening; e-wallet wajib nomor. Saldo awal terkunci setelah akun punya transaksi. *@
+@{ var isEdit = Model is TransaksiVM.EditAkun; }
+
+<div class="gwa-mform">
+    @(Html.DevExtreme().Form<TransaksiVM.NewAkun>()
+        .ID("frmAkun")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(2)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            items.AddSimpleFor(m => m.Name).Editor(e => e.TextBox().MaxLength(100).Placeholder("mis. Kas Bendahara"));
+            items.AddSimpleFor(m => m.AccountType).Editor(e => e.SelectBox().DataSource(Model.JenisOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.BankName).Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.AccountNumber).Editor(e => e.TextBox().MaxLength(50));
+            items.AddSimpleFor(m => m.AccountHolder).Editor(e => e.TextBox().MaxLength(150));
+            items.AddSimpleFor(m => m.OpeningBalance).Editor(e => e.NumberBox().Format("Rp #,##0"));
+            if (isEdit)
+            {
+                items.AddSimpleFor(m => m.IsActive).Editor(e => e.SelectBox().DataSource(Model.AktifList).ValueExpr("Value").DisplayExpr("Text"));
+            }
+        })
+    )
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Transaksi.save('Akun', @(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>
+    </div>
+</div>

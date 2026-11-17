@@ -1,0 +1,54 @@
+@model GitaWidyaAgniWeb.Models.Anggota.AlumniVM.Add
+@using GitaWidyaAgniWeb.Models.Anggota
+@* Form bersama Add & Edit profil alumni. Anggota tetap setelah dibuat. *@
+
+@{
+    var editModel = Model as AlumniVM.Edit;
+    var isEdit = editModel != null;
+}
+
+<div class="gwa-mform">
+    @if (isEdit)
+    {
+        <div class="gwa-mform-info">
+            <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-graduation-cap-line"></i></span>
+            <div><div class="gwa-mform-info-title">@editModel!.Nama</div></div>
+        </div>
+    }
+    else if (Model.AnggotaOpsi.Count == 0)
+    {
+        <div class="alert alert-warning py-2">Tidak ada anggota berstatus Alumni yang belum punya profil.</div>
+    }
+
+    @(Html.DevExtreme().Form<AlumniVM.NewRow>()
+        .ID("frmAlumni")
+        .FormData(Model.Row)
+        .LabelLocation(FormLabelLocation.Top)
+        .ShowColonAfterLabel(false)
+        .ColCount(3)
+        .ColCountByScreen(c => c.Xs(1).Sm(1))
+        .Items(items =>
+        {
+            if (!isEdit)
+            {
+                items.AddSimpleFor(m => m.MemberId).ColSpan(2)
+                    .Editor(e => e.SelectBox().DataSource(Model.AnggotaOpsi).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true));
+            }
+            items.AddSimpleFor(m => m.GraduationYear).Editor(e => e.NumberBox().Min(1990).Max(2100).Format("#0"));
+            items.AddSimpleFor(m => m.CurrentJob).Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.Company).Editor(e => e.TextBox().MaxLength(150));
+            items.AddSimpleFor(m => m.Industry).Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.City).Editor(e => e.TextBox().MaxLength(100));
+            items.AddSimpleFor(m => m.LinkedinUrl).Editor(e => e.TextBox().MaxLength(255).Placeholder("https://linkedin.com/in/..."));
+            items.AddSimpleFor(m => m.IsContactable).Editor(e => e.SelectBox().DataSource(Model.KontakOpsi).ValueExpr("Value").DisplayExpr("Text"));
+            items.AddSimpleFor(m => m.Notes).ColSpan(3).Editor(e => e.TextArea().Height(70).MaxLength(500));
+        })
+    )
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Alumni.@(isEdit ? "update" : "save")()">
+            <i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")
+        </button>
+    </div>
+</div>

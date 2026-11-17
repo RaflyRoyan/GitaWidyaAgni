@@ -1,0 +1,25 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.KepengurusanVM.List
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Organisasi
+
+@(Html.DevExtreme().DataGrid<KepengurusanVM.Row>()
+    .ID("tblGrid")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .ListGrid("Penugasan Pengurus")
+    .OnRowPrepared("AppUI.inactiveRowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Periode).Caption("Periode");
+        columns.AddFor(m => m.Anggota).Caption("Anggota").CssClass("fw-medium");
+        columns.AddFor(m => m.Jabatan).Caption("Jabatan");
+        columns.AddFor(m => m.Inti).Caption("Inti").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddFor(m => m.Divisi).Caption("Divisi");
+        columns.AddFor(m => m.SkNumber).Caption("No. SK");
+        columns.AddFor(m => m.StartDate).Caption("Mulai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.EndDate).Caption("Selesai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.Berjalan).Caption("Berjalan").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddAction("Kepengurusan.actionTemplate");
+    })
+)
