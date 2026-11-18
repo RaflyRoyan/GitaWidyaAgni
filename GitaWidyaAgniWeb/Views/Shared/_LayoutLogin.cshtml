@@ -33,6 +33,74 @@
 <body class="gwa">
     <div class="gwa-auth">
         <aside class="auth-showcase" aria-hidden="true">
+            @* Scene dekoratif (pola login GateSafetySecurity, tema marching band): paranada yang mengalir,
+               not balok berjalan di paranada (SMIL), titik ketukan berdenyut. Warna emas/merah api/hijau di atas krem. *@
+            <svg class="auth-scene" viewBox="0 0 800 1000" preserveAspectRatio="xMidYMid slice" focusable="false">
+                <defs>
+                    <path id="gwaStaff" d="M-60,430 C150,330 330,540 540,410 S770,300 880,350" />
+                    <path id="gwaStaffLow" d="M-60,880 C170,820 360,960 580,870 S790,800 880,830" />
+                    <symbol id="gwaNote" viewBox="0 0 24 40">
+                        <ellipse cx="8" cy="33" rx="7" ry="5" transform="rotate(-20 8 33)" />
+                        <rect x="13.2" y="4" width="2.2" height="29" />
+                        <path d="M15.4,4 C22,9 24,15 19,22 C21,15 19,11 15.4,10 Z" />
+                    </symbol>
+                    <symbol id="gwaNotes" viewBox="0 0 40 40">
+                        <ellipse cx="7" cy="33" rx="7" ry="5" transform="rotate(-20 7 33)" />
+                        <ellipse cx="31" cy="29" rx="7" ry="5" transform="rotate(-20 31 29)" />
+                        <rect x="12" y="8" width="2.2" height="25" />
+                        <rect x="36" y="4" width="2.2" height="25" />
+                        <path d="M12,8 L38.2,3 L38.2,9 L12,14 Z" />
+                    </symbol>
+                </defs>
+
+                @* Paranada utama: 5 garis; garis tengah putus-putus yang mengalir *@
+                <g class="auth-staff">
+                    <use href="#gwaStaff" y="-28" /><use href="#gwaStaff" y="-14" /><use href="#gwaStaff" />
+                    <use href="#gwaStaff" y="14" /><use href="#gwaStaff" y="28" />
+                </g>
+                <use href="#gwaStaff" class="auth-staff-flow" />
+                <g class="auth-staff auth-staff-low">
+                    <use href="#gwaStaffLow" y="-14" /><use href="#gwaStaffLow" /><use href="#gwaStaffLow" y="14" />
+                </g>
+                <use href="#gwaStaffLow" class="auth-staff-flow" />
+
+                @* Titik ketukan *@
+                <g>
+                    <circle cx="540" cy="410" r="4" fill="#c8202a" /><circle class="auth-beat" cx="540" cy="410" r="9" />
+                    <circle cx="150" cy="378" r="3.5" fill="#e8b52a" /><circle class="auth-beat" cx="150" cy="378" r="8" style="animation-delay:.8s" />
+                    <circle cx="580" cy="870" r="3.5" fill="#1f7a45" /><circle class="auth-beat" cx="580" cy="870" r="8" style="animation-delay:1.6s" />
+                </g>
+
+                @* Not balok berjalan di paranada *@
+                <g class="auth-note-ink" fill="#c8202a">
+                    <use href="#gwaNote" x="-12" y="-38" width="24" height="40" />
+                    <animateMotion dur="24s" repeatCount="indefinite" rotate="0"><mpath href="#gwaStaff" /></animateMotion>
+                </g>
+                <g fill="#8a6100">
+                    <use href="#gwaNotes" x="-20" y="-52" width="40" height="40" />
+                    <animateMotion dur="24s" begin="-8s" repeatCount="indefinite" rotate="0"><mpath href="#gwaStaff" /></animateMotion>
+                </g>
+                <g fill="#1f7a45">
+                    <use href="#gwaNote" x="-12" y="-24" width="24" height="40" />
+                    <animateMotion dur="24s" begin="-16s" repeatCount="indefinite" rotate="0"><mpath href="#gwaStaff" /></animateMotion>
+                </g>
+            </svg>
+
+            @* Kepala snare drum (tampak atas) berputar pelan *@
+            <svg class="auth-drum" viewBox="0 0 100 100" focusable="false">
+                <circle cx="50" cy="50" r="46" fill="none" stroke="#8a6100" stroke-width="1.4" />
+                <circle cx="50" cy="50" r="38" fill="none" stroke="#8a6100" stroke-width=".8" stroke-dasharray="1.5 3.5" />
+                <circle cx="50" cy="50" r="30" fill="none" stroke="#c8202a" stroke-width="1" />
+                @for (var i = 0; i < 8; i++)
+                {
+                    var a = i * Math.PI / 4;
+                    <circle cx="@((50 + 42 * Math.Cos(a)).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" cy="@((50 + 42 * Math.Sin(a)).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))" r="2.6" fill="#e8b52a" />
+                }
+                <path d="M30 30 L70 70 M70 30 L30 70" stroke="#8a6100" stroke-width="1.2" stroke-linecap="round" opacity=".6" />
+            </svg>
+
+            <div class="auth-eq"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+
             <a class="gwa-brand" href="@Url.Action("Index", "Landing")" tabindex="-1">
                 <img src="@Url.Action("Logo", "Brand")" alt="" width="44" height="44">
                 <span><b>Gita Widya Agni</b><small>Marching Band UPN Jatim</small></span>
@@ -73,6 +141,13 @@
             <p class="auth-foot mb-0">&copy; @DateTime.Now.Year @appName · UPN &quot;Veteran&quot; Jawa Timur</p>
         </main>
     </div>
+    <script>
+        // Hormati "kurangi animasi": hentikan animasi SMIL (not balok di paranada).
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            var scene = document.querySelector('.auth-scene');
+            if (scene && scene.pauseAnimations) scene.pauseAnimations();
+        }
+    </script>
     @RenderSection("scripts", required: false)
 </body>
 </html>
