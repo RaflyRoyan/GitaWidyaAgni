@@ -29,6 +29,7 @@ namespace GitaWidyaAgniWeb.Models.Anggota
             public string? Nim { get; set; }
             public string Kategori { get; set; } = "";
             public string? Prodi { get; set; }
+            public string? Section { get; set; }
             public short? Angkatan { get; set; }
             public string Tipe { get; set; } = "";
             public string StatusText { get; set; } = "";
@@ -48,6 +49,7 @@ namespace GitaWidyaAgniWeb.Models.Anggota
             public List<GwaVM.OpsiItem> KategoriList { get; set; } = GwaVM.Opsi<MemberCategory>();
             public List<GwaVM.OpsiItem> GenderList { get; set; } = GwaVM.Opsi<Gender>();
             public List<GwaVM.OpsiItem> StatusList { get; set; } = GwaVM.Opsi<MemberStatus>();
+            public List<GwaVM.OpsiItem> SectionList { get; set; } = Opsi.Section();
             public List<GwaVM.OpsiItem> UserList { get; set; }
 
             public Add() : this(null)
@@ -70,6 +72,7 @@ namespace GitaWidyaAgniWeb.Models.Anggota
         public class Edit : Add
         {
             public string StatusText { get; set; } = "";
+            public string? SectionText { get; set; }
 
             public Edit(string encKey) : this(LibExtensions.Load<Member>(encKey, "Anggota"))
             {
@@ -78,6 +81,7 @@ namespace GitaWidyaAgniWeb.Models.Anggota
             private Edit(Member obj) : base(obj.User?.Id)
             {
                 StatusText = EnumHelper.Text(obj.Status);
+                SectionText = obj.CurrentSectionName;
                 Row = new NewRow
                 {
                     UserId = obj.User?.Id,
@@ -164,6 +168,10 @@ namespace GitaWidyaAgniWeb.Models.Anggota
             [Display(Name = "Tanggal Keluar")]
             public DateTime? LeftAt { get; set; }
 
+            /// <summary>Section awal (wajib saat tambah). Perpindahan lewat tombol Riwayat section.</summary>
+            [Display(Name = "Section")]
+            public int? SectionId { get; set; }
+
             [Display(Name = "Akun Login")]
             public int? UserId { get; set; }
 
@@ -207,6 +215,7 @@ namespace GitaWidyaAgniWeb.Models.Anggota
                     Nim = x.Nim,
                     Kategori = EnumHelper.Text(x.MemberCategory),
                     Prodi = x.ProgramStudi ?? x.Institution,
+                    Section = x.CurrentSectionName,
                     Angkatan = x.Angkatan,
                     Tipe = EnumHelper.Text(x.MemberType),
                     StatusText = EnumHelper.Text(x.Status),
@@ -237,7 +246,8 @@ namespace GitaWidyaAgniWeb.Models.Anggota
                 Institution = input.Institution,
                 Phone = input.Phone,
                 Email = input.Email,
-                Address = input.Address
+                Address = input.Address,
+                SectionId = input.SectionId ?? 0
             };
 
             public static void Simpan(NewRow input, string user)

@@ -12,7 +12,9 @@ using GWALib.Lib.Master.Prestasi;
 using GWALib.Lib.Master.Sponsorship;
 using GWALib.Lib.Master.Surat;
 using GWALib.Lib.Master.TimPelaksana;
+using GWALib.Lib.Transaksi.Anggota;
 using GWAShared.Enums;
+using SectionMaster = GWALib.Lib.Master.Anggota.Section;
 
 namespace GWASeeder
 {
@@ -22,6 +24,7 @@ namespace GWASeeder
         public static ManagementPeriod PeriodOld = null!;
         public static ManagementPeriod PeriodActive = null!;
         public static readonly Dictionary<string, int> Divisions = new();
+        public static readonly Dictionary<string, int> MusicSections = new(); // section musik: semua anggota punya section
         public static readonly Dictionary<string, int> Positions = new();
         public static readonly List<Member> Members = new();
         public static readonly Dictionary<int, int> MemberUser = new(); // memberId → userId
@@ -83,7 +86,7 @@ namespace GWASeeder
             Ok(SiteSetting.Save(new SiteSetting.NewRow { SettingGroup = "LANDING", SettingKey = "hero_image", Description = "Gambar hero", SettingImage = Photo(5) }, Admin), "Setting hero_image");
         }
 
-        // ---------------------------------------------------------------- Periode, divisi, jabatan
+        // ---------------------------------------------------------------- Periode, section, divisi, jabatan
         private static void SeedPeriods()
         {
             PeriodOld = Ok(ManagementPeriod.Save(new ManagementPeriod.NewRow { Name = "Periode 2025/2026", StartDate = D(2025, 9, 1), EndDate = D(2026, 8, 31) }, Admin), "Periode lama");
@@ -91,17 +94,27 @@ namespace GWASeeder
             PeriodOld = Ok(PeriodOld.Update(Admin), "Aktifkan periode lama");
             PeriodActive = Ok(ManagementPeriod.Save(new ManagementPeriod.NewRow { Name = "Periode 2026/2027", StartDate = D(2026, 9, 1), EndDate = D(2027, 8, 31) }, Admin), "Periode baru");
 
-            var divisions = new (string Name, DivisionType Type, string Description)[]
+            // Section musik: semua anggota punya satu section (riwayat di t_section_member).
+            var sections = new (string Name, string Description)[]
             {
-                ("Brass", DivisionType.Divisi, "Trumpet, mellophone, baritone, tuba"),
-                ("Battery", DivisionType.Divisi, "Snare, tenor, bass drum, cymbal"),
-                ("Front Ensemble", DivisionType.Divisi, "Pit percussion: marimba, vibraphone, synth"),
-                ("Colour Guard", DivisionType.Divisi, "Bendera, rifle, sabre, tari"),
-                ("Humas & Media", DivisionType.Divisi, "Publikasi, dokumentasi, media sosial"),
-                ("Logistik", DivisionType.Divisi, "Perawatan dan peminjaman alat"),
-                ("Danus", DivisionType.Tim, "Dana usaha dan merchandise")
+                ("Brass", "Trumpet, mellophone, baritone, tuba"),
+                ("Battery", "Snare, tenor, bass drum, cymbal"),
+                ("Front Ensemble", "Pit percussion: marimba, vibraphone, synth"),
+                ("Colour Guard", "Bendera, rifle, sabre, tari")
             };
             var order = 1;
+            foreach (var s in sections)
+            {
+                MusicSections[s.Name] = Ok(SectionMaster.Save(new SectionMaster.NewRow { Name = s.Name, Description = s.Description, SortOrder = order++ }, Admin), "Section " + s.Name).Id;
+            }
+            // Divisi: tugas organisasi, hanya anggota pilihan Ketua Umum (dummy; bisa ditambah lewat halaman Divisi).
+            var divisions = new (string Name, DivisionType Type, string Description)[]
+            {
+                ("Humas & Media", DivisionType.Divisi, "Publikasi, dokumentasi, media sosial"),
+                ("Logistik", DivisionType.Divisi, "Perawatan dan peminjaman alat"),
+                ("Danus", DivisionType.Divisi, "Dana usaha dan merchandise")
+            };
+            order = 1;
             foreach (var d in divisions)
             {
                 Divisions[d.Name] = Ok(Division.Save(new Division.NewRow { Name = d.Name, DivisionType = d.Type, Description = d.Description, SortOrder = order++ }, Admin), "Divisi " + d.Name).Id;
@@ -109,7 +122,8 @@ namespace GWASeeder
             var positions = new (string Name, PositionLevel Level)[]
             {
                 ("Ketua Umum", PositionLevel.Inti), ("Wakil Ketua Umum", PositionLevel.Inti), ("Sekretaris", PositionLevel.Inti),
-                ("Bendahara", PositionLevel.Inti), ("Kepala Divisi", PositionLevel.Biasa), ("Staf Divisi", PositionLevel.Biasa)
+                ("Bendahara", PositionLevel.Inti), ("Kepala Divisi", PositionLevel.Biasa), ("Staf Divisi", PositionLevel.Biasa),
+                ("Section Leader", PositionLevel.Biasa)
             };
             order = 1;
             foreach (var p in positions)
@@ -120,7 +134,8 @@ namespace GWASeeder
 
         // ---------------------------------------------------------------- User & anggota
         // Akun contoh: username mudah diingat (lihat juga README), password semua DEFAULT_PASSWORD.
-        // Indeks dipakai bagian lain: 0 ketua, 1 wakil, 2 sekretaris, 3 bendahara, 4 ketua lama, 5-10 kepala divisi,
+        // Indeks dipakai bagian lain: 0 ketua, 1 wakil, 2 sekretaris, 3 bendahara, 4 ketua lama, 5-8 section leader
+        // (Brass, Battery, Colour Guard, Front Ensemble), 9-10 kepala divisi (Logistik, Humas & Media),
         // 11-21 anggota biasa, 22-23 alumni.
         private static readonly (string Username, string Name, Gender Gender, string Prodi, string Fakultas, short Angkatan)[] People =
         {
@@ -129,10 +144,10 @@ namespace GWASeeder
             ("sekretaris", "Dimas Arya Saputra", Gender.L, "Sistem Informasi", "Fakultas Ilmu Komputer", 2023),
             ("bendahara", "Salsabila Putri Ramadhani", Gender.P, "Akuntansi", "Fakultas Ekonomi dan Bisnis", 2023),
             ("ketua.lama", "Fajar Nugroho", Gender.L, "Teknik Sipil", "Fakultas Teknik dan Sains", 2022),
-            ("kadiv.brass", "Aditya Wicaksono", Gender.L, "Teknik Mesin", "Fakultas Teknik dan Sains", 2024),
-            ("kadiv.battery", "Bagas Setiawan", Gender.L, "Teknik Kimia", "Fakultas Teknik dan Sains", 2024),
-            ("kadiv.guard", "Citra Maharani", Gender.P, "Ilmu Komunikasi", "Fakultas Ilmu Sosial dan Ilmu Politik", 2024),
-            ("kadiv.front", "Dewi Kartika Sari", Gender.P, "Arsitektur", "Fakultas Arsitektur dan Desain", 2024),
+            ("leader.brass", "Aditya Wicaksono", Gender.L, "Teknik Mesin", "Fakultas Teknik dan Sains", 2024),
+            ("leader.battery", "Bagas Setiawan", Gender.L, "Teknik Kimia", "Fakultas Teknik dan Sains", 2024),
+            ("leader.guard", "Citra Maharani", Gender.P, "Ilmu Komunikasi", "Fakultas Ilmu Sosial dan Ilmu Politik", 2024),
+            ("leader.front", "Dewi Kartika Sari", Gender.P, "Arsitektur", "Fakultas Arsitektur dan Desain", 2024),
             ("kadiv.logistik", "Eko Prasetyo", Gender.L, "Agroteknologi", "Fakultas Pertanian", 2024),
             ("kadiv.humas", "Farah Aulia", Gender.P, "Desain Komunikasi Visual", "Fakultas Arsitektur dan Desain", 2024),
             ("anggota01", "Galih Ramadhan", Gender.L, "Ilmu Hukum", "Fakultas Hukum", 2025),
@@ -151,6 +166,15 @@ namespace GWASeeder
         };
         // Ringkasan akun untuk dicetak di akhir seeding: (username, nama, jabatan, role).
         public static readonly List<(string Username, string Name, string Jabatan, string Roles)> AccountSummary = new();
+
+        // Section awal anggota: 5-8 sesuai section yang dipimpin, anggota biasa bergantian, sisanya tetap.
+        private static readonly string[] SectionOrder = { "Brass", "Battery", "Colour Guard", "Front Ensemble" };
+        private static string SectionOf(int i) => i switch
+        {
+            0 => "Brass", 1 => "Colour Guard", 2 => "Battery", 3 => "Front Ensemble", 4 => "Battery",
+            >= 5 and <= 8 => SectionOrder[i - 5], 9 => "Battery", 10 => "Colour Guard", 22 => "Brass", 23 => "Battery",
+            _ => SectionOrder[i % 4]
+        };
 
         private static void SeedMembers()
         {
@@ -176,7 +200,8 @@ namespace GWASeeder
                     Institution = "UPN \"Veteran\" Jawa Timur",
                     Phone = $"08123{4500000 + i * 1311:D7}",
                     Email = $"{nim}@student.upnjatim.ac.id",
-                    Address = $"Jl. Rungkut Madya No. {i + 10}, Surabaya"
+                    Address = $"Jl. Rungkut Madya No. {i + 10}, Surabaya",
+                    SectionId = MusicSections[SectionOf(i)]
                 }, Admin), "Anggota " + p.Name);
                 Members.Add(member);
                 MemberUser[member.Id] = user.Id;
@@ -186,6 +211,11 @@ namespace GWASeeder
                 }
             }
             Ketua = Members[0]; Wakil = Members[1]; Sekretaris = Members[2]; Bendahara = Members[3]; KetuaLama = Members[4];
+
+            // Contoh riwayat pindah section (anggota bisa berganti section antar-event).
+            Ok(SectionMember.Move(new SectionMember.NewRow { MemberId = Members[13].Id, SectionId = MusicSections["Front Ensemble"], StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-75)), Note = "Mengisi pit untuk Konser Akhir Tahun" }, Admin), "Pindah section 1");
+            Ok(SectionMember.Move(new SectionMember.NewRow { MemberId = Members[13].Id, SectionId = MusicSections["Colour Guard"], StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-20)), Note = "Kembali ke colour guard untuk parade" }, Admin), "Pindah section 2");
+            Ok(SectionMember.Move(new SectionMember.NewRow { MemberId = Members[17].Id, SectionId = MusicSections["Brass"], StartDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-10)), Note = "Kebutuhan pemain baritone" }, Admin), "Pindah section 3");
 
             // Alumni
             for (var i = 22; i < 24; i++)
@@ -208,7 +238,7 @@ namespace GWASeeder
                 }, Admin), "Profil alumni");
             }
 
-            // Role: pengurus inti dan kepala divisi terikat periode aktif; role ANGGOTA tanpa periode (Area Anggota untuk semua).
+            // Role: pengurus inti, section leader dan kepala divisi terikat periode aktif; role ANGGOTA tanpa periode (Area Anggota untuk semua).
             void Grant(Member member, string roleCode, bool perPeriod)
             {
                 Ok(UserRole.Save(new UserRole.NewRow { UserId = MemberUser[member.Id], RoleId = Roles[roleCode].Id, PeriodId = perPeriod ? PeriodActive.Id : null }, Admin), $"Role {roleCode} {member.Fullname}");
@@ -217,7 +247,11 @@ namespace GWASeeder
             Grant(Wakil, "WAKIL", true);
             Grant(Sekretaris, "SEKRETARIS", true);
             Grant(Bendahara, "BENDAHARA", true);
-            foreach (var m in Members.Skip(5).Take(6))
+            foreach (var m in Members.Skip(5).Take(4))
+            {
+                Grant(m, "SECTION_LEADER", true);
+            }
+            foreach (var m in Members.Skip(9).Take(2))
             {
                 Grant(m, "KADIV", true);
             }
@@ -230,8 +264,8 @@ namespace GWASeeder
             {
                 [0] = ("Ketua Umum", "KETUA, ANGGOTA"), [1] = ("Wakil Ketua Umum", "WAKIL, ANGGOTA"), [2] = ("Sekretaris", "SEKRETARIS, ANGGOTA"),
                 [3] = ("Bendahara", "BENDAHARA, ANGGOTA"), [4] = ("Anggota (ketua periode lalu)", "ANGGOTA"),
-                [5] = ("Kepala Divisi Brass", "KADIV, ANGGOTA"), [6] = ("Kepala Divisi Battery", "KADIV, ANGGOTA"), [7] = ("Kepala Divisi Colour Guard", "KADIV, ANGGOTA"),
-                [8] = ("Kepala Divisi Front Ensemble", "KADIV, ANGGOTA"), [9] = ("Kepala Divisi Logistik", "KADIV, ANGGOTA"), [10] = ("Kepala Divisi Humas & Media", "KADIV, ANGGOTA")
+                [5] = ("Section Leader Brass", "SECTION_LEADER, ANGGOTA"), [6] = ("Section Leader Battery", "SECTION_LEADER, ANGGOTA"), [7] = ("Section Leader Colour Guard", "SECTION_LEADER, ANGGOTA"),
+                [8] = ("Section Leader Front Ensemble", "SECTION_LEADER, ANGGOTA"), [9] = ("Kepala Divisi Logistik", "KADIV, ANGGOTA"), [10] = ("Kepala Divisi Humas & Media", "KADIV, ANGGOTA")
             };
             for (var i = 0; i < People.Length; i++)
             {

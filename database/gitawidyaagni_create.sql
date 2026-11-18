@@ -1,7 +1,7 @@
 -- =====================================================================================
 -- GitaWidyaAgni: skema database lengkap (MySQL 8, utf8mb4_0900_ai_ci)
--- Dihasilkan dari database pengembangan pada 2026-11-17 (mysqldump --no-data), 132 tabel,
--- sudah termasuk migrasi 2026-11-17 (t_lpj, t_program.division_id / term).
+-- Dihasilkan dari database pengembangan pada 2026-11-18 (mysqldump --no-data), 135 tabel,
+-- sudah termasuk migrasi 2026-11-17 (t_lpj, t_program.division_id / term) dan 2026-11-18 (section, qr_token unit aset, pengajuan tidak ikut kegiatan).
 --
 -- Pakai untuk database BARU. Database lama cukup menjalankan berkas di database/migrations/
 -- yang tanggalnya lebih baru dari skemanya.
@@ -15,6 +15,7 @@
 
 CREATE DATABASE IF NOT EXISTS `gitawidyaagni` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 USE `gitawidyaagni`;
+
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -165,6 +166,7 @@ CREATE TABLE `m_asset_unit` (
   `id` int NOT NULL,
   `asset_id` int NOT NULL,
   `unit_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT 'Kode inventaris unit: unit_prefix + nomor urut, dicetak sebagai QR (berisi URL halaman unit)',
+  `qr_token` char(32) NOT NULL COMMENT 'Token acak 128-bit (hex huruf besar) untuk URL QR /aset/{token}; label lama dengan kode unit tidak berlaku lagi',
   `serial_number` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT 'Nomor seri pabrik (opsional)',
   `unit_condition` int NOT NULL DEFAULT '1' COMMENT '1=BAIK, 2=RUSAK_RINGAN, 3=RUSAK_BERAT',
   `status` int NOT NULL DEFAULT '1' COMMENT '1=TERSEDIA, 2=DIPINJAM, 3=PERAWATAN, 4=HILANG, 5=DIHAPUS',
@@ -176,6 +178,7 @@ CREATE TABLE `m_asset_unit` (
   `upd_by` int DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_asset_unit_code` (`unit_code`),
+  UNIQUE KEY `uq_asset_unit_qr_token` (`qr_token`),
   KEY `fk_m_asset_unit_asset_id` (`asset_id`),
   CONSTRAINT `fk_m_asset_unit_asset_id` FOREIGN KEY (`asset_id`) REFERENCES `m_asset` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Unit fisik aset berkode QR';
@@ -718,6 +721,22 @@ CREATE TABLE `m_role_menu` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `m_section` (
+  `id` int NOT NULL,
+  `name` varchar(100) NOT NULL COMMENT 'mis. Brass, Battery, Front Ensemble, Colour Guard',
+  `description` varchar(500) DEFAULT NULL,
+  `sort_order` int NOT NULL DEFAULT '0',
+  `is_active` int NOT NULL DEFAULT '1' COMMENT '0=Tidak, 1=Ya',
+  `ins_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `ins_by` int DEFAULT NULL,
+  `upd_date` datetime DEFAULT NULL,
+  `upd_by` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_section_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Section musik marching band; semua anggota punya section';
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `m_sequence` (
   `table_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `last_id` int NOT NULL,
@@ -883,8 +902,9 @@ CREATE TABLE `t_activity` (
   `parent_activity_id` int DEFAULT NULL COMMENT 'Kegiatan induk (event/lomba) untuk rapat/latihan persiapan; maksimal 1 tingkat',
   `competition_id` int DEFAULT NULL COMMENT 'Wajib untuk activity_type = 6 (LOMBA)',
   `activity_type` int NOT NULL DEFAULT '1' COMMENT '1=EVENT, 2=RAPAT, 3=LATIHAN, 4=PERTEMUAN, 5=LAINNYA, 6=LOMBA, 7=PIKET (mis. satu kegiatan "Piket Senin" + jadwal rutin + petugas di t_activity_participant)',
-  `audience_type` int NOT NULL DEFAULT '1' COMMENT '1=SEMUA_ANGGOTA, 2=PENGURUS, 3=PESERTA_TERDAFTAR (t_activity_participant), 4=DIVISI (t_division_member), 5=TIM_PELAKSANA (t_committee_member kegiatan induk) | penentu siapa yang dicatat ALPA',
+  `audience_type` int NOT NULL DEFAULT '1' COMMENT '1=SEMUA_ANGGOTA, 2=PENGURUS, 3=PESERTA_TERDAFTAR (t_activity_participant), 4=DIVISI (t_division_member), 5=TIM_PELAKSANA (t_committee_member kegiatan induk), 6=SECTION (t_section_member) | penentu siapa yang dicatat ALPA',
   `division_id` int DEFAULT NULL COMMENT 'Diisi jika audience_type = 4 (rapat divisi / latihan tim)',
+  `section_id` int DEFAULT NULL COMMENT 'Wajib bila audience_type = SECTION',
   `title` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,
   `location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
@@ -908,12 +928,41 @@ CREATE TABLE `t_activity` (
   KEY `fk_activity_program` (`program_id`),
   KEY `ix_activity_start` (`start_at`),
   KEY `ix_activity_type` (`activity_type`,`start_at`),
+  KEY `fk_activity_section` (`section_id`),
   CONSTRAINT `fk_activity_competition` FOREIGN KEY (`competition_id`) REFERENCES `t_competition` (`id`),
   CONSTRAINT `fk_activity_creator` FOREIGN KEY (`created_by`) REFERENCES `m_user` (`id`),
   CONSTRAINT `fk_activity_division` FOREIGN KEY (`division_id`) REFERENCES `m_division` (`id`),
   CONSTRAINT `fk_activity_parent` FOREIGN KEY (`parent_activity_id`) REFERENCES `t_activity` (`id`),
-  CONSTRAINT `fk_activity_program` FOREIGN KEY (`program_id`) REFERENCES `t_program` (`id`)
+  CONSTRAINT `fk_activity_program` FOREIGN KEY (`program_id`) REFERENCES `t_program` (`id`),
+  CONSTRAINT `fk_activity_section` FOREIGN KEY (`section_id`) REFERENCES `m_section` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `t_activity_absence_request` (
+  `id` int NOT NULL,
+  `activity_id` int NOT NULL,
+  `member_id` int NOT NULL,
+  `session_id` int DEFAULT NULL COMMENT 'NULL = seluruh kegiatan; diisi = satu sesi presensi',
+  `reason` varchar(500) NOT NULL COMMENT 'Alasan dari anggota',
+  `status` int NOT NULL DEFAULT '1' COMMENT '1=MENUNGGU, 2=DISETUJUI, 3=DITOLAK, 4=DITARIK',
+  `review_note` varchar(500) DEFAULT NULL COMMENT 'Catatan pengurus (wajib saat ditolak)',
+  `reviewed_by` int DEFAULT NULL COMMENT 'User yang menyetujui / menolak',
+  `reviewed_at` datetime DEFAULT NULL,
+  `ins_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `ins_by` int DEFAULT NULL,
+  `upd_date` datetime DEFAULT NULL,
+  `upd_by` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_absence_activity` (`activity_id`,`status`),
+  KEY `idx_absence_member` (`member_id`),
+  KEY `fk_absence_session` (`session_id`),
+  KEY `fk_absence_reviewer` (`reviewed_by`),
+  CONSTRAINT `fk_absence_activity` FOREIGN KEY (`activity_id`) REFERENCES `t_activity` (`id`),
+  CONSTRAINT `fk_absence_member` FOREIGN KEY (`member_id`) REFERENCES `m_member` (`id`),
+  CONSTRAINT `fk_absence_reviewer` FOREIGN KEY (`reviewed_by`) REFERENCES `m_user` (`id`),
+  CONSTRAINT `fk_absence_session` FOREIGN KEY (`session_id`) REFERENCES `t_attendance_session` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Pengajuan tidak ikut kegiatan (per sesi / seluruh kegiatan)';
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
@@ -2430,6 +2479,7 @@ CREATE TABLE `t_management_assignment` (
   `member_id` int NOT NULL,
   `position_id` int NOT NULL,
   `division_id` int DEFAULT NULL COMMENT 'Divisi yang dipimpin, mis. untuk jabatan Kadiv',
+  `section_id` int DEFAULT NULL COMMENT 'Section yang dipimpin (Section Leader)',
   `sk_number` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT 'Nomor SK pengangkatan',
   `start_date` date NOT NULL,
   `end_date` date DEFAULT NULL,
@@ -2443,10 +2493,12 @@ CREATE TABLE `t_management_assignment` (
   KEY `fk_assignment_member` (`member_id`),
   KEY `fk_assignment_position` (`position_id`),
   KEY `ix_assignment_current` (`period_id`,`is_current`),
+  KEY `fk_assignment_section` (`section_id`),
   CONSTRAINT `fk_assignment_division` FOREIGN KEY (`division_id`) REFERENCES `m_division` (`id`),
   CONSTRAINT `fk_assignment_member` FOREIGN KEY (`member_id`) REFERENCES `m_member` (`id`),
   CONSTRAINT `fk_assignment_period` FOREIGN KEY (`period_id`) REFERENCES `m_management_period` (`id`),
-  CONSTRAINT `fk_assignment_position` FOREIGN KEY (`position_id`) REFERENCES `m_position` (`id`)
+  CONSTRAINT `fk_assignment_position` FOREIGN KEY (`position_id`) REFERENCES `m_position` (`id`),
+  CONSTRAINT `fk_assignment_section` FOREIGN KEY (`section_id`) REFERENCES `m_section` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -3023,6 +3075,26 @@ CREATE TABLE `t_scheduled_job_log` (
   PRIMARY KEY (`id`),
   KEY `ix_joblog` (`job_name`,`started_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `t_section_member` (
+  `id` int NOT NULL,
+  `section_id` int NOT NULL,
+  `member_id` int NOT NULL,
+  `start_date` date NOT NULL COMMENT 'Mulai di section ini',
+  `end_date` date DEFAULT NULL COMMENT 'NULL = section aktif anggota saat ini',
+  `note` varchar(255) DEFAULT NULL COMMENT 'Alasan / event perpindahan',
+  `ins_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `ins_by` int DEFAULT NULL,
+  `upd_date` datetime DEFAULT NULL,
+  `upd_by` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_secmember_section` (`section_id`),
+  KEY `idx_secmember_member` (`member_id`,`end_date`),
+  CONSTRAINT `fk_secmember_member` FOREIGN KEY (`member_id`) REFERENCES `m_member` (`id`),
+  CONSTRAINT `fk_secmember_section` FOREIGN KEY (`section_id`) REFERENCES `m_section` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Riwayat section anggota';
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;

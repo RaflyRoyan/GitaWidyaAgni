@@ -41,15 +41,15 @@ namespace GWALib.Lib.Transaksi.Anggota
                 return new RecruitmentApplicant(row);
             }, data => ResponseFactory.DataSaved(data), msg => ResponseFactory.DataSaveFailed<RecruitmentApplicant>(msg));
         }
-        // Memindah status seleksi. Accepted = mengecek kuota dan membuat m_member bila perlu.
-        public Response<RecruitmentApplicant> Review(ApplicantStatus status, string? notes, string user)
+        // Memindah status seleksi. Accepted = mengecek kuota dan membuat m_member bila perlu (sectionId wajib untuk anggota baru).
+        public Response<RecruitmentApplicant> Review(ApplicantStatus status, string? notes, string user, int? sectionId = null)
         {
             return ServiceHandler.Handle(() =>
             {
                 var userId = ValidateUtility.ValidateUser(user);
                 using var context = DBClass.GetContext();
                 var row = GetRow(context, Id);
-                SetReview(context, row, status, notes, userId);
+                SetReview(context, row, status, notes, sectionId, userId);
                 context.SaveChanges();
                 return new RecruitmentApplicant(row);
             }, data => ResponseFactory.DataUpdated(data), msg => ResponseFactory.DataUpdateFailed<RecruitmentApplicant>(msg));
@@ -78,14 +78,14 @@ namespace GWALib.Lib.Transaksi.Anggota
                 return new RecruitmentApplicant(row);
             }, data => ResponseFactory.DataSaved(data), msg => ResponseFactory.DataSaveFailed<RecruitmentApplicant>(msg));
         }
-        public async Task<Response<RecruitmentApplicant>> ReviewAsync(ApplicantStatus status, string? notes, string user)
+        public async Task<Response<RecruitmentApplicant>> ReviewAsync(ApplicantStatus status, string? notes, string user, int? sectionId = null)
         {
             return await ServiceHandler.HandleAsync(async () =>
             {
                 var userId = ValidateUtility.ValidateUser(user);
                 using var context = DBClass.GetContext();
                 var row = await GetRowAsync(context, Id);
-                SetReview(context, row, status, notes, userId);
+                SetReview(context, row, status, notes, sectionId, userId);
                 await context.SaveChangesAsync();
                 return new RecruitmentApplicant(row);
             }, data => ResponseFactory.DataUpdated(data), msg => ResponseFactory.DataUpdateFailed<RecruitmentApplicant>(msg));
@@ -170,7 +170,7 @@ namespace GWALib.Lib.Transaksi.Anggota
             return row;
         }
         // Status hanya maju; Accepted / Rejected final.
-        private static void SetReview(EF.ModelContext context, EF.TRecruitmentApplicant row, ApplicantStatus status, string? notes, int userId)
+        private static void SetReview(EF.ModelContext context, EF.TRecruitmentApplicant row, ApplicantStatus status, string? notes, int? sectionId, int userId)
         {
             var current = (ApplicantStatus)row.Status;
             TransaksiHelper.ValidateStatus(current, "menilai pendaftar", ApplicantStatus.Submitted, ApplicantStatus.Screening, ApplicantStatus.Interview);
@@ -181,7 +181,7 @@ namespace GWALib.Lib.Transaksi.Anggota
             }
             if (status == ApplicantStatus.Accepted)
             {
-                Accept(context, row, userId);
+                Accept(context, row, sectionId, userId);
             }
 
             row.Status = (int)status;
@@ -191,8 +191,8 @@ namespace GWALib.Lib.Transaksi.Anggota
             row.UpdDate = DateTime.Now;
             row.UpdBy = userId;
         }
-        // Cek kuota lalu buat m_member (Anggota, bergabung hari ini) bila pendaftar belum terhubung ke anggota.
-        private static void Accept(EF.ModelContext context, EF.TRecruitmentApplicant row, int userId)
+        // Cek kuota lalu buat m_member (Anggota, bergabung hari ini, section awal = sectionId) bila pendaftar belum terhubung ke anggota.
+        private static void Accept(EF.ModelContext context, EF.TRecruitmentApplicant row, int? sectionId, int userId)
         {
             var quota = context.TRecruitments.Where(x => x.Id == row.RecruitmentId).Select(x => x.Quota).Single();
             if (quota != null && context.TRecruitmentApplicants.Count(x => x.RecruitmentId == row.RecruitmentId && x.Status == (int)ApplicantStatus.Accepted) >= quota)
@@ -214,7 +214,8 @@ namespace GWALib.Lib.Transaksi.Anggota
                 Angkatan = row.Angkatan,
                 Institution = row.Institution,
                 Phone = row.Phone,
-                Email = row.Email
+                Email = row.Email,
+                SectionId = sectionId ?? 0
             }, userId);
             context.MMembers.Add(member);
             row.MemberId = member.Id;

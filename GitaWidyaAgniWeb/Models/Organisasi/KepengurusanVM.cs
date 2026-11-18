@@ -28,6 +28,7 @@ namespace GitaWidyaAgniWeb.Models.Organisasi
             public string Jabatan { get; set; } = "";
             public bool Inti { get; set; }
             public string? Divisi { get; set; }
+            public string? Section { get; set; }
             public string? SkNumber { get; set; }
             public DateTime StartDate { get; set; }
             public DateTime? EndDate { get; set; }
@@ -43,6 +44,7 @@ namespace GitaWidyaAgniWeb.Models.Organisasi
             public List<GwaVM.OpsiItem> AnggotaOpsi { get; set; } = Opsi.Anggota();
             public List<GwaVM.OpsiItem> JabatanOpsi { get; set; } = Opsi.Jabatan();
             public List<GwaVM.OpsiItem> DivisiOpsi { get; set; } = Opsi.Divisi();
+            public List<GwaVM.OpsiItem> SectionOpsi { get; set; } = Opsi.Section();
 
             public Add()
             {
@@ -74,6 +76,7 @@ namespace GitaWidyaAgniWeb.Models.Organisasi
                     MemberId = obj.MemberId,
                     PositionId = obj.PositionId,
                     DivisionId = obj.DivisionId,
+                    SectionId = obj.SectionId,
                     SkNumber = obj.SkNumber,
                     StartDate = Opsi.KeDateTime(obj.StartDate),
                     EndDate = Opsi.KeDateTime(obj.EndDate)
@@ -97,6 +100,9 @@ namespace GitaWidyaAgniWeb.Models.Organisasi
 
             [Display(Name = "Divisi yang Dipimpin")]
             public int? DivisionId { get; set; }
+
+            [Display(Name = "Section yang Dipimpin")]
+            public int? SectionId { get; set; }
 
             [StringLength(100, ErrorMessage = "Nomor SK maksimal 100 karakter")]
             [Display(Name = "Nomor SK")]
@@ -128,6 +134,7 @@ namespace GitaWidyaAgniWeb.Models.Organisasi
                     Jabatan = x.PositionName,
                     Inti = x.PositionLevel == PositionLevel.Inti,
                     Divisi = x.DivisionName,
+                    Section = x.SectionName,
                     SkNumber = x.SkNumber,
                     StartDate = x.StartDate.ToDateTime(TimeOnly.MinValue),
                     EndDate = Opsi.KeDateTime(x.EndDate),
@@ -143,6 +150,7 @@ namespace GitaWidyaAgniWeb.Models.Organisasi
                     MemberId = input.MemberId ?? 0,
                     PositionId = input.PositionId ?? 0,
                     DivisionId = input.DivisionId,
+                    SectionId = input.SectionId,
                     SkNumber = input.SkNumber,
                     StartDate = Opsi.TanggalWajib(input.StartDate, "Tanggal mulai"),
                     EndDate = Opsi.Tanggal(input.EndDate)
@@ -153,6 +161,7 @@ namespace GitaWidyaAgniWeb.Models.Organisasi
             {
                 var obj = LibExtensions.Load<ManagementAssignment>(encKey, "Penugasan");
                 obj.DivisionId = input.DivisionId;
+                obj.SectionId = input.SectionId;
                 obj.SkNumber = input.SkNumber;
                 obj.StartDate = Opsi.TanggalWajib(input.StartDate, "Tanggal mulai");
                 obj.EndDate = Opsi.Tanggal(input.EndDate);

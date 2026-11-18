@@ -34,7 +34,7 @@
             {
                 <div class="apply-alert err" role="alert">
                     <i class="ri-error-warning-line" aria-hidden="true"></i>
-                    <div><strong>Kode unit @Model.Kode tidak dikenal.</strong> Label mungkin sudah tidak berlaku. Hubungi pengurus inventaris.</div>
+                    <div><strong>Label QR tidak dikenal.</strong> Label mungkin sudah tidak berlaku atau dicetak ulang. Hubungi pengurus inventaris.</div>
                 </div>
             }
             else
@@ -42,7 +42,7 @@
                 @if (Model.AdaFoto)
                 {
                     <div class="cover asset-photo">
-                        <img src="@Url.Action("AsetFoto", "Landing", new { kode = u.UnitCode })" alt="Foto @a.Name" loading="lazy" />
+                        <img src="@Url.Action("AsetFoto", "Landing", new { kode = u.QrToken })" alt="Foto @a.Name" loading="lazy" />
                     </div>
                 }
                 <div class="asset-status @statusCss" role="status">

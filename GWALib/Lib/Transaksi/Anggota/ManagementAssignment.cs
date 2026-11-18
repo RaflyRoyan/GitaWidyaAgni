@@ -24,6 +24,8 @@ namespace GWALib.Lib.Transaksi.Anggota
             public int PositionId { get; set; }
             // Divisi yang dipimpin, mis. untuk Kadiv.
             public int? DivisionId { get; set; }
+            /// <summary>Section yang dipimpin (Section Leader). Tidak boleh bersamaan dengan DivisionId.</summary>
+            public int? SectionId { get; set; }
             public string? SkNumber { get; set; }
             public DateOnly StartDate { get; set; }
             public DateOnly? EndDate { get; set; }
@@ -39,6 +41,8 @@ namespace GWALib.Lib.Transaksi.Anggota
         public PositionLevel PositionLevel { get; private set; }
         public int? DivisionId { get; set; }
         public string? DivisionName { get; private set; }
+        public int? SectionId { get; set; }
+        public string? SectionName { get; private set; }
         public string? SkNumber { get; set; }
         public DateOnly StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
@@ -54,7 +58,7 @@ namespace GWALib.Lib.Transaksi.Anggota
             get
             {
                 return DBClass.GetContext().TManagementAssignments
-                    .Include(x => x.Period).Include(x => x.Member).Include(x => x.Position).Include(x => x.Division)
+                    .Include(x => x.Period).Include(x => x.Member).Include(x => x.Position).Include(x => x.Division).Include(x => x.Section)
                     .AsQueryable();
             }
         }
@@ -87,6 +91,8 @@ namespace GWALib.Lib.Transaksi.Anggota
             PositionLevel = row.Position != null ? (PositionLevel)row.Position.IsCore : PositionLevel.Biasa;
             DivisionId = row.DivisionId;
             DivisionName = row.Division?.Name;
+            SectionId = row.SectionId;
+            SectionName = row.Section?.Name;
             SkNumber = row.SkNumber;
             StartDate = row.StartDate;
             EndDate = row.EndDate;

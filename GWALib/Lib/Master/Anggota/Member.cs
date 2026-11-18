@@ -35,6 +35,8 @@ namespace GWALib.Lib.Master.Anggota
             public string? Phone { get; set; }
             public string? Email { get; set; }
             public string? Address { get; set; }
+            /// <summary>Section awal (wajib saat anggota dibuat). Perpindahan berikutnya lewat SectionMember.Move.</summary>
+            public int SectionId { get; set; }
         }
 
         public int Id { get; set; }
@@ -56,6 +58,9 @@ namespace GWALib.Lib.Master.Anggota
         public string? Email { get; set; }
         public string? Address { get; set; }
         public MemberStatus Status { get; set; }
+        /// <summary>Section saat ini (riwayat t_section_member dengan end_date NULL); null bila belum ada.</summary>
+        public int? CurrentSectionId { get; private set; }
+        public string? CurrentSectionName { get; private set; }
         public DateTime InsDate { get; set; }
         public int? InsBy { get; set; }
         public DateTime? UpdDate { get; set; }
@@ -70,14 +75,14 @@ namespace GWALib.Lib.Master.Anggota
         {
             get
             {
-                return _context.MMembers.Include(x => x.User).AsQueryable();
+                return _context.MMembers.Include(x => x.User).Include(x => x.TSectionMembers.Where(s => s.EndDate == null)).ThenInclude(s => s.Section).AsQueryable();
             }
         }
         private static IQueryable<EF.MMember> _Querys
         {
             get
             {
-                return DBClass.GetContext().MMembers.Include(x => x.User).AsQueryable();
+                return DBClass.GetContext().MMembers.Include(x => x.User).Include(x => x.TSectionMembers.Where(s => s.EndDate == null)).ThenInclude(s => s.Section).AsQueryable();
             }
         }
         public Member()
@@ -130,6 +135,9 @@ namespace GWALib.Lib.Master.Anggota
             Email = row.Email;
             Address = row.Address;
             Status = (MemberStatus)row.Status;
+            var section = row.TSectionMembers.Where(x => x.EndDate == null).OrderByDescending(x => x.StartDate).FirstOrDefault();
+            CurrentSectionId = section?.SectionId;
+            CurrentSectionName = section?.Section?.Name;
             InsDate = row.InsDate;
             InsBy = row.InsBy;
             UpdDate = row.UpdDate;

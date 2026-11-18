@@ -12,6 +12,7 @@ namespace GWALib.EF;
 [Table("m_asset_unit")]
 [Index("AssetId", Name = "fk_m_asset_unit_asset_id")]
 [Index("UnitCode", Name = "uq_asset_unit_code", IsUnique = true)]
+[Index("QrToken", Name = "uq_asset_unit_qr_token", IsUnique = true)]
 public partial class MAssetUnit
 {
     [Key]
@@ -22,11 +23,18 @@ public partial class MAssetUnit
     public int AssetId { get; set; }
 
     /// <summary>
-    /// Kode inventaris unit: unit_prefix + nomor urut, dicetak sebagai QR (berisi URL halaman unit)
+    /// Kode inventaris unit: unit_prefix + nomor urut (dicetak di label; QR berisi token)
     /// </summary>
     [Column("unit_code")]
     [StringLength(50)]
     public string UnitCode { get; set; } = null!;
+
+    /// <summary>
+    /// Token acak 128-bit (hex huruf besar) untuk URL QR /aset/{token} (migrasi 2026-11-18_asset_qr_token, ditulis tangan)
+    /// </summary>
+    [Column("qr_token")]
+    [StringLength(32)]
+    public string QrToken { get; set; } = null!;
 
     /// <summary>
     /// Nomor seri pabrik (opsional)

@@ -65,6 +65,27 @@ window.Kegiatan = (function () {
             refreshParticipants();
         });
     }
+    /* ===== Pengajuan tidak ikut (anggota audiens otomatis) ===== */
+    const ABSENCE = { MENUNGGU: 1 };
+    function absences(row) {
+        AppUI.openModal(MODAL_LARGE, 'Pengajuan Tidak Ikut — ' + row.Title, URL.izin, { encKey: row.EncDecrKey });
+        $('#' + MODAL_LARGE).one('hidden.bs.modal', function () { refresh('Kegiatan'); });
+    }
+    function refreshAbsences() {
+        AppUI.loadPartial('#kegiatanIzinTarget', URL.izinList, { encKey: $('#kegiatanIzin').data('key') });
+    }
+    const absenceStatusTemplate = AppUI.badgeTemplate({ Menunggu: 'warning', Disetujui: 'success', Ditolak: 'danger', Ditarik: 'secondary' });
+    function absenceActionTemplate(container, options) {
+        const row = options.data;
+        if (row.Status !== ABSENCE.MENUNGGU) return;
+        btn(container, 'btn-outline-success', 'ri-check-line', 'Setujui', function () {
+            AppUI.inputPost({ title: 'Setujui pengajuan — ' + row.Nama, text: row.Cakupan + ': ' + row.Alasan, input: 'textarea', label: 'Catatan (opsional)', confirmText: 'Setujui', confirmCss: 'btn-success' },
+                URL.setujuiIzin, { Key: row.EncDecrKey }, 'Catatan').done(refreshAbsences);
+        });
+        btn(container, 'btn-outline-danger', 'ri-close-line', 'Tolak', function () {
+            AppUI.reasonPost('Tolak pengajuan — ' + row.Nama, URL.tolakIzin, { Key: row.EncDecrKey }, 'Catatan', 'Tolak', 'btn-danger').done(refreshAbsences);
+        });
+    }
     function participantActionTemplate(container, options) {
         const row = options.data;
         if (row.Status === REG.REGISTERED) {
@@ -165,6 +186,9 @@ window.Kegiatan = (function () {
         const open = row.Status === STATUS.PLANNED || row.Status === STATUS.ONGOING;
         btn(container, 'btn-outline-success', 'ri-group-line', 'Peserta', function () { participants(row); });
         btn(container, 'btn-outline-info', 'ri-handshake-line', 'Kolaborator / mitra', function () { collaborators(row); });
+        if (row.Audiens !== 'Peserta Terdaftar') {
+            btn(container, 'btn-outline-danger', 'ri-calendar-close-line', 'Pengajuan tidak ikut' + (row.IzinMenunggu ? ' (' + row.IzinMenunggu + ' menunggu)' : ''), function () { absences(row); });
+        }
         if (row.Status === STATUS.PLANNED) {
             btn(container, 'btn-outline-primary', 'ri-play-circle-line', 'Mulai kegiatan', function () {
                 post('Kegiatan', 'Mulai kegiatan?', row.Title + ' menjadi Berjalan.', URL.statusKegiatan, { Key: row.EncDecrKey, Status: STATUS.ONGOING }, 'Mulai', 'btn-primary');
@@ -190,6 +214,7 @@ window.Kegiatan = (function () {
         titleTemplate: titleTemplate, statusTemplate: statusTemplate, participantStatusTemplate: participantStatusTemplate,
         collabStatusTemplate: collabStatusTemplate, reportStatusTemplate: reportStatusTemplate,
         actionTemplate: actionTemplate, participantActionTemplate: participantActionTemplate,
+        absenceStatusTemplate: absenceStatusTemplate, absenceActionTemplate: absenceActionTemplate,
         collabActionTemplate: collabActionTemplate, reportActionTemplate: reportActionTemplate
     };
 })();

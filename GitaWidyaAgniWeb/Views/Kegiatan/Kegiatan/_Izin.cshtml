@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.KegiatanVM.Izin
+@* Modal pengajuan tidak ikut: anggota audiens otomatis mengajukan tidak ikut satu pertemuan atau seluruh kegiatan. *@
+
+<div class="gwa-mform" id="kegiatanIzin" data-key="@Model.Key">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-calendar-close-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Judul</div>
+            <div class="gwa-mform-info-meta">
+                <span>Audiens <b>@Model.Audiens</b></span>
+                <span>Disetujui per pertemuan = dicatat Izin di presensi; seluruh kegiatan = tidak dihitung wajib hadir.</span>
+            </div>
+        </div>
+    </div>
+    <div id="kegiatanIzinTarget">
+        <partial name="~/Views/Kegiatan/Kegiatan/_IzinList.cshtml" model="Model.List" />
+    </div>
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

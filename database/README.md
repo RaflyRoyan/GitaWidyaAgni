@@ -4,7 +4,7 @@ MySQL 8, database `gitawidyaagni`, charset `utf8mb4` / collation `utf8mb4_0900_a
 
 | Berkas | Untuk |
 |---|---|
-| `gitawidyaagni_create.sql` | Membuat database baru lengkap (132 tabel, semua foreign key dan COMMENT kolom). |
+| `gitawidyaagni_create.sql` | Membuat database baru lengkap (135 tabel, semua foreign key dan COMMENT kolom). |
 | `migrations/YYYY-MM-DD_<nama>.sql` | Perubahan skema setelah create script dibuat. Jalankan berurutan pada database yang sudah ada. |
 
 ## Setup database baru
@@ -27,6 +27,9 @@ Jalankan berkas di `migrations/` yang lebih baru dari skema database tersebut, u
 
 ```
 mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-17_lpj.sql
+mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-18_section.sql
+mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-18_asset_qr_token.sql
+mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-18_activity_absence.sql
 ```
 
 ## Aturan perubahan skema

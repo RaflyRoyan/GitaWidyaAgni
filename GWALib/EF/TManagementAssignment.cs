@@ -8,6 +8,7 @@ namespace GWALib.EF;
 
 [Table("t_management_assignment")]
 [Index("DivisionId", Name = "fk_assignment_division")]
+[Index("SectionId", Name = "fk_assignment_section")]
 [Index("MemberId", Name = "fk_assignment_member")]
 [Index("PositionId", Name = "fk_assignment_position")]
 [Index("PeriodId", "IsCurrent", Name = "ix_assignment_current")]
@@ -31,6 +32,12 @@ public partial class TManagementAssignment
     /// </summary>
     [Column("division_id")]
     public int? DivisionId { get; set; }
+
+    /// <summary>
+    /// Section yang dipimpin (Section Leader)
+    /// </summary>
+    [Column("section_id")]
+    public int? SectionId { get; set; }
 
     /// <summary>
     /// Nomor SK pengangkatan
@@ -66,6 +73,10 @@ public partial class TManagementAssignment
     [ForeignKey("DivisionId")]
     [InverseProperty("TManagementAssignments")]
     public virtual MDivision? Division { get; set; }
+
+    [ForeignKey("SectionId")]
+    [InverseProperty("TManagementAssignments")]
+    public virtual MSection? Section { get; set; }
 
     [ForeignKey("MemberId")]
     [InverseProperty("TManagementAssignments")]

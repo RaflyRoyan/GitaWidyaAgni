@@ -23,6 +23,7 @@ namespace GWALib.Lib.Transaksi.Information
         internal const string TYPE_ASPIRATION = "ASPIRASI";
         internal const string TYPE_NEWS = "BERITA";
         internal const string TYPE_ASSIGNMENT = "KEPENGURUSAN";
+        internal const string TYPE_ABSENCE = "IZIN_KEGIATAN";
 
         // Halaman web tujuan.
         internal const string LINK_LETTER = "/Persuratan/Surat";

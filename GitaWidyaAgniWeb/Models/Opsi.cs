@@ -36,6 +36,14 @@ namespace GitaWidyaAgniWeb.Models
                 .ToList();
         }
 
+        public static List<GwaVM.OpsiItem> Section()
+        {
+            return GWALib.Lib.Master.Anggota.Section.GetDataList(FilterAktif.Aktif)
+                .OrderBy(x => x.SortOrder).ThenBy(x => x.Name)
+                .Select(x => new GwaVM.OpsiItem(x.Id, x.Name))
+                .ToList();
+        }
+
         public static List<GwaVM.OpsiItem> Jabatan()
         {
             return Position.GetDataList(FilterAktif.Aktif)

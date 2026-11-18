@@ -105,6 +105,14 @@ namespace GitaWidyaAgniWeb.Models.Prestasi
         {
             public static Certificate Load(string? key) => LibExtensions.Load<Certificate>(key, "Sertifikat");
 
+            /// <summary>Laporan sertifikat (DevExpress). baseUrl = AsetLabel.BaseUrl; QR berisi tautan verifikasi publik.</summary>
+            public static Reports.SertifikatReport Cetak(Certificate obj, string webRoot, string baseUrl)
+            {
+                var data = obj.GetPrintData();
+                var url = baseUrl + "/sertifikat/verifikasi?kode=" + Uri.EscapeDataString(data.VerificationCode);
+                return new Reports.SertifikatReport(data, Reports.ReportBrand.Load(webRoot), url);
+            }
+
             // Jabatan & prestasi milik anggota, untuk referensi sertifikat Pengurus / Prestasi.
             public static object OpsiReferensi(int memberId) => new
             {

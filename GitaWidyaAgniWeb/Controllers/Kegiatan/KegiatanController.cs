@@ -40,6 +40,14 @@ namespace GitaWidyaAgniWeb.Controllers.Kegiatan
         public IActionResult BatalPeserta([FromBody] GwaVM.KeyInput input) => Aksi(user => VM.Method.BatalPeserta(input.Key, user), "Pendaftaran peserta dibatalkan.");
 
         // ---------- Kolaborator
+        // ---------- Pengajuan tidak ikut (anggota audiens otomatis)
+        [AccessAs(Acc.Index)] public IActionResult Izin(string encKey) => Bagian(() => new VM.Izin(encKey));
+        [AccessAs(Acc.Index)] public IActionResult IzinList(string encKey) => Bagian(() => new VM.IzinList(encKey));
+        [HttpPost, AccessAs(Acc.Approve)]
+        public IActionResult SetujuiIzin([FromBody] VM.IzinInput input) => Aksi(user => { LibExtensions.Load<GWALib.Lib.Transaksi.Program.ActivityAbsenceRequest>(input.Key, "Pengajuan").Approve(input.Catatan, user).Ok(); }, "Pengajuan disetujui.");
+        [HttpPost, AccessAs(Acc.Approve)]
+        public IActionResult TolakIzin([FromBody] VM.IzinInput input) => Aksi(user => { LibExtensions.Load<GWALib.Lib.Transaksi.Program.ActivityAbsenceRequest>(input.Key, "Pengajuan").Reject(input.Catatan, user).Ok(); }, "Pengajuan ditolak.");
+
         [AccessAs(Acc.Index)] public IActionResult Kolaborator(string encKey) => Bagian(() => new VM.Kolaborator(encKey));
         [AccessAs(Acc.Index)] public IActionResult KolaboratorList(string encKey) => Bagian(() => new VM.KolaboratorList(encKey));
         [HttpPost, AccessAs(Acc.Edit)]

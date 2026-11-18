@@ -15,6 +15,7 @@
         columns.AddFor(m => m.MemberNumber).Caption("No. Anggota").CellTemplate(new JS("AppUI.codeTemplate"));
         columns.AddFor(m => m.Nim).Caption("NIM");
         columns.AddFor(m => m.Kategori).Caption("Kategori").Visible(false);
+        columns.AddFor(m => m.Section).Caption("Section");
         columns.AddFor(m => m.Prodi).Caption("Prodi / Instansi");
         columns.AddFor(m => m.Angkatan).Caption("Angkatan").Alignment(HorizontalAlignment.Center).Width(95);
         columns.AddFor(m => m.Tipe).Caption("Tipe").Alignment(HorizontalAlignment.Center);

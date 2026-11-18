@@ -77,6 +77,7 @@ window.Sertifikat = (function () {
     function actionTemplate(container, options) {
         const row = options.data;
         const key = { Key: row.EncDecrKey };
+        btn(container, 'btn-outline-primary', 'ri-printer-line', 'Cetak sertifikat', function () { AppUI.openReport('Sertifikat ' + row.CertificateNumber, URL.cetak + '?key=' + encodeURIComponent(row.EncDecrKey)); });
         if (row.FileName) {
             btn(container, 'btn-outline-info', 'ri-file-download-line', 'Unduh berkas', function () { window.open(URL.unduh + '?key=' + encodeURIComponent(row.EncDecrKey), '_blank'); });
         }

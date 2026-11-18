@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.KegiatanVM.IzinList
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Kegiatan
+
+@(Html.DevExtreme().DataGrid<KegiatanVM.IzinRow>()
+    .ID("tblIzin")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .DetailGrid("Belum ada pengajuan tidak ikut.")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        columns.AddFor(m => m.Nama).Caption("Anggota").CssClass("fw-medium");
+        columns.AddFor(m => m.Cakupan).Caption("Tidak ikut");
+        columns.AddFor(m => m.Alasan).Caption("Alasan");
+        columns.AddFor(m => m.InsDate).Caption("Diajukan").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
+        columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Kegiatan.absenceStatusTemplate"));
+        columns.AddFor(m => m.Catatan).Caption("Catatan Pengurus");
+        columns.AddAction("Kegiatan.absenceActionTemplate");
+    })
+)

@@ -1,0 +1,57 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.SectionVM.RiwayatIndex
+@using GitaWidyaAgniWeb.Models.Organisasi
+@* Modal riwayat section satu anggota (dibuka dari Data Anggota): pindah section + grid riwayat. *@
+
+<div class="gwa-mform" id="sectionRiwayat" data-mode="member" data-key="@Model.MemberKey">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-music-2-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">@Model.Nama</div>
+            <div class="gwa-mform-info-meta">
+                <span>Section saat ini <b>@(Model.SectionSaatIni ?? "belum ada")</b></span>
+                <span>Pindah section menutup section lama sehari sebelum tanggal mulai.</span>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.BisaPindah)
+    {
+        <div class="gwa-mform-section">
+            <span class="gwa-mform-section-title">Pindah section</span>
+        </div>
+        <div class="gwa-mform-add">
+            <div class="gwa-mform-add-form">
+                @(Html.DevExtreme().Form<SectionVM.PindahInput>()
+                    .ID("frmSectionPindah")
+                    .FormData(Model.Input)
+                    .LabelLocation(FormLabelLocation.Top)
+                    .ShowColonAfterLabel(false)
+                    .ColCount(3)
+                    .ColCountByScreen(c => c.Xs(1).Sm(1))
+                    .Items(items =>
+                    {
+                        items.AddSimpleFor(m => m.SectionId).IsRequired(true)
+                            .Editor(e => e.SelectBox().DataSource(Model.SectionOpsi).ValueExpr("Value").DisplayExpr("Text").Placeholder("Pilih section..."));
+                        items.AddSimpleFor(m => m.StartDate)
+                            .Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+                        items.AddSimpleFor(m => m.Note)
+                            .Editor(e => e.TextBox().MaxLength(255).Placeholder("mis. Parade HUT UPN"));
+                    })
+                )
+            </div>
+            <button type="button" class="btn btn-outline-primary" onclick="SectionRiwayat.move()"><i class="ri-arrow-left-right-line align-bottom me-1"></i> Pindahkan</button>
+        </div>
+    }
+    else
+    {
+        <div class="gwa-mform-note">Anggota tidak aktif; riwayat hanya bisa dilihat.</div>
+    }
+
+    <div id="sectionRiwayatTarget">
+        <partial name="~/Views/Organisasi/Section/_RiwayatList.cshtml" model="Model.List" />
+    </div>
+
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

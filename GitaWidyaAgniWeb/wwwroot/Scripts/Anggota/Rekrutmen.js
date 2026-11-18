@@ -46,13 +46,28 @@ window.Rekrutmen = (function () {
     }
 
     // Status baru + catatan opsional (Ditolak: catatan wajib).
-    function review(row, status, label, css) {
+    function review(row, status, label, css, extra) {
         AppUI.inputPost({
             title: label + ' — ' + row.Fullname,
             text: status === APPLICANT.ACCEPTED ? 'Pendaftar akan dibuatkan data anggota baru.' : '',
             input: 'textarea', label: 'Catatan', value: row.Notes, required: status === APPLICANT.REJECTED,
             confirmText: label, confirmCss: css
-        }, URL.review, { Key: row.EncDecrKey, Status: status }, 'Notes').done(refreshApplicants);
+        }, URL.review, $.extend({ Key: row.EncDecrKey, Status: status }, extra), 'Notes').done(refreshApplicants);
+    }
+
+    // Terima: pendaftar yang belum anggota wajib diberi section awal (semua anggota punya section).
+    function accept(row) {
+        if (row.SudahAnggota) {
+            review(row, APPLICANT.ACCEPTED, 'Terima', 'btn-success');
+            return;
+        }
+        AppUI.promptInput({
+            title: 'Section — ' + row.Fullname, text: 'Pilih section awal anggota baru.',
+            input: 'select', options: window.RekrutmenSection, required: true, confirmText: 'Lanjut', confirmCss: 'btn-success'
+        }).then(function (sectionId) {
+            if (sectionId === null) return;
+            review(row, APPLICANT.ACCEPTED, 'Terima', 'btn-success', { SectionId: parseInt(sectionId, 10) });
+        });
     }
 
     function applicantActionTemplate(container, options) {
@@ -64,7 +79,7 @@ window.Rekrutmen = (function () {
         if (row.Status < APPLICANT.INTERVIEW) {
             container.append(AppUI.actionButton({ css: 'btn-outline-primary', icon: 'ri-chat-voice-line', title: 'Wawancara', onClick: function () { review(row, APPLICANT.INTERVIEW, 'Wawancara', 'btn-primary'); } }));
         }
-        container.append(AppUI.actionButton({ css: 'btn-outline-success', icon: 'ri-check-line', title: 'Terima', onClick: function () { review(row, APPLICANT.ACCEPTED, 'Terima', 'btn-success'); } }));
+        container.append(AppUI.actionButton({ css: 'btn-outline-success', icon: 'ri-check-line', title: 'Terima', onClick: function () { accept(row); } }));
         container.append(AppUI.actionButton({ css: 'btn-outline-danger', icon: 'ri-close-line', title: 'Tolak', onClick: function () { review(row, APPLICANT.REJECTED, 'Tolak', 'btn-danger'); } }));
     }
 

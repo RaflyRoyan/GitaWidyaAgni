@@ -13,7 +13,7 @@ namespace GWALib.Lib.Transaksi.Program
     /// <summary>
     /// Kegiatan (t_activity): event, rapat, latihan, pertemuan, lomba, piket. Pusat panitia, presensi, galeri, laporan.
     /// ProgramId NULL = kegiatan insidental. ParentActivityId = kegiatan induk (mis. rapat persiapan event), maksimal 1 tingkat.
-    /// Lomba wajib CompetitionId; audiens Divisi wajib DivisionId; audiens Tim Pelaksana wajib kegiatan induk.
+    /// Lomba wajib CompetitionId; audiens Divisi wajib DivisionId; audiens Section wajib SectionId (latihan sectional); audiens Tim Pelaksana wajib kegiatan induk.
     /// Alur status: Planned → Ongoing → Done; Planned / Ongoing → Cancelled. Disorot hanya untuk kegiatan publik.
     /// </summary>
     public partial class Activity : BaseLib
@@ -26,6 +26,7 @@ namespace GWALib.Lib.Transaksi.Program
             public ActivityType ActivityType { get; set; } = ActivityType.Event;
             public AudienceType AudienceType { get; set; } = AudienceType.SemuaAnggota;
             public int? DivisionId { get; set; }
+            public int? SectionId { get; set; }
             public string Title { get; set; } = null!;
             public string? Description { get; set; }
             public string? Location { get; set; }
@@ -45,6 +46,7 @@ namespace GWALib.Lib.Transaksi.Program
         public ActivityType ActivityType { get; set; }
         public AudienceType AudienceType { get; set; }
         public int? DivisionId { get; set; }
+        public int? SectionId { get; set; }
         public string Title { get; set; } = null!;
         public string? Description { get; set; }
         public string? Location { get; set; }
@@ -96,6 +98,7 @@ namespace GWALib.Lib.Transaksi.Program
             ActivityType = (ActivityType)row.ActivityType;
             AudienceType = (AudienceType)row.AudienceType;
             DivisionId = row.DivisionId;
+            SectionId = row.SectionId;
             Title = row.Title;
             Description = row.Description;
             Location = row.Location;

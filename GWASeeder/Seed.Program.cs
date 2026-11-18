@@ -44,9 +44,9 @@ namespace GWASeeder
             {
                 ("Konser", "Booking gedung konser", null, 1, Priority.Tinggi, -30, -10, TaskProgressStatus.Selesai),
                 ("Konser", "Desain poster dan tiket", "Humas & Media", 10, Priority.Sedang, -20, 5, TaskProgressStatus.Proses),
-                ("Konser", "Aransemen lagu pembuka", "Brass", 5, Priority.Tinggi, -40, 10, TaskProgressStatus.Proses),
+                ("Konser", "Aransemen lagu pembuka", null, 5, Priority.Tinggi, -40, 10, TaskProgressStatus.Proses),
                 ("Kejurnas", "Pendaftaran tim GPMB", null, 6, Priority.Tinggi, -5, 15, TaskProgressStatus.Belum),
-                ("Kejurnas", "Pengukuran kostum pemain", "Colour Guard", 7, Priority.Sedang, 0, 20, TaskProgressStatus.Belum),
+                ("Kejurnas", "Pengukuran kostum pemain", null, 7, Priority.Sedang, 0, 20, TaskProgressStatus.Belum),
                 ("Latihan", "Servis rutin alat brass", "Logistik", 9, Priority.Sedang, -14, -2, TaskProgressStatus.Selesai)
             };
             foreach (var t in tasks)
@@ -163,7 +163,7 @@ namespace GWASeeder
             }, ProgramStatus.Ongoing);
             Add("Brass", new Activity.NewRow
             {
-                ProgramId = Programs["Latihan"].Id, ActivityType = ActivityType.Latihan, AudienceType = AudienceType.Divisi, DivisionId = Divisions["Brass"],
+                ProgramId = Programs["Latihan"].Id, ActivityType = ActivityType.Latihan, AudienceType = AudienceType.Section, SectionId = MusicSections["Brass"],
                 Title = "Sectional Brass", Location = "Ruang Musik Giri Loka", StartAt = DateTime.Today.AddDays(2).AddHours(16), EndAt = DateTime.Today.AddDays(2).AddHours(18)
             });
             Add("Konser", new Activity.NewRow
@@ -367,6 +367,18 @@ namespace GWASeeder
                 }
                 Ok(opened.Close(Admin), "Tutup sesi latihan");
             }
+
+            // Latihan rutin diikuti otomatis semua anggota; anggota mengajukan tidak ikut satu pertemuan / seluruh kegiatan.
+            var next = AttendanceSession.GetDataList(latihan.Id).Where(s => s.Status == AttendanceSessionStatus.Scheduled && s.OpenAt > DateTime.Now)
+                .OrderBy(s => s.OpenAt).FirstOrDefault();
+            if (next != null)
+            {
+                var izin1 = Ok(ActivityAbsenceRequest.Submit(new ActivityAbsenceRequest.NewRow { ActivityId = latihan.Id, SessionId = next.Id, Reason = "Ujian tengah semester praktikum" }, UserOf(Members[19])), "Izin sesi");
+                Ok(izin1.Approve("Semoga lancar ujiannya", Admin), "Setujui izin sesi");
+                var izin2 = Ok(ActivityAbsenceRequest.Submit(new ActivityAbsenceRequest.NewRow { ActivityId = latihan.Id, SessionId = next.Id, Reason = "Ada acara keluarga" }, UserOf(Members[21])), "Izin sesi 2");
+                Ok(izin2.Reject("Sesi ini persiapan lomba, wajib hadir", Admin), "Tolak izin sesi");
+            }
+            Ok(ActivityAbsenceRequest.Submit(new ActivityAbsenceRequest.NewRow { ActivityId = latihan.Id, Reason = "Magang di luar kota sampai Januari" }, UserOf(Members[20])), "Izin seluruh kegiatan");
 
             // Rapat: QR + foto check-in oleh pengurus, notulen.
             var rapat = Ok(AttendanceSession.Save(new AttendanceSession.NewRow

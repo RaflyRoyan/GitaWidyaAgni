@@ -18,7 +18,7 @@ namespace GitaWidyaAgniWeb.Models.Inventaris
                 {
                     return null;
                 }
-                var unit = AssetUnit.GetByCode(AsetLabel.KodeUnit(code)) ?? throw new ArgumentException("Kode unit " + code + " tidak ditemukan.");
+                var unit = AssetUnit.GetByCodeOrToken(AsetLabel.KodeUnit(code)) ?? throw new ArgumentException("Kode unit " + code + " tidak ditemukan.");
                 if (unit.AssetId != assetId)
                 {
                     throw new ArgumentException("Kode unit " + code + " bukan milik aset yang dipilih.");
@@ -94,7 +94,7 @@ namespace GitaWidyaAgniWeb.Models.Inventaris
                         throw new ArgumentException("Unit bukan milik aset " + aset.Name + ".");
                     }
                     unit.MarkLabelPrinted(user).Ok();
-                    rows.Add(new Reports.LabelQrUnitReport.Row { UnitCode = unit.UnitCode, Url = AsetLabel.PublicUrl(baseUrl, unit.UnitCode), AssetName = aset.Name, SerialNumber = unit.SerialNumber });
+                    rows.Add(new Reports.LabelQrUnitReport.Row { UnitCode = unit.UnitCode, Url = AsetLabel.PublicUrl(baseUrl, unit.QrToken), AssetName = aset.Name, SerialNumber = unit.SerialNumber });
                 }
                 return rows.OrderBy(x => x.UnitCode).ToList();
             }

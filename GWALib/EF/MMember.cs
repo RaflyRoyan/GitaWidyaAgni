@@ -167,6 +167,9 @@ public partial class MMember
     public virtual ICollection<TDivisionMember> TDivisionMembers { get; set; } = new List<TDivisionMember>();
 
     [InverseProperty("Member")]
+    public virtual ICollection<TSectionMember> TSectionMembers { get; set; } = new List<TSectionMember>();
+
+    [InverseProperty("Member")]
     public virtual ICollection<TDuesBill> TDuesBills { get; set; } = new List<TDuesBill>();
 
     [InverseProperty("Member")]

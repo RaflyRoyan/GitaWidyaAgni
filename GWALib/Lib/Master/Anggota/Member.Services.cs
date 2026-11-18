@@ -282,6 +282,9 @@ namespace GWALib.Lib.Master.Anggota
                 InsBy = userId
             };
             GWAShared.Utilities.ValidateUtility.ValidateDAModel(row);
+            // Semua anggota wajib punya section: section awal dicatat mulai tanggal bergabung (atau hari ini).
+            row.TSectionMembers.Add(Transaksi.Anggota.SectionMember.NewHistoryRow(context, row, newrow.SectionId,
+                newrow.JoinedAt ?? DateOnly.FromDateTime(DateTime.Today), "Section awal", userId));
             return row;
         }
         private void SetRow(EF.ModelContext context, EF.MMember row, int userId)

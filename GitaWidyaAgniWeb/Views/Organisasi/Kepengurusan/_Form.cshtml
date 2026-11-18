@@ -42,6 +42,8 @@
             }
             items.AddSimpleFor(m => m.DivisionId)
                 .Editor(e => e.SelectBox().DataSource(Model.DivisiOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Tidak memimpin divisi"));
+            items.AddSimpleFor(m => m.SectionId)
+                .Editor(e => e.SelectBox().DataSource(Model.SectionOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Untuk jabatan Section Leader"));
             items.AddSimpleFor(m => m.SkNumber)
                 .Editor(e => e.TextBox().MaxLength(100));
             items.AddSimpleFor(m => m.StartDate)

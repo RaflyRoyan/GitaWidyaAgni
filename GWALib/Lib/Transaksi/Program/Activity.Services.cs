@@ -201,9 +201,9 @@ namespace GWALib.Lib.Transaksi.Program
         {
             return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
         }
-        // Kolom yang tidak berlaku dikosongkan: CompetitionId hanya untuk Lomba, DivisionId hanya untuk audiens Divisi.
-        private static (int? CompetitionId, int? DivisionId) ValidateData(EF.ModelContext context, int id, int? programId, int? parentId, int? competitionId,
-            ActivityType activityType, AudienceType audienceType, int? divisionId, string title, decimal? latitude, decimal? longitude,
+        // Kolom yang tidak berlaku dikosongkan: CompetitionId hanya untuk Lomba, DivisionId hanya untuk audiens Divisi, SectionId hanya untuk audiens Section.
+        private static (int? CompetitionId, int? DivisionId, int? SectionId) ValidateData(EF.ModelContext context, int id, int? programId, int? parentId, int? competitionId,
+            ActivityType activityType, AudienceType audienceType, int? divisionId, int? sectionId, string title, decimal? latitude, decimal? longitude,
             DateTime startAt, DateTime? endAt, PublicVisibility isPublic, FeaturedStatus isFeatured)
         {
             if (string.IsNullOrWhiteSpace(title))
@@ -268,7 +268,16 @@ namespace GWALib.Lib.Transaksi.Program
                 }
                 Division.ValidateActiveDivision(context, divisionId.Value);
             }
-            return (competitionId, divisionId);
+            sectionId = audienceType == AudienceType.Section ? sectionId : null;
+            if (audienceType == AudienceType.Section)
+            {
+                if (sectionId == null)
+                {
+                    throw new ArgumentException(string.Format(ExceptionMessage.FIELD_REQUIRED, "Section"));
+                }
+                Section.ValidateActiveSection(context, sectionId.Value);
+            }
+            return (competitionId, divisionId, sectionId);
         }
         // Hanya kegiatan Planned yang belum punya data turunan yang bisa dihapus; selebihnya dibatalkan.
         private static void ValidateDelete(EF.ModelContext context, EF.TActivity row)
@@ -292,7 +301,7 @@ namespace GWALib.Lib.Transaksi.Program
             var programId = newrow.ProgramId > 0 ? newrow.ProgramId : null;
             var parentId = newrow.ParentActivityId > 0 ? newrow.ParentActivityId : null;
             var scope = ValidateData(context, 0, programId, parentId, newrow.CompetitionId > 0 ? newrow.CompetitionId : null, newrow.ActivityType,
-                newrow.AudienceType, newrow.DivisionId > 0 ? newrow.DivisionId : null, title, newrow.Latitude, newrow.Longitude,
+                newrow.AudienceType, newrow.DivisionId > 0 ? newrow.DivisionId : null, newrow.SectionId > 0 ? newrow.SectionId : null, title, newrow.Latitude, newrow.Longitude,
                 newrow.StartAt, newrow.EndAt, newrow.IsPublic, newrow.IsFeatured);
 
             var row = new EF.TActivity
@@ -304,6 +313,7 @@ namespace GWALib.Lib.Transaksi.Program
                 ActivityType = (int)newrow.ActivityType,
                 AudienceType = (int)newrow.AudienceType,
                 DivisionId = scope.DivisionId,
+                SectionId = scope.SectionId,
                 Title = title,
                 Description = ToNullable(newrow.Description),
                 Location = ToNullable(newrow.Location),
@@ -329,7 +339,7 @@ namespace GWALib.Lib.Transaksi.Program
             var programId = ProgramId > 0 ? ProgramId : null;
             var parentId = ParentActivityId > 0 ? ParentActivityId : null;
             var scope = ValidateData(context, row.Id, programId != row.ProgramId ? programId : null, parentId, CompetitionId > 0 ? CompetitionId : null,
-                ActivityType, AudienceType, DivisionId > 0 ? DivisionId : null, title, Latitude, Longitude, StartAt, EndAt, IsPublic, IsFeatured);
+                ActivityType, AudienceType, DivisionId > 0 ? DivisionId : null, SectionId > 0 ? SectionId : null, title, Latitude, Longitude, StartAt, EndAt, IsPublic, IsFeatured);
 
             row.ProgramId = programId;
             row.ParentActivityId = parentId;
@@ -337,6 +347,7 @@ namespace GWALib.Lib.Transaksi.Program
             row.ActivityType = (int)ActivityType;
             row.AudienceType = (int)AudienceType;
             row.DivisionId = scope.DivisionId;
+            row.SectionId = scope.SectionId;
             row.Title = title;
             row.Description = ToNullable(Description);
             row.Location = ToNullable(Location);

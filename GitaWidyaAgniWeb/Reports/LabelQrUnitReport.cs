@@ -11,7 +11,8 @@ namespace GitaWidyaAgniWeb.Reports
     /// <summary>
     /// Label QR unit aset (DevExpress Reports, dibuat lewat kode tanpa .repx).
     /// A4 portrait, 4 kolom × 5 baris (label 46 × 53 mm, garis potong putus-putus).
-    /// Isi QR = URL publik /aset/{kodeUnit} (detail alat tanpa login); scanner internal mengambil kodenya lewat AsetLabel.KodeUnit.
+    /// Isi QR = URL publik /aset/{qrToken} (token acak, detail alat tanpa login); kode unit hanya tercetak sebagai teks.
+    /// Scanner internal memetakan token ke kode lewat AsetLabel.ResolveKode.
     /// Ukuran ditulis dalam 0,1 mm lalu dikonversi (M / R) ke satuan bawaan report, 1/100 inci: kontrol yang dibuat lewat kode
     /// memakai satuan bawaan walau ReportUnit diubah.
     /// </summary>

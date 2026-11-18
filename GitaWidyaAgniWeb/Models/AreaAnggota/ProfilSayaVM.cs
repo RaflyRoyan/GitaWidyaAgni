@@ -6,7 +6,7 @@ using GWAShared.Enums;
 
 namespace GitaWidyaAgniWeb.Models.AreaAnggota
 {
-    /// <summary>Area Anggota › Profil Saya: data diri (kontak bisa diubah sendiri), foto, jabatan, divisi, dan ganti password.</summary>
+    /// <summary>Area Anggota › Profil Saya: data diri (kontak bisa diubah sendiri), foto, riwayat section, jabatan, divisi, dan ganti password.</summary>
     public class ProfilSayaVM
     {
         public class Index
@@ -17,6 +17,8 @@ namespace GitaWidyaAgniWeb.Models.AreaAnggota
             public NewKontak Kontak { get; set; } = new();
             public List<string> Jabatan { get; set; } = new();
             public List<string> Divisi { get; set; } = new();
+            /// <summary>Riwayat section (terbaru dulu): nama, rentang tanggal, catatan, aktif.</summary>
+            public List<(string Nama, string Rentang, string? Catatan, bool Aktif)> Section { get; set; } = new();
 
             public Index(string username, Member? member)
             {
@@ -30,11 +32,15 @@ namespace GitaWidyaAgniWeb.Models.AreaAnggota
                 Kontak = new NewKontak { Phone = member.Phone, Email = member.Email, Address = member.Address };
                 Jabatan = ManagementAssignment.GetDataList(memberId: member.Id)
                     .OrderByDescending(x => x.StartDate)
-                    .Select(x => x.PositionName + (x.DivisionName != null ? " " + x.DivisionName : "") + " · " + x.PeriodName
+                    .Select(x => x.PositionName + (x.DivisionName != null ? " " + x.DivisionName : x.SectionName != null ? " " + x.SectionName : "") + " · " + x.PeriodName
                         + (x.IsCurrent == AssignmentPeriod.Berjalan ? "" : " (selesai)"))
                     .ToList();
                 Divisi = DivisionMember.GetDataList(FilterAktif.Aktif, memberId: member.Id)
                     .Select(x => x.DivisionName + (string.IsNullOrEmpty(x.MemberRole) ? "" : " · " + x.MemberRole))
+                    .ToList();
+                var id = new System.Globalization.CultureInfo("id-ID");
+                Section = SectionMember.GetDataList(memberId: member.Id).OrderByDescending(x => x.StartDate)
+                    .Select(x => (x.SectionName, x.StartDate.ToString("d MMM yyyy", id) + " – " + (x.EndDate?.ToString("d MMM yyyy", id) ?? "sekarang"), x.Note, x.IsCurrent))
                     .ToList();
             }
         }

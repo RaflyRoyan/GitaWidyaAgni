@@ -93,9 +93,16 @@ window.Anggota = (function () {
 
     const statusTemplate = AppUI.badgeTemplate({ Aktif: 'success', Alumni: 'info', 'Tidak Aktif': 'danger' });
 
+    // Riwayat & pindah section (modal bersama dari Organisasi › Section, Scripts/Organisasi/SectionRiwayat.js).
+    function sections(row) {
+        AppUI.openModal('staticBackdropLarge', 'Riwayat Section — ' + row.Fullname, window.SectionRiwayatUrl.riwayat, { memberKey: row.EncDecrKey });
+        $('#staticBackdropLarge').one('hidden.bs.modal', refresh);
+    }
+
     function actionTemplate(container, options) {
         const row = options.data;
         container.append(AppUI.actionButton({ css: 'btn-outline-info', icon: 'ri-image-line', title: 'Foto anggota', onClick: function () { photos(row); } }));
+        container.append(AppUI.actionButton({ css: 'btn-outline-success', icon: 'ri-music-2-line', title: 'Riwayat section', onClick: function () { sections(row); } }));
         container.append(AppUI.actionButton({ css: 'btn-outline-warning', icon: 'ri-edit-2-line', title: 'Ubah anggota', onClick: function () { edit(row.EncDecrKey); } }));
         if (row.Aktif) {
             container.append(AppUI.actionButton({ css: 'btn-outline-danger', icon: 'ri-forbid-line', title: 'Nonaktifkan anggota', onClick: function () { deactivate(row); } }));

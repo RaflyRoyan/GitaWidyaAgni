@@ -15,6 +15,8 @@ namespace GWALib.Lib.Master.Inventaris
     public partial class AssetUnit
     {
         private const int CODE_DIGITS = 3;
+        /// <summary>Panjang token QR: 16 byte acak dalam hex huruf besar.</summary>
+        public const int QR_TOKEN_LENGTH = 32;
         private const string ADD_MOVEMENT_NOTE = "Unit baru";
         private const string DISPOSAL_MOVEMENT_NOTE = "Unit dihapus";
 
@@ -44,6 +46,19 @@ namespace GWALib.Lib.Master.Inventaris
             var row = _Querys.SingleOrDefault(x => x.UnitCode == code);
             return row != null ? new AssetUnit(row) : null;
         }
+        /// <summary>Unit dari token QR (label baru). Token dicocokkan tanpa membedakan huruf besar/kecil.</summary>
+        public static AssetUnit? GetByQrToken(string? token)
+        {
+            var value = token?.Trim().ToUpperInvariant() ?? string.Empty;
+            if (value.Length != QR_TOKEN_LENGTH)
+            {
+                return null;
+            }
+            var row = _Querys.SingleOrDefault(x => x.QrToken == value);
+            return row != null ? new AssetUnit(row) : null;
+        }
+        /// <summary>Isi scan (token QR atau kode unit yang diketik) → unit; null bila tidak ada.</summary>
+        public static AssetUnit? GetByCodeOrToken(string? input) => GetByQrToken(input) ?? GetByCode(input ?? string.Empty);
         public static Response<AssetUnit> Save(NewRow newrow, string user)
         {
             return ServiceHandler.Handle(() =>
@@ -187,12 +202,14 @@ namespace GWALib.Lib.Master.Inventaris
                 Id = firstId + i,
                 AssetId = asset.Id,
                 UnitCode = prefix + (lastNumber + i + 1).ToString("D" + CODE_DIGITS),
+                QrToken = NewQrToken(),
                 UnitCondition = (int)unitCondition,
                 Status = (int)AssetUnitStatus.Tersedia,
                 InsDate = DateTime.Now,
                 InsBy = userId
             }).ToList();
         }
+        private static string NewQrToken() => Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(QR_TOKEN_LENGTH / 2));
         // Tanpa SaveChanges: semua unit yang belum dihapus ikut dihapus bersama asetnya.
         internal static void DisposeAll(EF.ModelContext context, EF.MAsset asset, string notes, int userId)
         {

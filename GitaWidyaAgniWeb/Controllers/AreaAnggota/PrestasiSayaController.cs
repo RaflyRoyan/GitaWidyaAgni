@@ -36,6 +36,19 @@ namespace GitaWidyaAgniWeb.Controllers.AreaAnggota
             });
         }
 
+        // Cetak sertifikat milik sendiri (DevExpress Reports; ?pdf=1 = unduh PDF).
+        public IActionResult CetakSertifikat(string key) => Laporan(() =>
+        {
+            var c = LibExtensions.Load<Certificate>(key, "Sertifikat");
+            if (c.MemberId != Saya().Id || c.Status != CertificateStatus.Terbit)
+            {
+                throw new ArgumentException("Sertifikat tidak ditemukan.");
+            }
+            return Models.Prestasi.SertifikatVM.Method.Cetak(c,
+                HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath,
+                AsetLabel.BaseUrl(Request, HttpContext.RequestServices.GetRequiredService<IConfiguration>()));
+        });
+
         // Unduh berkas sertifikat milik sendiri.
         public IActionResult Sertifikat(string key)
         {

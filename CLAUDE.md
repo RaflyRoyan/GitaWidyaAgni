@@ -65,7 +65,7 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
       - A per-unit asset creates `Quantity` units on save. Its `Quantity` is the count of units that are not deleted.
       - Adding or deleting a unit updates `Quantity` and writes a `t_asset_movement` row with `asset_unit_id`.
       - A unit cannot be deleted while borrowed or under maintenance. Disposing the asset deletes its remaining units.
-      - Use `GetByCode` for QR scans and `MarkLabelPrinted` after printing.
+      - Each unit has a random `qr_token` (16 bytes, 32 upper-case hex; migration `2026-11-18_asset_qr_token.sql`) set on create. The QR holds the token, not the unit code. Use `GetByQrToken` (public page), `GetByCodeOrToken` (internal scans), `GetByCode` for typed codes, and `MarkLabelPrinted` after printing.
   - `Lib/Master/Surat/`:
     - `DocumentCategory` has a unique name.
     - `LetterTemplate` has a unique name. `LetterType` is normalised to a type code (`ToTypeCode`). It needs an HTML body, a `.docx` file of at most 5 MB, or both. Lists do not load the file blob (`GetFile` / `UpdateFile`). `GetLetterTypes()` returns the letter types in use.
@@ -85,6 +85,8 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
     - `Member`: NIM, member number (stored upper case) and user are each unique globally. `MemberType` and `JoinedAt` / `LeftAt` are new compared with ClubLib. Delete sets the member Inactive and fills `LeftAt`. Use `internal GetMember` (any status) or `GetActiveMember`.
     - `MemberPhoto` and `AlumniProfile`: alumni profiles are only for members with status Alumni.
     - `Division` and `Position`: names are unique and delete is soft (`is_active`). Use `internal ValidateActiveDivision` / `ValidateActivePosition`.
+    - `Section` (`m_section`, migration `2026-11-18_section.sql`, EF entities written by hand): the music sections (Brass, Battery, Front Ensemble, Colour Guard). **Every member has a section; a division (`Division`) holds only members picked by the Ketua Umum** (Humas, Logistik, Danus, …). The name is unique and delete is soft, refused while the section has current members. `GetMemberCounts()` counts active members per current section. `internal ValidateActiveSection`.
+    - `Member.NewRow.SectionId` is required on create: `CreateRow` adds the first `t_section_member` row (start = `JoinedAt` or today). `Member` exposes `CurrentSectionId` / `CurrentSectionName` (filtered include of the open history row).
 - All `m_*` master tables now have a service class under `Lib/Master/`. Transactions go under `Lib/Transaksi/<Module>/`.
 - `Lib/Transaksi/Approval/` (ported from ClubLib):
   - `DocumentNumberSeq`:
@@ -108,8 +110,10 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
   - `DivisionMember`:
     - Unique per (division, member, period), with NULL period checked in code.
     - The role is an uppercase code. Delete sets the row inactive and fills `left_at`.
+  - `SectionMember` (`t_section_member`): section history. The open row (`end_date` NULL) is the current section. `Move(memberId, sectionId, startDate, note)` closes the current row on `startDate − 1` and opens a new one (same start date = correction of the current row; a start before the current one is refused), so members can switch section per event. `Update` changes only the note. `Delete` removes a wrong row and reopens the previous one; the only row of an Active member cannot be deleted. `internal MemberIdsAt(context, sectionId, date)` gives the members in a section on a date.
   - `ManagementAssignment`:
-    - A core position (`is_core`) can have only one current holder per (period, position, division).
+    - A core position (`is_core`) can have only one current holder per (period, position, division, section).
+    - `SectionId` (`t_management_assignment.section_id`) marks a Section Leader assignment. An assignment leads a division or a section, never both.
     - Assigning a member whose type is Anggota changes the type to Pengurus.
     - `End` closes an assignment, and an ended assignment is locked. Delete is refused when a certificate uses the assignment.
     - `internal EndAllInPeriod` is used by the period handover.
@@ -120,7 +124,7 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
   - `RecruitmentApplicant`:
     - `Apply` needs no login. It requires status Open within the date range. Umum applicants are allowed only if `accept_public`. NIM and email are unique per recruitment. The applicant is linked to an existing member by NIM or email.
     - `Review` moves the status forward only; Accepted and Rejected are final.
-    - Accepted checks the quota and creates an `m_member` through `Member.CreateRow`, which is now internal.
+    - Accepted checks the quota and creates an `m_member` through `Member.CreateRow`, which is now internal. `Review(status, notes, user, sectionId)`: the section is required when a new member is created.
   - `PeriodHandover` and `PeriodHandoverItem`:
     - One handover per source period. Draft → Diajukan → Disetujui / Ditolak, and Ditolak can be edited and resubmitted.
     - Data, items and the LPJ file can be changed only in Draft or Ditolak.
@@ -139,11 +143,12 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
     - Selesai records `completed_at` and `done_by`.
   - `Activity`:
     - The parent activity may be only one level deep.
-    - Lomba requires `CompetitionId`, audience Divisi requires `DivisionId`, and audience TimPelaksana requires a parent. Fields that do not apply are cleared.
+    - Lomba requires `CompetitionId`, audience Divisi requires `DivisionId`, audience Section (6, sectional practice) requires `SectionId` (`t_activity.section_id`), and audience TimPelaksana requires a parent. Fields that do not apply are cleared.
     - Featured requires public. `GetPublicList` serves the landing page.
     - Delete is allowed only for a Planned activity with no dependents. `internal GetActivity` and `GetOpenActivity` are available.
   - `ActivityCollaborator`: `Respond` moves Diundang to Diterima or Ditolak. Blacklisted parties are refused.
   - `ActivityParticipant`: unique per activity. Registering again after Cancelled reactivates the old row.
+  - `ActivityAbsenceRequest` (`t_activity_absence_request`, migration `2026-11-18_activity_absence.sql`, entity written by hand): members of an activity audience other than Peserta Terdaftar (Semua Anggota, Pengurus, Divisi, Section, Tim Pelaksana — e.g. latihan rutin) are **automatically** in it and never register. They request not to attend one session (`SessionId`) or the whole activity (`SessionId` NULL) with a reason (`Submit`, by the logged-in member). Menunggu → Disetujui / Ditolak (note required) by staff, Menunggu → Ditarik by the member. No duplicate open request per session or whole activity. Approved whole activity = removed from `GetExpectedMemberIds` (no Alpa); approved session = recorded Izin when the session closes (an existing Alpa without check-in becomes Izin on approval). Check-in still accepts them (`GetExpectedMemberIds(..., excludeAbsent: false)`). Decisions notify the member (`IZIN_KEGIATAN`). `GetAutoActivityIds(memberId, ids)` lists the activities a member follows automatically.
   - `ActivityReport`:
     - Needs an activity or a program; the program is filled from the activity.
     - Draft → Submitted → Approved, and Submitted → Revision. The file is not loaded in lists.
@@ -193,7 +198,7 @@ The structure is copied from the author's ClubSphere project (`C:\Users\Royan\so
     - Scheduled → Open → Closed, and Scheduled/Open → Cancelled with a reason.
     - `Open` creates a new random `qr_token`; calling it again rotates the token.
     - `Close` clears the token and records Alpa for expected members with no record.
-    - Expected members come from the activity audience through `internal GetExpectedMemberIds`.
+    - Expected members come from the activity audience through `internal GetExpectedMemberIds(context, activity, sessionOpenAt)`; audience Section uses the section history on the session date.
     - A session cannot be cancelled once someone has checked in.
   - `AttendanceRecord`:
     - `CheckIn` / `CheckOut` take the QR token from the logged-in user's member. The session must be Open and within its time window. The member must be in the audience, unless the audience is all members.
@@ -422,7 +427,7 @@ Open items not tied to one folder:
   - There is no column for an email-verified flag (`UserToken.VerifyEmail` only consumes the token) and none for report revision notes (`ActivityReport`). Adding them is up to the user.
 - **Commits:** `861fd70` holds the library. The web app, the seeder and the docs were committed and pushed after it. Commit only when asked.
 - **Security:** `GWALib/EF/ModelContext.cs:282` has a commented DB root password that is already in git history. Rotate that password and remove the line.
-- **Database scripts (in the repo):** `database/gitawidyaagni_create.sql` is a schema-only `mysqldump` of the dev database (132 tables, 267 foreign keys, column COMMENTs; verified on an empty database 2026-11-17). Later schema changes go to `database/migrations/YYYY-MM-DD_<name>.sql`, then regenerate the create script (`database/README.md`). MySQL 8 is in `C:\Program Files\MySQL\MySQL Server 8.0\bin` and is not on PATH.
+- **Database scripts (in the repo):** `database/gitawidyaagni_create.sql` is a schema-only `mysqldump` of the dev database (135 tables since 2026-11-18, column COMMENTs; the 2026-11-18 version was loaded into an empty database and seeded). Later schema changes go to `database/migrations/YYYY-MM-DD_<name>.sql`, then regenerate the create script (`database/README.md`). MySQL 8 is in `C:\Program Files\MySQL\MySQL Server 8.0\bin` and is not on PATH.
 
 ## GitaWidyaAgniWeb
 
@@ -475,6 +480,15 @@ ASP.NET Core 8 MVC. The template is Velzon (`wwwroot/assets`), plus DevExtreme 2
   - Layout is a split screen: a cream showcase on the left (first `m_organization_photo` in a tilted frame, a floating logo emblem and a quote) and the form on the right. Below 992px it collapses to a compact header.
   - The form has visible labels with icons, a show/hide password button (`aria-pressed`), a Caps Lock hint, a `role="alert"` error linked through `aria-describedby`, focus on the first empty field instead of an alert, and a loading state on submit that resets on `pageshow`.
   - `Denied` uses the same layout with the `.auth-state` block.
+- **Dashboard page (`Home/Index`, `Models/HomeVM`):** data from GWALib `Lib/Transaksi/Information/Dashboard.GetSummary(user)`, built from aggregate queries.
+  - Contents:
+    - a greeting hero with the active period, days left and the next agenda item;
+    - stat cards: members, upcoming activities, cash balance, unpaid dues;
+    - a DevExtreme bar chart of cash flow over 6 months and a doughnut of active members per section (`Dashboard.Sections`; `Divisions` is still computed);
+    - the agenda (upcoming attendance sessions plus activities not yet started);
+    - "Perlu tindakan": pending absence requests (Kegiatan), letters, funding, procurement and borrow requests, plus the user's own open dispositions and unpaid dues;
+    - the top 5 points and up to 8 menu shortcuts.
+  - Each section shows only when `HomeVM.Can(controller)` allows `<controller>/index` (SUPERADMIN sees all). Styles are under "Dashboard" in `gwa-theme.css`.
 - **Dashboard theme (Velzon):** the same palette as landing and login (DevExtreme widgets use the SurabayaTaxWeb Material theme, see above).
   - `_Layout` loads `assets/css/bootstrap.gwa.min.css`, `app.gwa.min.css` and `custom.gwa.min.css` instead of Velzon's originals, which stay untouched.
   - The `.gwa` copies are made with sed from the originals, replacing primary navy `#405189` and its shades/rgb with bronze `#9a6b00`, secondary `#3577f1` with flame `#c8202a`, success `#0ab39c` with leaf `#1f7a45`, warning `#f7b84b` with gold `#e8b52a`, and body `#f3f3f9` with `#f8f4ec`. Hover shades are mapped too.
@@ -559,6 +573,7 @@ Suggested order: Akses & Pengaturan first, so admins can manage roles and menus 
 | 4 | Pengaturan Sistem | `Pengaturan` | `SiteSetting`, `DocumentNumberFormat`, `ApprovalFlow` / `ApprovalFlowStep`, `MessageTemplate`, `Sequence`, `ScheduledJobLog`, `MessageOutbox`, `ActivityLog` (read-only) |
 | 5 | Organisasi › Profil Organisasi | `Organisasi` | `OrganizationProfile` (logo, SK pembina), `OrganizationPhoto` |
 | 6 | Organisasi › Periode | `Periode` | `ManagementPeriod`, `PeriodHandover` / `PeriodHandoverItem` (submit / approve) |
+| 6a | Organisasi › Section | `Section` | `Section`, `SectionMember` (section history: move, delete wrong rows). The member history modal (`RiwayatAnggota`, `Scripts/Organisasi/SectionRiwayat.js`) is also opened from Data Anggota |
 | 7 | Organisasi › Divisi | `Divisi` | `Division`, `DivisionMember` |
 | 8 | Organisasi › Jabatan | `Jabatan` | `Position` |
 | 9 | Organisasi › Kepengurusan | `Kepengurusan` | `ManagementAssignment` (assign / end) |
@@ -567,7 +582,7 @@ Suggested order: Akses & Pengaturan first, so admins can manage roles and menus 
 | 12 | Anggota › Rekrutmen | `Rekrutmen` | `Recruitment` (open / close), `RecruitmentApplicant` (review), `Form` for extra questions; public apply page (`Apply` + `FormResponse.SubmitApplicant`) |
 | 13 | Program Kerja | `ProgramKerja` | `WorkProgram` (bidang + jangka), `ProgramTask`, `TimelinePlan` |
 | 13a | LPJ (area `Lpj`, `/Lpj/Lpj`) | `Lpj` | `Lpj` (narrative form, preview, finalize to PDF, reopen, download); roles KETUA, WAKIL, SEKRETARIS |
-| 14 | Kegiatan › Daftar Kegiatan | `Kegiatan` | `Activity`, `ActivityParticipant`, `ActivityCollaborator`, `ActivityReport` |
+| 14 | Kegiatan › Daftar Kegiatan | `Kegiatan` | `Activity`, `ActivityParticipant`, `ActivityCollaborator`, `ActivityReport`, `ActivityAbsenceRequest` (row action "Pengajuan tidak ikut": approve / reject, Approve action; grid column Izin Menunggu) |
 | 15 | Kegiatan › Tim Pelaksana | `TimPelaksana` | `CommitteeSection`, `CommitteeMember`, `CommitteeRecruitment` / `CommitteeApplication`, `ActivityRundown`, `ActivityChecklist` (+ `GenerateFromTemplate`, `ChecklistTemplate` master), `ActivityTripMember` |
 | 16 | Kegiatan › Presensi | `Presensi` | `ActivitySchedule` (+ `GenerateSessions`), `AttendanceSession` (open with QR / close / cancel), `AttendanceRecord` (`CheckIn` / `CheckOut` with camera + location, `SetManual`), `MeetingMinutes` |
 | 17 | Kegiatan › Galeri | `Galeri` | `Gallery`, `GalleryPhoto` (cover, publish) |
@@ -599,7 +614,7 @@ Suggested order: Akses & Pengaturan first, so admins can manage roles and menus 
 - Pages:
   - `ProfilSaya`: contact edit, own photo, positions and divisions, change password (old password required).
   - `PresensiSaya`: QR scan with `js/html5-qrcode.min.js` (2.3.8, or type the code), selfie upload, geolocation, check-in / check-out, history.
-  - `KegiatanSaya`: register / cancel as participant, apply / withdraw for open committee recruitments (the member's own form response is attached when the recruitment has a form), committee duties.
+  - `KegiatanSaya`: activities the member follows automatically show "Otomatis terdaftar" with an inline "Ajukan tidak ikut" form (one upcoming session or the whole activity) and a "Pengajuan Tidak Ikut" list with withdraw; Peserta Terdaftar activities keep register / cancel. Also apply / withdraw for open committee recruitments (the member's own form response is attached when the recruitment has a form), committee duties.
   - `IuranSaya`: own dues bills (read only).
   - `PeminjamanSaya`: borrow request as member (borrower type Anggota) and cancel.
   - `Toko`: catalog with variants, client-side cart, order as member, own orders and cancel.
@@ -626,9 +641,9 @@ Suggested order: Akses & Pengaturan first, so admins can manage roles and menus 
   - Reports are code-based classes in `Reports/` (no .repx). Controls created in code use the default unit (1/100 inch) even when `ReportUnit` is changed, so write sizes in 0.1 mm and convert them (`M` / `R` helpers).
   - Inventaris QR labels:
     - `Reports/LabelQrUnitReport` is A4 with 4 columns of 46 × 53 mm labels (logo, organization name, QR, code, asset name + serial).
-    - The QR holds the public URL `{App:PublicUrl or request host}/aset/{unitCode}` (`Infrastructure/AsetLabel.PublicUrl`). Set `App:PublicUrl` to the production domain before printing real labels.
-    - Scanning opens `LandingController.AsetPublik` without login: unit code, asset name / code, category, brand, serial, condition, unit status, location, specification, the first asset photo (`/Landing/AsetFoto?kode=`), and a WhatsApp link to the organization. It never shows cost, rates or borrowers. Unknown or deleted units return 404, and a logged-in user also gets a dashboard link.
-    - Internal scanners (borrow checkout and return in `Peminjaman.js` / `PeminjamanVM`, and the unit code on inspection / maintenance in `AsetVM.Method.UnitId`) accept the URL or the bare code. `AsetLabel.KodeUnit` on the server, and `unitCode()` in `Peminjaman.js`, take the last path segment in upper case.
+    - The QR holds the public URL `{App:PublicUrl or request host}/aset/{qrToken}` (`Infrastructure/AsetLabel.PublicUrl`), so the URL cannot be guessed from inventory codes; the unit code is only printed as text. Labels printed before 2026-11-18 (URL with the unit code) no longer open and must be reprinted. Set `App:PublicUrl` to the production domain before printing real labels.
+    - Scanning opens `LandingController.AsetPublik` without login: unit code, asset name / code, category, brand, serial, condition, unit status, location, specification, the first asset photo (`/Landing/AsetFoto?kode={qrToken}`), and a WhatsApp link to the organization. It never shows cost, rates or borrowers. Only tokens are accepted (a plain unit code returns 404). Unknown or deleted units return 404, and a logged-in user also gets a dashboard link.
+    - Internal scanners (borrow checkout and return in `Peminjaman.js` / `PeminjamanVM`, and the unit code on inspection / maintenance in `AsetVM.Method.UnitId`) accept the scanned URL, the token or a typed unit code. `AsetLabel.KodeUnit` (server) and `unitCode()` (`Peminjaman.js`) take the last path segment in upper case; `AsetLabel.ResolveKode` / `AssetUnit.GetByCodeOrToken` map a token to its unit.
     - `Aset/CetakLabel` (POST, Edit) checks that the units belong to the asset, marks them label-printed and stores the rows in `IMemoryCache` for 10 minutes, keyed by user + id.
     - `Aset/LabelQr?id=` (Index) shows the viewer. The asset page no longer loads `js/qrcode.min.js`; Presensi still uses it.
   - The standalone viewer page is shared: `Views/Shared/_ReportViewer.cshtml` (model = any `XtraReport`), opened with `AppUI.openReport(title, url)` (iframe in `staticBackdropFullScreen`).
@@ -659,20 +674,24 @@ Suggested order: Akses & Pengaturan first, so admins can manage roles and menus 
     - **Agenda surat** (`Surat/Agenda?arah=1|2&dari=&sampai=`, landscape): incoming letters by received date with their disposition targets, or outgoing letters by letter date.
     - **Daftar arsip dokumen** (`Dokumen/CetakDaftar`, landscape): documents grouped by category.
     - Buttons: row actions "Cetak surat" / "Lembar disposisi" / "Pratinjau di kop surat", and toolbar buttons "Cetak Agenda Surat Masuk/Keluar" (asks for a date range) and "Cetak Daftar Arsip". `ToolbarModel.Extra` adds such buttons.
+  - **Sertifikat:** `Reports/SertifikatReport` (A4 landscape, one page). It has a gold frame, the logo, the title, the number, the recipient name and NIA, a role sentence for the certificate type, and the place and date. Its data comes from `Certificate.GetPrintData()` in GWALib (`Certificate.Data.cs`), which gives the activity, position or achievement reference.
+    - Signers: Ketua Pelaksana + Ketua Umum for activity certificates; Ketua Umum + Pembina for the others. Ketua Umum is taken from the period that contains the issue date, else the Active period.
+    - A QR links to `/sertifikat/verifikasi?kode=` (base from `AsetLabel.BaseUrl`). A revoked certificate gets a DICABUT watermark.
+    - Admin: `Sertifikat/Cetak?key=` (Index). Member: `AreaAnggota/PrestasiSaya/CetakSertifikat?key=&pdf=1`, only for the member's own Terbit certificates. An uploaded file is still downloadable separately.
   - `Lpj/Pratinjau?key=` builds the report from current data; `Lpj/Finalisasi` (Process) exports it with `ExportToPdf` and calls `Lpj.Finalize`; `Lpj/Unduh?key=` returns the stored PDF.
   - The DevExpress install on this device is a trial: exported PDFs carry "created using the trial version of DevExpress components". A licensed install removes it.
 
 ## GWASeeder
 
-A console project, part of the solution, that fills every table except `t_lpj` (131 of 132) with sample data for MB Gita Widya Agni through the GWALib services, so the validation rules run too.
+A console project, part of the solution, that fills every table except `t_lpj` (134 of 135) with sample data for MB Gita Widya Agni through the GWALib services, so the validation rules run too.
 
 - **Run:** `dotnet run --project GWASeeder` (empty database), `-- --reset` (deletes every row of every model table with FOREIGN_KEY_CHECKS off, after typing RESET or `--yes`, then seeds) or `-- --sync-akses` (access catalog only, on a seeded database). Other options: `--evoting-key <base64>`, `--admin-password <pw>`.
   - The connection string comes from env `GWA_DB`, then `GitaWidyaAgniWeb/appsettings.Development.json`, then `appsettings.json`.
   - The e-voting key comes from the argument, env `GWA_EVOTING_KEY` or `EVoting:Key`. When none is given, a random key is generated and printed. The web must use the same key to finalize elections.
 - **Admin:** when `m_user` is empty, the seeder creates `admin` (SUPERADMIN) through `UserAccount.BootstrapAdmin`, with the password from `--admin-password`, env `GWA_ADMIN_PASSWORD` or `admin12345`. Without `--reset` it refuses to run when `m_organization` already has a row.
 - **Access catalog (`Seed.Akses.cs`):** `SyncAccess` is idempotent. It creates or updates controllers, header menus (matched by name), sub menus (matched by controller) and the catalog roles, and replaces the action list, menu details, role actions and role menus of catalog roles with the catalog. Roles outside the catalog are left alone. A catalog role gets every action of its controllers plus the Area Anggota menu.
-- **Roles:** KETUA and WAKIL (all operational modules), SEKRETARIS, BENDAHARA, KADIV (Kepala Divisi), ANGGOTA (Area Anggota only). Akses and Pengaturan Sistem stay SUPERADMIN only.
-- **Users:** memorable usernames, password `gwa12345`: `ketua`, `wakil`, `sekretaris`, `bendahara`, `kadiv.brass` / `.battery` / `.guard` / `.front` / `.logistik` / `.humas`, `ketua.lama`, `anggota01`…`anggota11`, `alumni01`, `alumni02`. Positions are Ketua Umum, Wakil Ketua Umum, Sekretaris, Bendahara, Kepala Divisi and Staf Divisi. The seeder prints the account table at the end, and README lists it.
+- **Roles:** KETUA and WAKIL (all operational modules), SEKRETARIS, BENDAHARA, KADIV (Kepala Divisi), SECTION_LEADER (Section, Kegiatan, Presensi, Galeri, Aset, Peminjaman, Prestasi), ANGGOTA (Area Anggota only). Akses and Pengaturan Sistem stay SUPERADMIN only.
+- **Users:** memorable usernames, password `gwa12345`: `ketua`, `wakil`, `sekretaris`, `bendahara`, `leader.brass` / `.battery` / `.guard` / `.front` (Section Leader), `kadiv.logistik` / `.humas`, `ketua.lama`, `anggota01`…`anggota11`, `alumni01`, `alumni02`. Positions are Ketua Umum, Wakil Ketua Umum, Sekretaris, Bendahara, Kepala Divisi, Staf Divisi and Section Leader. Sections: Brass, Battery, Front Ensemble, Colour Guard (every member gets one, a few move with history). Divisions (dummy): Humas & Media, Logistik, Danus with a few picked members. The seeder prints the account table at the end, and README lists it.
 - **Code layout:** files are split per module (`Seed.Akses.cs`, `Seed.Reset.cs`, `Seed.Master.cs`, `Seed.Anggota.cs`, `Seed.Program.cs`, `Seed.Keuangan.cs`, `Seed.Lain.cs`), and `Seed.Run.cs` holds the order.
 - **Workflow:** approvals, check-in, votes and form responses are done by the right member's user (`UserOf(member)`); the rest by admin.
 - **Order matters:**

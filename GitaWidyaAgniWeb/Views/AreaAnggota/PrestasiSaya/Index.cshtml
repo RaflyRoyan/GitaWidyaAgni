@@ -53,9 +53,10 @@ else
                                 <div class="small">Kode verifikasi <span class="gwa-code">@c.VerificationCode</span>
                                     <a href="@Url.Action("VerifikasiSertifikat", "Landing", new { area = "", kode = c.VerificationCode })" target="_blank" class="ms-1">cek</a></div>
                             </div>
+                            <a class="btn btn-sm btn-outline-primary" href="@Url.Action("CetakSertifikat", new { key = c.EncDecrKey, pdf = 1 })" target="_blank"><i class="ri-printer-line me-1"></i>Cetak PDF</a>
                             @if (!string.IsNullOrEmpty(c.FileName))
                             {
-                                <a class="btn btn-sm btn-outline-info" href="@Url.Action("Sertifikat", new { key = c.EncDecrKey })" target="_blank"><i class="ri-download-2-line me-1"></i>Unduh</a>
+                                <a class="btn btn-sm btn-outline-info" href="@Url.Action("Sertifikat", new { key = c.EncDecrKey })" target="_blank"><i class="ri-download-2-line me-1"></i>Berkas</a>
                             }
                         </li>
                     }

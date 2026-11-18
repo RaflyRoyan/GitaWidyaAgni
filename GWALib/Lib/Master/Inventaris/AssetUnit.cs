@@ -28,6 +28,8 @@ namespace GWALib.Lib.Master.Inventaris
         public int AssetId { get; private set; }
         // Hanya-baca: dibuat otomatis.
         public string UnitCode { get; private set; } = null!;
+        /// <summary>Token acak isi QR (URL publik /aset/{token}); kode unit tidak dimuat di QR.</summary>
+        public string QrToken { get; private set; } = null!;
         public string? SerialNumber { get; set; }
         public ItemCondition UnitCondition { get; set; }
         // Hanya-baca: diatur peminjaman / perawatan / penghapusan.
@@ -90,6 +92,7 @@ namespace GWALib.Lib.Master.Inventaris
             EncDecrKey = Id.ToString().EncryptString<AssetUnit>();
             AssetId = row.AssetId;
             UnitCode = row.UnitCode;
+            QrToken = row.QrToken;
             SerialNumber = row.SerialNumber;
             UnitCondition = (ItemCondition)row.UnitCondition;
             Status = (AssetUnitStatus)row.Status;

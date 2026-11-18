@@ -172,6 +172,8 @@ namespace GitaWidyaAgniWeb.Models.Anggota
             public string Key { get; set; } = "";
             public int Status { get; set; }
             public string? Notes { get; set; }
+            /// <summary>Section awal anggota baru (wajib saat Diterima bila pendaftar belum anggota).</summary>
+            public int? SectionId { get; set; }
         }
 
         public class Method
@@ -229,7 +231,7 @@ namespace GitaWidyaAgniWeb.Models.Anggota
 
             public static void Review(ReviewInput input, string user)
             {
-                LibExtensions.Load<RecruitmentApplicant>(input.Key, "Pendaftar").Review((ApplicantStatus)input.Status, input.Notes, user).Ok();
+                LibExtensions.Load<RecruitmentApplicant>(input.Key, "Pendaftar").Review((ApplicantStatus)input.Status, input.Notes, user, input.SectionId).Ok();
             }
         }
     }

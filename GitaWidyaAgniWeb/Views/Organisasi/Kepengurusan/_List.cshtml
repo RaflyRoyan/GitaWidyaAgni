@@ -16,6 +16,7 @@
         columns.AddFor(m => m.Jabatan).Caption("Jabatan");
         columns.AddFor(m => m.Inti).Caption("Inti").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
         columns.AddFor(m => m.Divisi).Caption("Divisi");
+        columns.AddFor(m => m.Section).Caption("Section");
         columns.AddFor(m => m.SkNumber).Caption("No. SK");
         columns.AddFor(m => m.StartDate).Caption("Mulai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
         columns.AddFor(m => m.EndDate).Caption("Selesai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");

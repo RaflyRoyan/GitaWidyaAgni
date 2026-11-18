@@ -13,6 +13,7 @@
     <div class="card-body">
         <partial name="_Toolbar" model='new ToolbarModel("Tambah Anggota", "Anggota.add()",
             ("btn-outline-info", "ri-image-line", "Foto anggota"),
+            ("btn-outline-success", "ri-music-2-line", "Riwayat section"),
             ("btn-outline-warning", "ri-edit-2-line", "Ubah anggota"),
             ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan anggota"))' />
         <div id="target" class="mt-3"></div>
@@ -34,5 +35,15 @@
             hapusFoto: '@Url.Action("HapusFoto")'
         };
     </script>
+    <script>
+        window.SectionRiwayatUrl = {
+            riwayat: '@Url.Action("RiwayatAnggota", "Section", new { area = "Organisasi" })',
+            sectionList: '@Url.Action("AnggotaList", "Section", new { area = "Organisasi" })',
+            memberList: '@Url.Action("RiwayatAnggotaList", "Section", new { area = "Organisasi" })',
+            pindah: '@Url.Action("Pindah", "Section", new { area = "Organisasi" })',
+            hapus: '@Url.Action("HapusRiwayat", "Section", new { area = "Organisasi" })'
+        };
+    </script>
+    <script src="~/Scripts/Organisasi/SectionRiwayat.js" asp-append-version="true"></script>
     <script src="~/Scripts/Anggota/Anggota.js" asp-append-version="true"></script>
 }

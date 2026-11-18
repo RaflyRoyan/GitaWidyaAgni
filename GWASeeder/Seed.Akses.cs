@@ -45,6 +45,7 @@ namespace GWASeeder
             // Pengelolaan.
             new("Organisasi", "Profil organisasi", Array.Empty<string>()),
             new("Periode", "Periode & serah terima", new[] { SUBMIT, APPROVE }),
+            new("Section", "Section musik & riwayat section anggota", Array.Empty<string>()),
             new("Divisi", "Divisi & anggota divisi", Array.Empty<string>()),
             new("Jabatan", "Jabatan pengurus", Array.Empty<string>()),
             new("Kepengurusan", "Penugasan pengurus", new[] { PROCESS }),
@@ -97,7 +98,8 @@ namespace GWASeeder
             new("Organisasi", "Organisasi", "ri-building-4-line", null, new[]
             {
                 new MenuDef("Organisasi", "Profil Organisasi", "ri-information-line"), new MenuDef("Periode", "Periode", "ri-calendar-2-line"),
-                new MenuDef("Divisi", "Divisi", "ri-team-line"), new MenuDef("Jabatan", "Jabatan", "ri-medal-line"),
+                new MenuDef("Section", "Section", "ri-music-2-line"), new MenuDef("Divisi", "Divisi", "ri-team-line"),
+                new MenuDef("Jabatan", "Jabatan", "ri-medal-line"),
                 new MenuDef("Kepengurusan", "Kepengurusan", "ri-user-star-line")
             }),
             new("Organisasi", "Anggota", "ri-group-line", null, new[]
@@ -157,7 +159,7 @@ namespace GWASeeder
         // Semua role juga mendapat menu Area Anggota.
         private static readonly string[] KetuaControllers =
         {
-            "Organisasi", "Periode", "Divisi", "Jabatan", "Kepengurusan", "Anggota", "Alumni", "Rekrutmen", "ProgramKerja", "Kegiatan", "Lpj",
+            "Organisasi", "Periode", "Section", "Divisi", "Jabatan", "Kepengurusan", "Anggota", "Alumni", "Rekrutmen", "ProgramKerja", "Kegiatan", "Lpj",
             "TimPelaksana", "Presensi", "Galeri", "Transaksi", "Anggaran", "PengajuanDana", "Iuran", "Hutang", "Aset", "Peminjaman",
             "Pengadaan", "Merchandise", "Mitra", "Sponsorship", "Surat", "Dokumen", "Prestasi", "Sertifikat", "Formulir", "Aspirasi",
             "EVoting", "Berita", "Banner"
@@ -168,7 +170,7 @@ namespace GWASeeder
             new("WAKIL", "Wakil Ketua Umum", "Mendampingi ketua umum, akses semua modul operasional", KetuaControllers),
             new("SEKRETARIS", "Sekretaris", "Administrasi anggota, kegiatan, surat, dokumen", new[]
             {
-                "Anggota", "Alumni", "Rekrutmen", "Kegiatan", "Lpj", "Presensi", "Surat", "Dokumen", "Sertifikat", "Formulir", "Aspirasi", "Berita"
+                "Anggota", "Section", "Alumni", "Rekrutmen", "Kegiatan", "Lpj", "Presensi", "Surat", "Dokumen", "Sertifikat", "Formulir", "Aspirasi", "Berita"
             }),
             new("BENDAHARA", "Bendahara", "Pengelolaan keuangan, danus, sponsorship", new[]
             {
@@ -177,6 +179,10 @@ namespace GWASeeder
             new("KADIV", "Kepala Divisi", "Kepala divisi: program, kegiatan, presensi, alat", new[]
             {
                 "ProgramKerja", "Kegiatan", "TimPelaksana", "Presensi", "Galeri", "Aset", "Peminjaman", "Prestasi", "Berita"
+            }),
+            new("SECTION_LEADER", "Section Leader", "Pemimpin section musik: anggota section, latihan sectional, presensi, alat", new[]
+            {
+                "Section", "Kegiatan", "Presensi", "Galeri", "Aset", "Peminjaman", "Prestasi"
             }),
             new("ANGGOTA", "Anggota", "Anggota biasa (hanya Area Anggota)", Array.Empty<string>())
         };

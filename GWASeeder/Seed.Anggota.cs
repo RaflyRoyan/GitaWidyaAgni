@@ -20,7 +20,7 @@ namespace GWASeeder
             Ok(ManagementAssignment.Save(new ManagementAssignment.NewRow { PeriodId = PeriodOld.Id, MemberId = Ketua.Id, PositionId = Positions["Wakil Ketua Umum"], SkNumber = "SK/01/GWA/IX/2025", StartDate = start }, Admin), "Wakil lama");
             Ok(ManagementAssignment.Save(new ManagementAssignment.NewRow { PeriodId = PeriodOld.Id, MemberId = Sekretaris.Id, PositionId = Positions["Sekretaris"], StartDate = start }, Admin), "Sekretaris lama");
             Ok(ManagementAssignment.Save(new ManagementAssignment.NewRow { PeriodId = PeriodOld.Id, MemberId = Bendahara.Id, PositionId = Positions["Bendahara"], StartDate = start }, Admin), "Bendahara lama");
-            Ok(DivisionMember.Save(new DivisionMember.NewRow { DivisionId = Divisions["Battery"], MemberId = KetuaLama.Id, PeriodId = PeriodOld.Id, MemberRole = "Kepala Divisi", JoinedAt = start }, Admin), "Divisi lama");
+            Ok(DivisionMember.Save(new DivisionMember.NewRow { DivisionId = Divisions["Logistik"], MemberId = KetuaLama.Id, PeriodId = PeriodOld.Id, MemberRole = "Kepala Divisi", JoinedAt = start }, Admin), "Divisi lama");
 
             ProgramOldConcert = Ok(WorkProgram.Save(new WorkProgram.NewRow
             {
@@ -54,12 +54,13 @@ namespace GWASeeder
         private static void SeedActivePeriod()
         {
             var start = D(2026, 9, 1);
-            void Assign(Member member, string position, string? division = null)
+            void Assign(Member member, string position, string? division = null, string? section = null)
             {
                 var row = Ok(ManagementAssignment.Save(new ManagementAssignment.NewRow
                 {
                     PeriodId = PeriodActive.Id, MemberId = member.Id, PositionId = Positions[position],
-                    DivisionId = division == null ? null : Divisions[division], SkNumber = "SK/02/GWA/IX/2026", StartDate = start
+                    DivisionId = division == null ? null : Divisions[division], SectionId = section == null ? null : MusicSections[section],
+                    SkNumber = "SK/02/GWA/IX/2026", StartDate = start
                 }, Admin), $"Penugasan {position} {member.Fullname}");
                 Assignments[member.Fullname] = row.Id;
             }
@@ -67,20 +68,25 @@ namespace GWASeeder
             Assign(Wakil, "Wakil Ketua Umum");
             Assign(Sekretaris, "Sekretaris");
             Assign(Bendahara, "Bendahara");
-            var coordinators = new (int Member, string Division)[] { (5, "Brass"), (6, "Battery"), (7, "Colour Guard"), (8, "Front Ensemble"), (9, "Logistik"), (10, "Humas & Media") };
-            foreach (var (index, division) in coordinators)
+            // Section leader (anggota section-nya = semua anggota yang section-nya sama, lewat t_section_member).
+            var leaders = new (int Member, string Section)[] { (5, "Brass"), (6, "Battery"), (7, "Colour Guard"), (8, "Front Ensemble") };
+            foreach (var (index, section) in leaders)
+            {
+                Assign(Members[index], "Section Leader", section: section);
+            }
+            // Divisi: kepala + anggota pilihan Ketua Umum.
+            var heads = new (int Member, string Division)[] { (9, "Logistik"), (10, "Humas & Media") };
+            foreach (var (index, division) in heads)
             {
                 Assign(Members[index], "Kepala Divisi", division);
                 Ok(DivisionMember.Save(new DivisionMember.NewRow { DivisionId = Divisions[division], MemberId = Members[index].Id, PeriodId = PeriodActive.Id, MemberRole = "Kepala Divisi", JoinedAt = start }, Admin), "Kepala divisi");
             }
-            // Anggota tersebar ke divisi musik.
-            var musicDivisions = new[] { "Brass", "Battery", "Colour Guard", "Front Ensemble" };
-            for (var i = 11; i < 22; i++)
+            var picks = new (int Member, string Division)[] { (11, "Logistik"), (15, "Logistik"), (16, "Humas & Media"), (18, "Humas & Media"), (12, "Danus"), (20, "Danus") };
+            foreach (var (index, division) in picks)
             {
-                Ok(DivisionMember.Save(new DivisionMember.NewRow { DivisionId = Divisions[musicDivisions[i % 4]], MemberId = Members[i].Id, PeriodId = PeriodActive.Id, JoinedAt = start }, Admin), "Anggota divisi");
+                Ok(DivisionMember.Save(new DivisionMember.NewRow { DivisionId = Divisions[division], MemberId = Members[index].Id, PeriodId = PeriodActive.Id, JoinedAt = start }, Admin), "Anggota divisi");
             }
-            Ok(DivisionMember.Save(new DivisionMember.NewRow { DivisionId = Divisions["Danus"], MemberId = Members[12].Id, PeriodId = PeriodActive.Id, MemberRole = "Anggota Tim", JoinedAt = start }, Admin), "Tim danus");
-            Ok(DivisionMember.Save(new DivisionMember.NewRow { DivisionId = Divisions["Danus"], MemberId = Members[14].Id, JoinedAt = start }, Admin), "Tim danus tanpa periode");
+            Assign(Members[16], "Staf Divisi", "Humas & Media");
         }
 
         // ---------------------------------------------------------------- Rekrutmen
@@ -99,7 +105,7 @@ namespace GWASeeder
                 FormType = FormType.PendaftaranRekrutmen, RecruitmentId = recruitment.Id, Title = "Pertanyaan Tambahan Rekrutmen 2026",
                 Questions = new()
                 {
-                    new() { QuestionText = "Pilihan divisi yang diminati", QuestionType = QuestionType.PilihanGanda, Options = new() { "Brass", "Battery", "Front Ensemble", "Colour Guard" }, IsRequired = AnswerRequirement.Wajib },
+                    new() { QuestionText = "Pilihan section yang diminati", QuestionType = QuestionType.PilihanGanda, Options = new() { "Brass", "Battery", "Front Ensemble", "Colour Guard" }, IsRequired = AnswerRequirement.Wajib },
                     new() { QuestionText = "Pengalaman bermusik sebelumnya", QuestionType = QuestionType.Paragraf },
                     new() { QuestionText = "Alat musik yang dikuasai", QuestionType = QuestionType.KotakCentang, Options = new() { "Trumpet", "Snare", "Bass Drum", "Keyboard", "Belum ada" } },
                     new() { QuestionText = "Seberapa siap mengikuti latihan 2x seminggu?", QuestionType = QuestionType.Skala1Sampai5, IsRequired = AnswerRequirement.Wajib }
@@ -138,7 +144,7 @@ namespace GWASeeder
             }
             Ok(applicantRows[0].Review(ApplicantStatus.Screening, "Berkas lengkap", Admin), "Seleksi berkas");
             Ok(applicantRows[0].Review(ApplicantStatus.Interview, "Lanjut wawancara", Admin), "Wawancara");
-            var accepted = Ok(applicantRows[0].Review(ApplicantStatus.Accepted, "Diterima di divisi Battery", Admin), "Terima pendaftar");
+            var accepted = Ok(applicantRows[0].Review(ApplicantStatus.Accepted, "Diterima di section Battery", Admin, MusicSections["Battery"]), "Terima pendaftar");
             ApplicantAcceptedMemberId = accepted.MemberId ?? 0;
             Ok(applicantRows[1].Review(ApplicantStatus.Screening, "Berkas lengkap", Admin), "Seleksi berkas 2");
             Ok(applicantRows[2].Review(ApplicantStatus.Rejected, "Jadwal latihan bentrok dengan praktikum", Admin), "Tolak pendaftar");

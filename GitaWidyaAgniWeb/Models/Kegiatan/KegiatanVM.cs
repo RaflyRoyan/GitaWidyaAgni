@@ -38,6 +38,8 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
             public int Status { get; set; }
             public string StatusText { get; set; } = "";
             public int JumlahPeserta { get; set; }
+            /// <summary>Pengajuan tidak ikut yang menunggu persetujuan.</summary>
+            public int IzinMenunggu { get; set; }
         }
 
         public class AddKegiatan
@@ -47,6 +49,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
             public List<GwaVM.OpsiItem> IndukOpsi { get; set; }
             public List<GwaVM.OpsiItem> LombaOpsi { get; set; } = Opsi.Lomba();
             public List<GwaVM.OpsiItem> DivisiOpsi { get; set; } = Opsi.Divisi();
+            public List<GwaVM.OpsiItem> SectionOpsi { get; set; } = Opsi.Section();
             public List<GwaVM.OpsiItem> JenisOpsi { get; set; } = GwaVM.Opsi<ActivityType>();
             public List<GwaVM.OpsiItem> AudiensOpsi { get; set; } = GwaVM.Opsi<AudienceType>();
             public List<GwaVM.OpsiItem> PublikOpsi { get; set; } = GwaVM.Opsi<PublicVisibility>();
@@ -88,6 +91,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
                     ActivityType = (int)obj.ActivityType,
                     AudienceType = (int)obj.AudienceType,
                     DivisionId = obj.DivisionId,
+                    SectionId = obj.SectionId,
                     Title = obj.Title,
                     Description = obj.Description,
                     Location = obj.Location,
@@ -125,6 +129,9 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
 
             [Display(Name = "Divisi")]
             public int? DivisionId { get; set; }
+
+            [Display(Name = "Section")]
+            public int? SectionId { get; set; }
 
             [Display(Name = "Deskripsi")]
             public string? Description { get; set; }
@@ -191,6 +198,65 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
             public PesertaList(string encKey) : this(LibExtensions.Load<Activity>(encKey, "Kegiatan").Id)
             {
             }
+        }
+
+        // ---------- Pengajuan tidak ikut (modal _Izin + grid _IzinList): anggota audiens otomatis mengajukan tidak ikut sesi / seluruh kegiatan.
+        public class Izin
+        {
+            public string Key { get; set; } = "";
+            public string Judul { get; set; } = "";
+            public string Audiens { get; set; } = "";
+            public IzinList List { get; set; }
+
+            public Izin(string encKey)
+            {
+                var obj = LibExtensions.Load<Activity>(encKey, "Kegiatan");
+                Key = obj.EncDecrKey;
+                Judul = obj.Title;
+                Audiens = EnumHelper.Text(obj.AudienceType);
+                List = new IzinList(obj.Id);
+            }
+        }
+
+        public class IzinList
+        {
+            public List<IzinRow> Rows { get; set; }
+            public IzinList(int activityId)
+            {
+                var id = new System.Globalization.CultureInfo("id-ID");
+                Rows = ActivityAbsenceRequest.GetDataList(activityId).Select(x => new IzinRow
+                {
+                    EncDecrKey = x.EncDecrKey,
+                    Nama = x.MemberName,
+                    Cakupan = x.WholeActivity ? "Seluruh kegiatan" : "Pertemuan " + x.SessionAt?.ToString("ddd, dd MMM yyyy HH:mm", id),
+                    Alasan = x.Reason,
+                    Status = (int)x.Status,
+                    StatusText = EnumHelper.Text(x.Status),
+                    Catatan = x.ReviewNote,
+                    InsDate = x.InsDate
+                }).OrderBy(x => x.Status).ThenByDescending(x => x.InsDate).ToList();
+            }
+            public IzinList(string encKey) : this(LibExtensions.Load<Activity>(encKey, "Kegiatan").Id)
+            {
+            }
+        }
+
+        public class IzinRow
+        {
+            public string EncDecrKey { get; set; } = "";
+            public string Nama { get; set; } = "";
+            public string Cakupan { get; set; } = "";
+            public string Alasan { get; set; } = "";
+            public int Status { get; set; }
+            public string StatusText { get; set; } = "";
+            public string? Catatan { get; set; }
+            public DateTime InsDate { get; set; }
+        }
+
+        public class IzinInput
+        {
+            public string Key { get; set; } = "";
+            public string? Catatan { get; set; }
         }
 
         public class PesertaRow
@@ -349,6 +415,8 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
                 var judul = list.ToDictionary(x => x.Id, x => x.Title);
                 var peserta = ActivityParticipant.GetDataList().Where(x => x.RegistrationStatus != RegistrationStatus.Cancelled)
                     .GroupBy(x => x.ActivityId).ToDictionary(g => g.Key, g => g.Count());
+                var izin = ActivityAbsenceRequest.GetDataList(status: AbsenceRequestStatus.Menunggu)
+                    .GroupBy(x => x.ActivityId).ToDictionary(g => g.Key, g => g.Count());
                 return list.Select(x => new KegiatanRow
                 {
                     EncDecrKey = x.EncDecrKey,
@@ -365,7 +433,8 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
                     Disorot = x.IsFeatured == FeaturedStatus.Disorot,
                     Status = (int)x.Status,
                     StatusText = EnumHelper.Text(x.Status),
-                    JumlahPeserta = peserta.TryGetValue(x.Id, out var n) ? n : 0
+                    JumlahPeserta = peserta.TryGetValue(x.Id, out var n) ? n : 0,
+                    IzinMenunggu = izin.TryGetValue(x.Id, out var iz) ? iz : 0
                 }).OrderByDescending(x => x.StartAt);
             }
 
@@ -377,6 +446,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
                 obj.ActivityType = (ActivityType)input.ActivityType;
                 obj.AudienceType = (AudienceType)input.AudienceType;
                 obj.DivisionId = input.DivisionId;
+                obj.SectionId = input.SectionId;
                 obj.Title = input.Title ?? "";
                 obj.Description = input.Description;
                 obj.Location = input.Location;
@@ -398,6 +468,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
                     ActivityType = (ActivityType)input.ActivityType,
                     AudienceType = (AudienceType)input.AudienceType,
                     DivisionId = input.DivisionId,
+                    SectionId = input.SectionId,
                     Title = input.Title ?? "",
                     Description = input.Description,
                     Location = input.Location,

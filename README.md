@@ -42,7 +42,7 @@ Langkah dari nol sampai bisa login. Perintah ditulis untuk PowerShell atau Git B
    git clone https://github.com/RaflyRoyan/GitaWidyaAgni.git
    cd GitaWidyaAgni
    ```
-3. **Buat database** dari skrip di repo. Perintah ini membuat database `gitawidyaagni` beserta 132 tabelnya:
+3. **Buat database** dari skrip di repo. Perintah ini membuat database `gitawidyaagni` beserta 135 tabelnya:
    ```
    mysql -u root -p < database/gitawidyaagni_create.sql
    ```
@@ -123,7 +123,7 @@ GitaWidyaAgni.sln
 │   └── wwwroot/               assets/ (Velzon), css/, js/ (AppUI site.js, grid-export.js), Scripts/<Area>/, lib/dxreporting-23.2.5/
 ├── GWASeeder/                 Console data contoh + katalog hak akses (Seed.*.cs)
 └── database/
-    ├── gitawidyaagni_create.sql   Skema lengkap (132 tabel, 267 foreign key)
+    ├── gitawidyaagni_create.sql   Skema lengkap (135 tabel)
     ├── migrations/                Perubahan skema per tanggal
     └── README.md                  Cara pakai skrip database
 ```
@@ -136,7 +136,7 @@ Struktur dan konvensinya mengikuti project ClubSphere (ClubLib / ClubShared). Pa
 
 | Berkas | Untuk |
 |---|---|
-| [`database/gitawidyaagni_create.sql`](database/gitawidyaagni_create.sql) | Membuat database baru lengkap: 132 tabel, 267 relasi, semua `COMMENT` kolom. Isinya hanya struktur, tanpa data. Sudah memuat semua migrasi sampai tanggal di kepala berkas. |
+| [`database/gitawidyaagni_create.sql`](database/gitawidyaagni_create.sql) | Membuat database baru lengkap: 135 tabel, semua relasi dan `COMMENT` kolom. Isinya hanya struktur, tanpa data. Sudah memuat semua migrasi sampai tanggal di kepala berkas. |
 | [`database/migrations/`](database/migrations/) | Perubahan skema setelah create script dibuat, satu berkas per perubahan (`YYYY-MM-DD_<nama>.sql`). Hanya untuk database lama. |
 | [`database/README.md`](database/README.md) | Cara pakai dan aturan menambah migrasi. |
 
@@ -144,6 +144,9 @@ Struktur dan konvensinya mengikuti project ClubSphere (ClubLib / ClubShared). Pa
 - **Database lama:** jalankan migrasi yang tanggalnya lebih baru dari skema database itu, urut tanggal:
   ```
   mysql -u root -p gitawidyaagni < database/migrations/2026-11-17_lpj.sql
+  mysql -u root -p gitawidyaagni < database/migrations/2026-11-18_section.sql
+  mysql -u root -p gitawidyaagni < database/migrations/2026-11-18_asset_qr_token.sql
+  mysql -u root -p gitawidyaagni < database/migrations/2026-11-18_activity_absence.sql
   ```
 
 Riwayat migrasi:
@@ -151,6 +154,9 @@ Riwayat migrasi:
 | Tanggal | Berkas | Isi |
 |---|---|---|
 | 2026-11-17 | `2026-11-17_lpj.sql` | Tabel `t_lpj` (LPJ kegiatan / kepengurusan); kolom `t_program.division_id` (bidang) dan `t_program.term` (jangka pendek / panjang) |
+| 2026-11-18 | `2026-11-18_section.sql` | Tabel `m_section` (section musik) dan `t_section_member` (riwayat section anggota); kolom `t_activity.section_id` (audiens 6 = Section) dan `t_management_assignment.section_id` (Section Leader) |
+| 2026-11-18 | `2026-11-18_asset_qr_token.sql` | Kolom `m_asset_unit.qr_token`: token acak isi QR label, menggantikan kode unit di URL `/aset/...`. Label lama harus dicetak ulang |
+| 2026-11-18 | `2026-11-18_activity_absence.sql` | Tabel `t_activity_absence_request`: anggota otomatis ikut kegiatan audiensnya (mis. latihan rutin) dan mengajukan tidak ikut satu pertemuan atau seluruh kegiatan, disetujui pengurus |
 
 ### Konvensi skema
 
@@ -167,7 +173,7 @@ Riwayat migrasi:
 |---|---|
 | Inti & akses | `m_organization`, `m_user`, `m_role`, `m_user_role`, `m_controller`, `m_controller_action`, `m_header_menu`, `m_sub_menu`, `m_role_menu`, `m_sequence` |
 | Sistem | `m_site_setting`, `m_document_number_format`, `m_approval_flow(_step)`, `m_message_template`, `t_message_outbox`, `t_notification`, `t_activity_log`, `t_scheduled_job_log`, `t_user_token` |
-| Anggota | `m_member`, `m_division`, `m_position`, `m_management_period`, `t_management_assignment`, `t_recruitment(_applicant)`, `t_period_handover(_item)`, `m_alumni_profile` |
+| Anggota | `m_member`, `m_section`, `t_section_member`, `m_division`, `m_position`, `m_management_period`, `t_management_assignment`, `t_recruitment(_applicant)`, `t_period_handover(_item)`, `m_alumni_profile` |
 | Program & kegiatan | `t_program`, `t_program_task`, `t_timeline_plan`, `t_activity`, `t_activity_participant`, `t_activity_report`, `t_gallery(_photo)`, `t_lpj` |
 | Tim pelaksana & presensi | `t_committee_*`, `t_activity_rundown`, `t_activity_checklist`, `t_activity_schedule`, `t_attendance_session`, `t_attendance_record`, `t_meeting_minutes` |
 | Keuangan | `m_financial_account`, `m_financial_category`, `t_financial_transaction`, `t_budget(_item)`, `t_funding_request`, `m_dues_setting`, `t_dues_bill`, `t_debt`, `t_period_balance` |
@@ -214,7 +220,7 @@ Saluran email atau WhatsApp yang belum dikonfigurasi tidak dikirim, dan pesannya
 ### Data master yang perlu diisi sebelum dipakai
 
 - **Profil organisasi**: nama, kode (untuk `{org}` di nomor dokumen), logo, visi, misi, dan nama pembina (tanda tangan LPJ kepengurusan).
-- **Periode kepengurusan** yang berstatus Active, beserta divisi dan jabatan. Penanda tangan LPJ dicari dari jabatan "Ketua Umum" dan "Sekretaris".
+- **Periode kepengurusan** yang berstatus Active, beserta section, divisi dan jabatan. Setiap anggota wajib punya section (Brass, Battery, Front Ensemble, Colour Guard); divisi (Humas, Logistik, Danus, ...) hanya untuk anggota pilihan Ketua Umum. Penanda tangan LPJ dicari dari jabatan "Ketua Umum" dan "Sekretaris".
 - **Format nomor dokumen** dan **alur persetujuan** untuk `FUNDING_REQUEST`, `PROCUREMENT`, dan `LETTER`. Tanpa alur aktif, pengajuan dana dan pengadaan tidak bisa diajukan.
 - **Akun keuangan** dan **kategori**, termasuk kategori untuk iuran, sewa alat, denda, penjualan, dan sponsorship.
 
@@ -228,7 +234,7 @@ dotnet run --project GWASeeder -- --sync-akses    # hanya sinkron controller/aks
 
 Opsi tambahan: `--evoting-key <base64>` dan `--admin-password <password>`.
 
-- Mengisi 131 dari 132 tabel lewat service GWALib, jadi semua validasi ikut berjalan. Hanya `t_lpj` yang tidak diisi; LPJ dibuat dari web. Datanya meliputi:
+- Mengisi 134 dari 135 tabel lewat service GWALib, jadi semua validasi ikut berjalan. Hanya `t_lpj` yang tidak diisi; LPJ dibuat dari web. Datanya meliputi:
   - controller + aksi, menu sidebar (termasuk **Area Anggota**), role, dan hak akses;
   - profil MB GWA;
   - dua periode kepengurusan, dengan serah terima dari periode lama ke periode baru;
@@ -251,14 +257,14 @@ Password semua akun anggota: `gwa12345`. Akun ini hanya untuk pengembangan.
 | `wakil` | Nabila Ayu Lestari | Wakil Ketua Umum | WAKIL, ANGGOTA |
 | `sekretaris` | Dimas Arya Saputra | Sekretaris | SEKRETARIS, ANGGOTA |
 | `bendahara` | Salsabila Putri Ramadhani | Bendahara | BENDAHARA, ANGGOTA |
-| `kadiv.brass` | Aditya Wicaksono | Kepala Divisi Brass | KADIV, ANGGOTA |
-| `kadiv.battery` | Bagas Setiawan | Kepala Divisi Battery | KADIV, ANGGOTA |
-| `kadiv.guard` | Citra Maharani | Kepala Divisi Colour Guard | KADIV, ANGGOTA |
-| `kadiv.front` | Dewi Kartika Sari | Kepala Divisi Front Ensemble | KADIV, ANGGOTA |
+| `leader.brass` | Aditya Wicaksono | Section Leader Brass | SECTION_LEADER, ANGGOTA |
+| `leader.battery` | Bagas Setiawan | Section Leader Battery | SECTION_LEADER, ANGGOTA |
+| `leader.guard` | Citra Maharani | Section Leader Colour Guard | SECTION_LEADER, ANGGOTA |
+| `leader.front` | Dewi Kartika Sari | Section Leader Front Ensemble | SECTION_LEADER, ANGGOTA |
 | `kadiv.logistik` | Eko Prasetyo | Kepala Divisi Logistik | KADIV, ANGGOTA |
 | `kadiv.humas` | Farah Aulia | Kepala Divisi Humas & Media | KADIV, ANGGOTA |
 | `ketua.lama` | Fajar Nugroho | Anggota (Ketua Umum periode lalu) | ANGGOTA |
-| `anggota01` … `anggota11` | 11 anggota biasa | Anggota divisi musik | ANGGOTA |
+| `anggota01` … `anggota11` | 11 anggota biasa | Anggota (punya section; beberapa juga di divisi) | ANGGOTA |
 | `alumni01`, `alumni02` | 2 alumni | Alumni | - |
 
 Hak akses per role:
@@ -285,7 +291,7 @@ Siapa yang boleh menyetujui dokumen tetap ditentukan alur persetujuan. Pada data
 | `/rekrutmen/{id?}` | Pendaftaran open recruitment, termasuk pertanyaan tambahan dari formulir |
 | `/sertifikat/verifikasi?kode=` | Cek keaslian sertifikat dari kode verifikasi |
 | `/toko` | Pesan merchandise tanpa login (nama + WhatsApp), konfirmasi lewat WhatsApp, dan lacak pesanan dengan nomor pesanan + nomor WhatsApp |
-| `/aset/{kodeUnit}` | Hasil scan label QR alat: detail unit, kondisi, status, lokasi, dan foto. Harga, tarif, dan data peminjam tidak ditampilkan. |
+| `/aset/{token}` | Hasil scan label QR alat (token acak per unit, bukan kode unit): detail unit, kondisi, status, lokasi, dan foto. Harga, tarif, dan data peminjam tidak ditampilkan. |
 
 ### Dashboard pengurus
 
@@ -295,7 +301,7 @@ Menu sidebar dan area URL-nya (`/<Area>/<Controller>`):
 |---|---|---|
 | Akses › User / Role / Menu | `User`, `Role`, `Menu` | Akun, role per periode, hak aksi, menu sidebar, reset password |
 | Pengaturan Sistem | `Pengaturan` | Site setting, format nomor, alur persetujuan, template pesan, sequence, log job, antrian pesan, log aktivitas |
-| Organisasi › Profil / Periode / Divisi / Jabatan / Kepengurusan | `Organisasi`, `Periode`, `Divisi`, `Jabatan`, `Kepengurusan` | Profil + logo, periode dan serah terima (dengan berkas LPJ), divisi dan anggotanya, jabatan, penugasan pengurus |
+| Organisasi › Profil / Periode / Section / Divisi / Jabatan / Kepengurusan | `Organisasi`, `Periode`, `Section`, `Divisi`, `Jabatan`, `Kepengurusan` | Profil + logo, periode dan serah terima (dengan berkas LPJ), section musik dan riwayat section anggota (pindah kapan saja), divisi dan anggota pilihannya, jabatan, penugasan pengurus (termasuk Section Leader) |
 | Anggota › Data Anggota / Alumni / Rekrutmen | `Anggota`, `Alumni`, `Rekrutmen` | Data anggota dan foto, profil alumni, rekrutmen dan seleksi pelamar |
 | Program Kerja | `ProgramKerja` | Program kerja (dengan **bidang** dan **jangka**), tugas, timeline |
 | Kegiatan › Daftar / Tim Pelaksana / Presensi / Galeri | `Kegiatan`, `TimPelaksana`, `Presensi`, `Galeri` | Kegiatan, peserta, kolaborator, laporan; panitia, rundown, checklist; jadwal rutin, sesi QR, notulen; galeri foto |
@@ -317,9 +323,9 @@ Semua grid punya pencarian, filter, dan **export Excel + PDF**.
 
 | Menu | Isi |
 |---|---|
-| Profil Saya | Ubah kontak dan foto, lihat jabatan dan divisi, ganti password |
+| Profil Saya | Ubah kontak dan foto, lihat riwayat section, jabatan dan divisi, ganti password |
 | Presensi | Scan QR sesi (atau ketik kode), selfie, lokasi, check-in / check-out, riwayat |
-| Kegiatan Saya | Daftar sebagai peserta, melamar tim pelaksana, tugas panitia |
+| Kegiatan Saya | Kegiatan untuk anggota (mis. latihan rutin) otomatis diikuti; ajukan tidak ikut satu pertemuan atau seluruh kegiatan (disetujui pengurus). Kegiatan dengan pendaftaran terbuka: daftar / batal. Melamar tim pelaksana, tugas panitia |
 | Iuran Saya | Tagihan iuran sendiri |
 | Peminjaman Alat | Mengajukan dan membatalkan peminjaman |
 | Toko Merchandise | Katalog dan pesanan sebagai anggota |
@@ -384,7 +390,7 @@ Untuk mendapatkan PDF langsung tanpa viewer, tambahkan `pdf=1` pada URL cetakan.
 ### Label QR inventaris (Aset › Unit & label QR)
 
 - Label A4, 4 kolom, ukuran 46 × 53 mm. Isinya logo, nama organisasi, QR, kode unit, nama aset, dan nomor seri.
-- Isi QR adalah URL publik `{App:PublicUrl}/aset/{kodeUnit}`. Scan dengan kamera HP membuka detail alat tanpa login. Scanner internal (checkout, pengembalian, inspeksi, perawatan) menerima URL itu atau kode unit saja.
+- Isi QR adalah URL publik `{App:PublicUrl}/aset/{token}` dengan token acak 32 karakter per unit (`m_asset_unit.qr_token`), jadi URL tidak bisa ditebak dari kode inventaris. Scan dengan kamera HP membuka detail alat tanpa login; kode unit biasa di URL ditolak (404). Scanner internal (checkout, pengembalian, inspeksi, perawatan) menerima URL itu, tokennya, atau kode unit yang diketik. Label yang dicetak sebelum 2026-11-18 harus dicetak ulang.
 - Isi `App:PublicUrl` dengan domain produksi **sebelum** mencetak label sungguhan.
 
 ## Job terjadwal dan pengiriman pesan

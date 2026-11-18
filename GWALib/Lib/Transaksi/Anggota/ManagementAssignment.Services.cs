@@ -192,20 +192,32 @@ namespace GWALib.Lib.Transaksi.Anggota
                 throw new ArgumentException(ExceptionMessage.DATE_RANGE_INVALID);
             }
         }
-        // Jabatan inti hanya satu pemegang berjalan per (periode, jabatan, divisi); jabatan biasa boleh banyak.
-        private static void ValidateHolder(EF.ModelContext context, int id, int periodId, int memberId, int positionId, int? divisionId)
+        // Jabatan inti hanya satu pemegang berjalan per (periode, jabatan, divisi, section); jabatan biasa boleh banyak.
+        private static void ValidateHolder(EF.ModelContext context, int id, int periodId, int memberId, int positionId, int? divisionId, int? sectionId)
         {
             var position = context.MPositions.Single(x => x.Id == positionId);
             ValidateUtility.CheckDuplicateData<EF.TManagementAssignment>(context,
-                x => x.PeriodId == periodId && x.MemberId == memberId && x.PositionId == positionId && x.DivisionId == divisionId
+                x => x.PeriodId == periodId && x.MemberId == memberId && x.PositionId == positionId && x.DivisionId == divisionId && x.SectionId == sectionId
                     && x.IsCurrent == (int)AssignmentPeriod.Berjalan && x.Id != id,
                 string.Format(ExceptionMessage.DATA_DUPLICATE, "Anggota, Jabatan dan Periode"));
             if (position.IsCore == (int)PositionLevel.Inti)
             {
                 ValidateUtility.CheckDuplicateData<EF.TManagementAssignment>(context,
-                    x => x.PeriodId == periodId && x.PositionId == positionId && x.DivisionId == divisionId
+                    x => x.PeriodId == periodId && x.PositionId == positionId && x.DivisionId == divisionId && x.SectionId == sectionId
                         && x.IsCurrent == (int)AssignmentPeriod.Berjalan && x.Id != id,
                     string.Format(ExceptionMessage.POSITION_HOLDER_EXISTS, position.Name));
+            }
+        }
+        // Penugasan memimpin divisi ATAU section (Section Leader), tidak keduanya. Section divalidasi aktif bila baru / diganti.
+        private static void ValidateSection(EF.ModelContext context, int? divisionId, int? sectionId, int? oldSectionId)
+        {
+            if (divisionId != null && sectionId != null)
+            {
+                throw new ArgumentException("Penugasan hanya untuk satu divisi atau satu section, tidak keduanya.");
+            }
+            if (sectionId != null && sectionId != oldSectionId)
+            {
+                Section.ValidateActiveSection(context, sectionId.Value);
             }
         }
         private static void ValidateDelete(EF.ModelContext context, EF.TManagementAssignment row)
@@ -226,7 +238,9 @@ namespace GWALib.Lib.Transaksi.Anggota
                 Division.ValidateActiveDivision(context, divisionId.Value);
             }
             ValidateDates(newrow.StartDate, newrow.EndDate);
-            ValidateHolder(context, 0, newrow.PeriodId, newrow.MemberId, newrow.PositionId, divisionId);
+            var sectionId = newrow.SectionId > 0 ? newrow.SectionId : null;
+            ValidateSection(context, divisionId, sectionId, null);
+            ValidateHolder(context, 0, newrow.PeriodId, newrow.MemberId, newrow.PositionId, divisionId, sectionId);
 
             var row = new EF.TManagementAssignment
             {
@@ -235,6 +249,7 @@ namespace GWALib.Lib.Transaksi.Anggota
                 MemberId = newrow.MemberId,
                 PositionId = newrow.PositionId,
                 DivisionId = divisionId,
+                SectionId = sectionId,
                 SkNumber = string.IsNullOrWhiteSpace(newrow.SkNumber) ? null : newrow.SkNumber.Trim(),
                 StartDate = newrow.StartDate,
                 EndDate = newrow.EndDate,
@@ -264,9 +279,12 @@ namespace GWALib.Lib.Transaksi.Anggota
                 Division.ValidateActiveDivision(context, divisionId.Value);
             }
             ValidateDates(StartDate, EndDate);
-            ValidateHolder(context, row.Id, row.PeriodId, row.MemberId, row.PositionId, divisionId);
+            var sectionId = SectionId > 0 ? SectionId : null;
+            ValidateSection(context, divisionId, sectionId, row.SectionId);
+            ValidateHolder(context, row.Id, row.PeriodId, row.MemberId, row.PositionId, divisionId, sectionId);
 
             row.DivisionId = divisionId;
+            row.SectionId = sectionId;
             row.SkNumber = string.IsNullOrWhiteSpace(SkNumber) ? null : SkNumber.Trim();
             row.StartDate = StartDate;
             row.EndDate = EndDate;

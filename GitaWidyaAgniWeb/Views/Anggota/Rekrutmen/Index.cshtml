@@ -25,6 +25,8 @@
 
 @section Scripts {
     <script>
+        // Pilihan section awal saat menerima pendaftar ({ id: nama }).
+        window.RekrutmenSection = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(GitaWidyaAgniWeb.Models.Opsi.Section().ToDictionary(x => x.Value.ToString(), x => x.Text)));
         window.RekrutmenUrl = {
             list: '@Url.Action("List")',
             add: '@Url.Action("Add")',

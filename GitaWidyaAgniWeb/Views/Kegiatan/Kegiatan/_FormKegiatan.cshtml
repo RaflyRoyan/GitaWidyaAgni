@@ -1,6 +1,6 @@
 @model GitaWidyaAgniWeb.Models.Kegiatan.KegiatanVM.AddKegiatan
 @using GitaWidyaAgniWeb.Models.Kegiatan
-@* Form bersama Add & Edit kegiatan. Jenis Lomba butuh lomba, audiens Divisi butuh divisi, audiens Tim Pelaksana butuh kegiatan induk. *@
+@* Form bersama Add & Edit kegiatan. Jenis Lomba butuh lomba, audiens Divisi butuh divisi, audiens Section butuh section, audiens Tim Pelaksana butuh kegiatan induk. *@
 
 @{
     var editModel = Model as KegiatanVM.EditKegiatan;
@@ -42,6 +42,7 @@
             {
                 g.AddSimpleFor(m => m.AudienceType).Editor(e => e.SelectBox().DataSource(Model.AudiensOpsi).ValueExpr("Value").DisplayExpr("Text"));
                 g.AddSimpleFor(m => m.DivisionId).Editor(e => e.SelectBox().DataSource(Model.DivisiOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Untuk audiens Divisi"));
+                g.AddSimpleFor(m => m.SectionId).Editor(e => e.SelectBox().DataSource(Model.SectionOpsi).ValueExpr("Value").DisplayExpr("Text").ShowClearButton(true).Placeholder("Untuk audiens Section (latihan sectional)"));
                 g.AddSimpleFor(m => m.IsPublic).Editor(e => e.SelectBox().DataSource(Model.PublikOpsi).ValueExpr("Value").DisplayExpr("Text"));
                 g.AddSimpleFor(m => m.IsFeatured).Editor(e => e.SelectBox().DataSource(Model.SorotOpsi).ValueExpr("Value").DisplayExpr("Text"));
             });

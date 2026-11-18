@@ -188,10 +188,10 @@ namespace GWALib.Lib.Transaksi.Program
                 })
                 .OrderBy(x => x.Category).ThenBy(x => x.Name).ToList();
 
-            // Susunan pengurus periode: inti dulu, lalu per divisi.
-            var assignments = context.TManagementAssignments.AsNoTracking().Include(x => x.Member).Include(x => x.Position).Include(x => x.Division)
+            // Susunan pengurus periode: inti dulu, lalu per divisi, lalu section leader.
+            var assignments = context.TManagementAssignments.AsNoTracking().Include(x => x.Member).Include(x => x.Position).Include(x => x.Division).Include(x => x.Section)
                 .Where(x => x.PeriodId == periodId).ToList()
-                .OrderByDescending(x => x.Position.IsCore).ThenBy(x => x.Division?.SortOrder ?? 0).ThenBy(x => x.Position.SortOrder).ThenBy(x => x.Member.Fullname)
+                .OrderByDescending(x => x.Position.IsCore).ThenBy(x => x.SectionId != null).ThenBy(x => x.Division?.SortOrder ?? x.Section?.SortOrder ?? 0).ThenBy(x => x.Position.SortOrder).ThenBy(x => x.Member.Fullname)
                 .ToList();
             var memberIds = assignments.Select(x => x.MemberId).Distinct().ToList();
             var photos = context.MMemberPhotos.AsNoTracking().Where(x => memberIds.Contains(x.MemberId))
@@ -199,7 +199,7 @@ namespace GWALib.Lib.Transaksi.Program
                 .ToDictionary(x => x.MemberId, x => x.Photo);
             data.Officers = assignments.Select(x => new OfficerLine(
                     x.Position.Name,
-                    x.Position.IsCore == 1 ? null : x.Division?.Name,
+                    x.Position.IsCore == 1 ? null : x.Division?.Name ?? x.Section?.Name,
                     x.Member.Fullname,
                     x.Member.MemberNumber,
                     string.Join(" / ", new[] { x.Member.Fakultas, x.Member.ProgramStudi }.Where(s => !string.IsNullOrWhiteSpace(s))),

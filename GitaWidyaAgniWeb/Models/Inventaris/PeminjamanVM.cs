@@ -397,7 +397,7 @@ namespace GitaWidyaAgniWeb.Models.Inventaris
                 var lines = input.Lines ?? new();
                 foreach (var line in lines.Where(x => x.UnitCodes != null))
                 {
-                    line.UnitCodes = line.UnitCodes!.Select(AsetLabel.KodeUnit).ToList();
+                    line.UnitCodes = line.UnitCodes!.Select(AsetLabel.ResolveKode).ToList();
                 }
                 Load(input.Key).Checkout(lines, user).Ok();
             }
@@ -406,7 +406,7 @@ namespace GitaWidyaAgniWeb.Models.Inventaris
                 => LibExtensions.Load<BorrowItem>(input.Key, "Item").ReturnQuantity(input.Returned, input.Lost, (ItemCondition)input.Condition, input.Notes, user).Ok();
 
             public static void KembaliUnit(KembaliUnitInput input, string user)
-                => BorrowItemUnit.ReturnUnit(Load(input.Key).Id, AsetLabel.KodeUnit(input.UnitCode), (ItemCondition)input.Condition, input.Lost, input.Notes, user).Ok();
+                => BorrowItemUnit.ReturnUnit(Load(input.Key).Id, AsetLabel.ResolveKode(input.UnitCode), (ItemCondition)input.Condition, input.Lost, input.Notes, user).Ok();
 
             public static GwaVM.BayarForm FormBayar(string encKey)
             {

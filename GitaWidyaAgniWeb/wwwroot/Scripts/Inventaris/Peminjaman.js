@@ -51,7 +51,8 @@ window.Peminjaman = (function () {
     function removeItem(key) {
         AppUI.confirmPost('Hapus item?', 'Item dihapus dari peminjaman.', URL.hapusItem, { Key: key }, 'Hapus', 'btn-danger').done(reloadDetail);
     }
-    // Label QR berisi URL publik .../aset/{kode}; scanner bisa mengetik URL itu atau kode saja (sama dengan AsetLabel.KodeUnit).
+    // Label QR berisi URL publik .../aset/{token}; scanner bisa memindai URL itu atau mengetik kode unit (server memetakan
+    // token ke kode lewat AsetLabel.ResolveKode).
     function unitCode(text) {
         let s = $.trim(String(text || '')).split(/[?#]/)[0].replace(/\/+$/, '');
         s = s.substring(s.lastIndexOf('/') + 1);

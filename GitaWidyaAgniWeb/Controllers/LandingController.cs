@@ -183,18 +183,19 @@ namespace GitaWidyaAgniWeb.Controllers
             }
         }
 
-        // Hasil scan label QR unit aset (isi QR = URL ini): detail alat tanpa login. Unit yang dihapus tidak ditampilkan.
-        [HttpGet("aset/{kode}")]
-        public IActionResult AsetPublik(string kode)
+        // Hasil scan label QR unit aset (isi QR = URL ini dengan token acak unit): detail alat tanpa login. Kode unit biasa tidak
+        // diterima (URL tidak bisa ditebak). Unit yang dihapus tidak ditampilkan.
+        [HttpGet("aset/{token}")]
+        public IActionResult AsetPublik(string token)
         {
             var model = new AsetPublikVM
             {
-                Kode = AsetLabel.KodeUnit(kode),
+                Kode = AsetLabel.KodeUnit(token),
                 WhatsApp = Load(LoadSite, new SiteInfo()).WhatsApp,
                 OrgName = _access.GetAppName(),
                 Login = User.Identity?.IsAuthenticated == true
             };
-            var unit = Load(() => AssetUnit.GetByCode(model.Kode), null);
+            var unit = Load(() => AssetUnit.GetByQrToken(model.Kode), null);
             if (unit != null && unit.Status != AssetUnitStatus.Dihapus)
             {
                 model.Unit = unit;
@@ -209,11 +210,11 @@ namespace GitaWidyaAgniWeb.Controllers
             return View(model);
         }
 
-        // Foto pertama aset dari unit (halaman AsetPublik).
+        // Foto pertama aset dari unit (halaman AsetPublik; kode = token QR).
         [ResponseCache(Duration = 300)]
         public IActionResult AsetFoto(string kode)
         {
-            var unit = Load(() => AssetUnit.GetByCode(AsetLabel.KodeUnit(kode)), null);
+            var unit = Load(() => AssetUnit.GetByQrToken(AsetLabel.KodeUnit(kode)), null);
             if (unit == null || unit.Status == AssetUnitStatus.Dihapus)
             {
                 return NotFound();

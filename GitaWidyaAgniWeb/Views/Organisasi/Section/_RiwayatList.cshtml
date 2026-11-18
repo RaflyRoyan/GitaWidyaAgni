@@ -1,0 +1,30 @@
+@model GitaWidyaAgniWeb.Models.Organisasi.SectionVM.RiwayatList
+@using GitaWidyaAgniWeb.Infrastructure
+@using GitaWidyaAgniWeb.Models.Organisasi
+@* Grid riwayat section: per section (kolom anggota) atau per anggota (kolom section). Baris aktif = section saat ini. *@
+
+@(Html.DevExtreme().DataGrid<SectionVM.RiwayatRow>()
+    .ID("tblSectionRiwayat")
+    .DataSource(Model.Rows)
+    .KeyExpr("EncDecrKey")
+    .DetailGrid(Model.PerSection ? "Belum ada anggota di section ini." : "Belum ada riwayat section.")
+    .OnRowPrepared("SectionRiwayat.rowPrepared")
+    .Columns(columns =>
+    {
+        columns.AddRowNumber();
+        if (Model.PerSection)
+        {
+            columns.AddFor(m => m.Anggota).Caption("Anggota").CssClass("fw-medium");
+            columns.AddFor(m => m.NoAnggota).Caption("No. Anggota").CellTemplate(new JS("AppUI.codeTemplate"));
+        }
+        else
+        {
+            columns.AddFor(m => m.Section).Caption("Section").CssClass("fw-medium");
+        }
+        columns.AddFor(m => m.StartDate).Caption("Mulai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.EndDate).Caption("Sampai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
+        columns.AddFor(m => m.Aktif).Caption("Saat Ini").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
+        columns.AddFor(m => m.Note).Caption("Catatan / Event");
+        columns.AddAction("SectionRiwayat.actionTemplate");
+    })
+)

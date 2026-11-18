@@ -176,7 +176,7 @@ namespace GWALib.Lib.Transaksi.Presensi
             var session = GetOpenSession(context, input.QrToken);
             var member = GetMemberOfUser(context, userId);
             var activity = Activity.GetActivity(context, session.ActivityId);
-            if (activity.AudienceType != (int)AudienceType.SemuaAnggota && !AttendanceSession.GetExpectedMemberIds(context, activity).Contains(member.Id))
+            if (activity.AudienceType != (int)AudienceType.SemuaAnggota && !AttendanceSession.GetExpectedMemberIds(context, activity, session.OpenAt, false).Contains(member.Id))
             {
                 throw new ArgumentException(ExceptionMessage.ATTENDANCE_NOT_IN_AUDIENCE);
             }

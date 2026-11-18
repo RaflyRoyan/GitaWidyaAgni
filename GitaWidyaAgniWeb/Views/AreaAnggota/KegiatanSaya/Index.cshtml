@@ -17,7 +17,7 @@ else
             <div class="card">
                 <div class="card-header">
                     <h5 class="card-title mb-0"><i class="ri-calendar-event-line align-bottom me-1"></i> Kegiatan Mendatang</h5>
-                    <p class="gwa-card-intro mb-0">Daftar sebagai peserta kegiatan. Kehadiran dicatat lewat menu Presensi.</p>
+                    <p class="gwa-card-intro mb-0">Kegiatan untuk anggota (mis. latihan rutin) otomatis Anda ikuti; bila berhalangan, ajukan tidak ikut satu pertemuan atau seluruh kegiatan untuk disetujui pengurus. Kegiatan dengan pendaftaran terbuka perlu didaftar dulu. Kehadiran dicatat lewat menu Presensi.</p>
                 </div>
                 @if (Model.Kegiatan.Count == 0)
                 {
@@ -39,7 +39,25 @@ else
                                     <div class="fw-semibold">@k.Title</div>
                                     <div class="small text-muted">@EnumHelper.Text(k.ActivityType) · @k.StartAt.ToString("dddd, HH:mm", id) @(string.IsNullOrEmpty(k.Location) ? "" : "· " + k.Location)</div>
                                 </div>
-                                @if (aktif)
+                                @if (Model.Otomatis.Contains(k.Id))
+                                {
+                                    var whole = Model.Pengajuan.FirstOrDefault(p => p.ActivityId == k.Id && p.WholeActivity
+                                        && (p.Status == AbsenceRequestStatus.Menunggu || p.Status == AbsenceRequestStatus.Disetujui));
+                                    if (whole?.Status == AbsenceRequestStatus.Disetujui)
+                                    {
+                                        <span class="badge badge-soft-secondary">Tidak ikut (disetujui)</span>
+                                    }
+                                    else if (whole != null)
+                                    {
+                                        <span class="badge badge-soft-warning">Pengajuan tidak ikut menunggu</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-soft-success"><i class="ri-check-line me-1"></i>Otomatis terdaftar</span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="collapse" data-bs-target="#izin-@k.Id" aria-expanded="false" aria-controls="izin-@k.Id">Ajukan tidak ikut</button>
+                                    }
+                                }
+                                else if (aktif)
                                 {
                                     <span class="badge badge-soft-success">@EnumHelper.Text(reg!.RegistrationStatus)</span>
                                     <button type="button" class="btn btn-sm btn-outline-danger" onclick="KegiatanSaya.post('batal','@reg.EncDecrKey','Batalkan pendaftaran?')">Batal</button>
@@ -48,10 +66,66 @@ else
                                 {
                                     <button type="button" class="btn btn-sm btn-primary" onclick="KegiatanSaya.post('daftar','@k.EncDecrKey')"><i class="ri-user-add-line me-1"></i>Daftar</button>
                                 }
+                                @if (Model.Otomatis.Contains(k.Id))
+                                {
+                                    var sesi = Model.Sesi.TryGetValue(k.Id, out var ss) ? ss : new();
+                                    <form id="izin-@k.Id" class="collapse w-100 izin-form border rounded p-2" data-key="@k.EncDecrKey" novalidate>
+                                        <div class="row g-2">
+                                            <div class="col-sm-5">
+                                                <label class="form-label small mb-1" for="izinSesi-@k.Id">Tidak ikut</label>
+                                                <select class="form-select form-select-sm" id="izinSesi-@k.Id" name="SessionId">
+                                                    @foreach (var s in sesi) { <option value="@s.Value">Pertemuan @s.Text</option> }
+                                                    <option value="">Seluruh kegiatan</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-sm-7">
+                                                <label class="form-label small mb-1" for="izinAlasan-@k.Id">Alasan</label>
+                                                <textarea class="form-control form-control-sm" id="izinAlasan-@k.Id" name="Reason" rows="2" maxlength="500" required placeholder="mis. ujian praktikum, sakit, pulang kampung"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="text-end mt-2"><button type="submit" class="btn btn-sm btn-danger"><i class="ri-send-plane-line me-1"></i>Kirim pengajuan</button></div>
+                                    </form>
+                                }
                             </li>
                         }
                     </ul>
                 }
+            </div>
+            <div class="card">
+                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-calendar-close-line align-bottom me-1"></i> Pengajuan Tidak Ikut</h5></div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var p in Model.Pengajuan)
+                    {
+                        var css = p.Status switch
+                        {
+                            AbsenceRequestStatus.Disetujui => "badge-soft-success",
+                            AbsenceRequestStatus.Ditolak => "badge-soft-danger",
+                            AbsenceRequestStatus.Menunggu => "badge-soft-warning",
+                            _ => "badge-soft-secondary"
+                        };
+                        <li class="list-group-item d-flex align-items-center gap-2">
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">@p.ActivityTitle</div>
+                                <div class="small text-muted">
+                                    @(p.WholeActivity ? "Seluruh kegiatan" : "Pertemuan " + p.SessionAt?.ToString("ddd, dd MMM yyyy HH:mm", id)) · @p.Reason
+                                </div>
+                                @if (!string.IsNullOrEmpty(p.ReviewNote))
+                                {
+                                    <div class="small"><i class="ri-chat-1-line me-1"></i>@p.ReviewNote</div>
+                                }
+                            </div>
+                            <span class="badge @css">@EnumHelper.Text(p.Status)</span>
+                            @if (p.Status == AbsenceRequestStatus.Menunggu)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="KegiatanSaya.post('tarikIzin','@p.EncDecrKey','Tarik pengajuan?')">Tarik</button>
+                            }
+                        </li>
+                    }
+                    @if (Model.Pengajuan.Count == 0)
+                    {
+                        <li class="list-group-item text-muted">Belum ada pengajuan tidak ikut.</li>
+                    }
+                </ul>
             </div>
         </div>
 
@@ -133,7 +207,7 @@ else
 @section Scripts {
     <script>
         window.KegiatanSaya = (function () {
-            const URL = { daftar: '@Url.Action("Daftar")', batal: '@Url.Action("Batal")', mundur: '@Url.Action("Mundur")', lamar: '@Url.Action("Lamar")' };
+            const URL = { daftar: '@Url.Action("Daftar")', batal: '@Url.Action("Batal")', mundur: '@Url.Action("Mundur")', lamar: '@Url.Action("Lamar")', ajukanIzin: '@Url.Action("AjukanIzin")', tarikIzin: '@Url.Action("TarikIzin")' };
             const reload = function () { window.location.reload(); };
             function post(action, key, confirmText) {
                 if (confirmText) {
@@ -142,6 +216,20 @@ else
                     AppUI.postJson(URL[action], { Key: key }).done(function (r) { AppUI.alertSuccess(r.Message); setTimeout(reload, 800); });
                 }
             }
+            // Pengajuan tidak ikut kegiatan otomatis: satu pertemuan (SessionId) atau seluruh kegiatan (kosong).
+            $(document).on('submit', '.izin-form', function (e) {
+                e.preventDefault();
+                const f = $(this);
+                const reason = $.trim(f.find('[name=Reason]').val() || '');
+                if (!reason) {
+                    AppUI.alertWarning('Isi alasan tidak ikut.');
+                    f.find('[name=Reason]').trigger('focus');
+                    return;
+                }
+                const sesi = f.find('[name=SessionId]').val();
+                AppUI.postJson(URL.ajukanIzin, { ActivityKey: f.data('key'), SessionId: sesi ? parseInt(sesi, 10) : null, Reason: reason })
+                    .done(function (r) { AppUI.alertSuccess(r.Message); setTimeout(reload, 800); });
+            });
             $(document).on('submit', '.lamar-form', function (e) {
                 e.preventDefault();
                 const f = $(this);

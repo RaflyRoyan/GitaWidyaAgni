@@ -35,6 +35,12 @@ namespace GitaWidyaAgniWeb.Controllers.Prestasi
         [HttpPost, AccessAs(Acc.Process)] public IActionResult Cabut([FromBody] GwaVM.KeyInput i) => Aksi(u => { VM.Method.Load(i.Key).Revoke(u).Ok(); }, "Sertifikat dicabut.");
         [HttpPost, AccessAs(Acc.Process)] public IActionResult Pulihkan([FromBody] GwaVM.KeyInput i) => Aksi(u => { VM.Method.Load(i.Key).Restore(u).Ok(); }, "Sertifikat berlaku kembali.");
 
+        // Cetak sertifikat (DevExpress Reports, viewer di iframe; ?pdf=1 = unduh PDF).
+        [AccessAs(Acc.Index)]
+        public IActionResult Cetak(string key) => Laporan(() => VM.Method.Cetak(VM.Method.Load(key),
+            HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath,
+            AsetLabel.BaseUrl(Request, HttpContext.RequestServices.GetRequiredService<IConfiguration>())));
+
         [AccessAs(Acc.Index)]
         public IActionResult Unduh(string key)
         {

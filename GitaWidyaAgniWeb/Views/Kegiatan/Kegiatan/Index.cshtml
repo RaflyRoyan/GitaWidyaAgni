@@ -21,6 +21,7 @@
                 <partial name="_Toolbar" model='new ToolbarModel("Tambah Kegiatan", "Kegiatan.add(\"Kegiatan\")",
                     ("btn-outline-success", "ri-group-line", "Peserta"),
                     ("btn-outline-info", "ri-handshake-line", "Kolaborator / mitra"),
+                    ("btn-outline-danger", "ri-calendar-close-line", "Pengajuan tidak ikut"),
                     ("btn-outline-primary", "ri-play-circle-line", "Mulai / selesaikan"),
                     ("btn-outline-warning", "ri-edit-2-line", "Ubah kegiatan"),
                     ("btn-outline-secondary", "ri-close-circle-line", "Batalkan"),
@@ -50,7 +51,8 @@
             });
         });
         ['Peserta', 'PesertaList', 'TambahPeserta', 'KonfirmasiPeserta', 'BatalPeserta', 'Kolaborator', 'KolaboratorList', 'TambahKolaborator',
-            'ResponKolaborator', 'HapusKolaborator', 'BerkasLaporan', 'AjukanLaporan', 'SetujuiLaporan', 'RevisiLaporan'].forEach(function (a) {
+            'ResponKolaborator', 'HapusKolaborator', 'BerkasLaporan', 'AjukanLaporan', 'SetujuiLaporan', 'RevisiLaporan',
+            'Izin', 'IzinList', 'SetujuiIzin', 'TolakIzin'].forEach(function (a) {
             window.KegiatanUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
         });
     </script>

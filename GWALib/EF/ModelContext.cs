@@ -39,6 +39,8 @@ public partial class ModelContext : DbContext
 
     public virtual DbSet<MDivision> MDivisions { get; set; }
 
+    public virtual DbSet<MSection> MSections { get; set; }
+
     public virtual DbSet<MDocumentCategory> MDocumentCategories { get; set; }
 
     public virtual DbSet<MDocumentNumberFormat> MDocumentNumberFormats { get; set; }
@@ -104,6 +106,8 @@ public partial class ModelContext : DbContext
     public virtual DbSet<TAchievement> TAchievements { get; set; }
 
     public virtual DbSet<TActivity> TActivities { get; set; }
+
+    public virtual DbSet<TActivityAbsenceRequest> TActivityAbsenceRequests { get; set; }
 
     public virtual DbSet<TActivityChecklist> TActivityChecklists { get; set; }
 
@@ -174,6 +178,8 @@ public partial class ModelContext : DbContext
     public virtual DbSet<TDebtPayment> TDebtPayments { get; set; }
 
     public virtual DbSet<TDivisionMember> TDivisionMembers { get; set; }
+
+    public virtual DbSet<TSectionMember> TSectionMembers { get; set; }
 
     public virtual DbSet<TDocument> TDocuments { get; set; }
 
@@ -413,7 +419,7 @@ public partial class ModelContext : DbContext
             entity.Property(e => e.Status)
                 .HasDefaultValueSql("'1'")
                 .HasComment("1=TERSEDIA, 2=DIPINJAM, 3=PERAWATAN, 4=HILANG, 5=DIHAPUS");
-            entity.Property(e => e.UnitCode).HasComment("Kode inventaris unit: unit_prefix + nomor urut, dicetak sebagai QR (berisi URL halaman unit)");
+            entity.Property(e => e.UnitCode).HasComment("Kode inventaris unit: unit_prefix + nomor urut (dicetak di label; QR berisi token)");
             entity.Property(e => e.UnitCondition)
                 .HasDefaultValueSql("'1'")
                 .HasComment("1=BAIK, 2=RUSAK_RINGAN, 3=RUSAK_BERAT");
@@ -2238,6 +2244,63 @@ public partial class ModelContext : DbContext
             entity.HasOne(d => d.Position).WithMany(p => p.TManagementAssignments)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_assignment_position");
+        });
+
+        modelBuilder.Entity<TActivityAbsenceRequest>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("t_activity_absence_request", tb => tb.HasComment("Pengajuan tidak ikut kegiatan (per sesi / seluruh kegiatan)"));
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.InsDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Status).HasDefaultValueSql("'1'");
+
+            entity.HasOne(d => d.Activity).WithMany().HasForeignKey(d => d.ActivityId)
+                .OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("fk_absence_activity");
+            entity.HasOne(d => d.Member).WithMany().HasForeignKey(d => d.MemberId)
+                .OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("fk_absence_member");
+            entity.HasOne(d => d.Session).WithMany().HasForeignKey(d => d.SessionId).HasConstraintName("fk_absence_session");
+            entity.HasOne(d => d.ReviewedByNavigation).WithMany().HasForeignKey(d => d.ReviewedBy).HasConstraintName("fk_absence_reviewer");
+        });
+
+        modelBuilder.Entity<MSection>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("m_section", tb => tb.HasComment("Section musik marching band; semua anggota punya section"));
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.InsDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.IsActive).HasDefaultValueSql("'1'");
+        });
+
+        modelBuilder.Entity<TSectionMember>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("t_section_member", tb => tb.HasComment("Riwayat section anggota"));
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.InsDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(d => d.Section).WithMany(p => p.TSectionMembers)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_secmember_section");
+
+            entity.HasOne(d => d.Member).WithMany(p => p.TSectionMembers)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_secmember_member");
+        });
+
+        modelBuilder.Entity<TActivity>(entity =>
+        {
+            entity.HasOne(d => d.Section).WithMany(p => p.TActivities).HasConstraintName("fk_activity_section");
+        });
+
+        modelBuilder.Entity<TManagementAssignment>(entity =>
+        {
+            entity.HasOne(d => d.Section).WithMany(p => p.TManagementAssignments).HasConstraintName("fk_assignment_section");
         });
 
         modelBuilder.Entity<TLpj>(entity =>

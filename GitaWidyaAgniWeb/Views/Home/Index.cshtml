@@ -1,17 +1,317 @@
-﻿@using GitaWidyaAgniWeb.Infrastructure
+﻿@model GitaWidyaAgniWeb.Models.HomeVM
+@using GitaWidyaAgniWeb.Infrastructure
+@using GWAShared.Enums
 @{
     ViewData["Title"] = "Dashboard";
     ViewData["HidePageTitle"] = true; // dashboard punya judul sendiri
+    var d = Model.Data;
+    var id = new System.Globalization.CultureInfo("id-ID");
+    var now = DateTime.Now;
+    var salam = now.Hour < 11 ? "Selamat pagi" : now.Hour < 15 ? "Selamat siang" : now.Hour < 18 ? "Selamat sore" : "Selamat malam";
+    string Rp(decimal v) => (v < 0 ? "-Rp " : "Rp ") + Math.Abs(v).ToString("N0", id);
+    var sisaHari = d.PeriodEnd == null ? (int?)null : d.PeriodEnd.Value.DayNumber - DateOnly.FromDateTime(now).DayNumber;
+    var canKeuangan = Model.Can("Transaksi");
+    var canAnggota = Model.Can("Anggota");
+    var canKegiatan = Model.Can("Kegiatan");
+    var canSection = Model.Can("Section") || canAnggota;
+    var approvals = new List<(string Text, int Count, string Icon, string Controller, string Area)>();
+    if (canKegiatan) { approvals.Add(("Pengajuan tidak ikut kegiatan", d.AbsenceWaiting, "ri-calendar-close-line", "Kegiatan", "Kegiatan")); }
+    if (Model.Can("Surat")) { approvals.Add(("Surat menunggu persetujuan", d.LettersWaiting, "ri-mail-send-line", "Surat", "Persuratan")); }
+    if (Model.Can("PengajuanDana")) { approvals.Add(("Pengajuan dana diajukan", d.FundingWaiting, "ri-hand-coin-line", "PengajuanDana", "Keuangan")); }
+    if (Model.Can("Pengadaan")) { approvals.Add(("Pengadaan diajukan", d.ProcurementWaiting, "ri-shopping-bag-3-line", "Pengadaan", "Pengadaan")); }
+    if (Model.Can("Peminjaman"))
+    {
+        approvals.Add(("Permohonan pinjam baru", d.BorrowPending, "ri-inbox-archive-line", "Peminjaman", "Inventaris"));
+        approvals.Add(("Peminjaman terlambat kembali", d.BorrowOverdue, "ri-alarm-warning-line", "Peminjaman", "Inventaris"));
+    }
+    var jenisIkon = new Dictionary<ActivityType, string>
+    {
+        [ActivityType.Event] = "ri-music-2-line", [ActivityType.Rapat] = "ri-discuss-line", [ActivityType.Latihan] = "ri-drum-line",
+        [ActivityType.Pertemuan] = "ri-team-line", [ActivityType.Lomba] = "ri-trophy-line", [ActivityType.Piket] = "ri-broom-line", [ActivityType.Lainnya] = "ri-calendar-event-line"
+    };
 }
-<div class="row">
-    <div class="col-12">
-        <div class="page-title-box d-sm-flex align-items-center justify-content-between">
-            <h4 class="mb-sm-0">Dashboard</h4>
+
+<div class="gwa-dash">
+    @* ===== Sambutan ===== *@
+    <section class="gwa-welcome gwa-dash-hero mb-4">
+        <div class="gwa-dash-hero-text">
+            <span class="gwa-eyebrow">Marching Band Gita Widya Agni</span>
+            <h2>@salam, <em>@Model.DisplayName</em></h2>
+            <p>@now.ToString("dddd, d MMMM yyyy", id)</p>
+            <div class="gwa-dash-chips">
+                @if (d.PeriodName != null)
+                {
+                    <span class="gwa-chip"><i class="ri-flag-2-line"></i> @d.PeriodName</span>
+                    @if (sisaHari is >= 0)
+                    {
+                        <span class="gwa-chip"><i class="ri-hourglass-line"></i> @sisaHari hari tersisa</span>
+                    }
+                }
+                @if (d.ActivitiesThisMonth > 0)
+                {
+                    <span class="gwa-chip"><i class="ri-calendar-check-line"></i> @d.ActivitiesThisMonth kegiatan bulan ini</span>
+                }
+            </div>
+        </div>
+        @if (d.Agenda.Count > 0)
+        {
+            var next = d.Agenda[0];
+            <div class="gwa-dash-next" aria-label="Agenda terdekat">
+                <span class="gwa-dash-next-label">Agenda terdekat</span>
+                <div class="gwa-dash-next-date">
+                    <strong>@next.StartAt.ToString("dd")</strong>
+                    <span>@next.StartAt.ToString("MMM", id)</span>
+                </div>
+                <div class="gwa-dash-next-title">@next.Title</div>
+                <div class="gwa-dash-next-meta"><i class="ri-time-line"></i> @next.StartAt.ToString("HH:mm") @if (next.Location != null) { <text>· @next.Location</text> }</div>
+            </div>
+        }
+    </section>
+
+    @if (Model.Error != null)
+    {
+        <div class="alert alert-warning">@Model.Error</div>
+    }
+
+    @* ===== Angka utama ===== *@
+    <div class="row g-3 mb-4">
+        @if (canAnggota)
+        {
+            <div class="col-6 col-xl-3">
+                <div class="gwa-stat">
+                    <span class="gwa-stat-icon" style="--c: var(--gwa-bronze)"><i class="ri-group-line"></i></span>
+                    <div><div class="gwa-stat-label">Anggota aktif</div><div class="gwa-stat-value">@d.ActiveMembers.ToString("N0", id)</div>
+                        <div class="gwa-stat-sub">@d.Officers pengurus · @d.Alumni alumni</div></div>
+                </div>
+            </div>
+        }
+        <div class="col-6 col-xl-3">
+            <div class="gwa-stat">
+                <span class="gwa-stat-icon" style="--c: var(--gwa-flame)"><i class="ri-calendar-event-line"></i></span>
+                <div><div class="gwa-stat-label">Kegiatan mendatang</div><div class="gwa-stat-value">@d.UpcomingActivities</div>
+                    <div class="gwa-stat-sub">@d.ActivitiesThisMonth terjadwal bulan ini</div></div>
+            </div>
+        </div>
+        @if (canKeuangan)
+        {
+            <div class="col-6 col-xl-3">
+                <div class="gwa-stat">
+                    <span class="gwa-stat-icon" style="--c: var(--gwa-leaf)"><i class="ri-wallet-3-line"></i></span>
+                    <div><div class="gwa-stat-label">Saldo kas</div><div class="gwa-stat-value">@Rp(d.CashBalance)</div>
+                        <div class="gwa-stat-sub @(d.IncomeThisMonth - d.ExpenseThisMonth < 0 ? "text-danger" : "text-success")">
+                            @(d.IncomeThisMonth - d.ExpenseThisMonth < 0 ? "−" : "+")@Rp(Math.Abs(d.IncomeThisMonth - d.ExpenseThisMonth)) bulan ini</div></div>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="gwa-stat">
+                    <span class="gwa-stat-icon" style="--c: #b5651d"><i class="ri-bill-line"></i></span>
+                    <div><div class="gwa-stat-label">Iuran belum dibayar</div><div class="gwa-stat-value">@Rp(d.UnpaidDues)</div>
+                        <div class="gwa-stat-sub">@d.UnpaidDuesCount tagihan</div></div>
+                </div>
+            </div>
+        }
+        else if (Model.Can("Aset"))
+        {
+            <div class="col-6 col-xl-3">
+                <div class="gwa-stat">
+                    <span class="gwa-stat-icon" style="--c: var(--gwa-leaf)"><i class="ri-archive-drawer-line"></i></span>
+                    <div><div class="gwa-stat-label">Aset tercatat</div><div class="gwa-stat-value">@d.AssetCount</div>
+                        <div class="gwa-stat-sub">@d.BorrowOut sedang dipinjam</div></div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @* ===== Grafik ===== *@
+    @if (canKeuangan || canSection)
+    {
+        <div class="row g-3 mb-4">
+            @if (canKeuangan)
+            {
+                <div class="@(canSection ? "col-xl-8" : "col-12")">
+                    <div class="card h-100 mb-0">
+                        <div class="card-header d-flex align-items-center">
+                            <h5 class="card-title mb-0 flex-grow-1"><i class="ri-line-chart-line align-bottom me-1"></i> Arus kas 6 bulan</h5>
+                            <a class="btn btn-sm btn-soft-primary" href="@Url.Action("Index", "Transaksi", new { area = "Keuangan" })">Transaksi</a>
+                        </div>
+                        <div class="card-body"><div id="chartArusKas" style="height: 300px" role="img" aria-label="Grafik pemasukan dan pengeluaran 6 bulan terakhir"></div></div>
+                    </div>
+                </div>
+            }
+            @if (canSection)
+            {
+                <div class="@(canKeuangan ? "col-xl-4" : "col-12")">
+                    <div class="card h-100 mb-0">
+                        <div class="card-header"><h5 class="card-title mb-0"><i class="ri-pie-chart-2-line align-bottom me-1"></i> Anggota per section</h5></div>
+                        <div class="card-body"><div id="chartSection" style="height: 300px" role="img" aria-label="Jumlah anggota per section"></div></div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <div class="row g-3 mb-4">
+        @* ===== Agenda ===== *@
+        <div class="col-lg-6 col-xl-5">
+            <div class="card h-100 mb-0">
+                <div class="card-header d-flex align-items-center">
+                    <h5 class="card-title mb-0 flex-grow-1"><i class="ri-calendar-2-line align-bottom me-1"></i> Agenda mendatang</h5>
+                    @if (canKegiatan)
+                    {
+                        <a class="btn btn-sm btn-soft-primary" href="@Url.Action("Index", "Kegiatan", new { area = "Kegiatan" })">Semua</a>
+                    }
+                </div>
+                <ul class="list-group list-group-flush gwa-agenda">
+                    @foreach (var a in d.Agenda)
+                    {
+                        <li class="list-group-item">
+                            <div class="gwa-agenda-date"><strong>@a.StartAt.ToString("dd")</strong><span>@a.StartAt.ToString("MMM", id)</span></div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="fw-semibold text-truncate">@a.Title</div>
+                                <div class="small text-muted text-truncate">
+                                    <i class="@(jenisIkon.GetValueOrDefault(a.Type, "ri-calendar-event-line"))"></i> @EnumHelper.Text(a.Type)
+                                    · @a.StartAt.ToString("ddd, HH:mm", id)@if (a.Location != null) { <text> · @a.Location</text> }
+                                </div>
+                            </div>
+                        </li>
+                    }
+                    @if (d.Agenda.Count == 0)
+                    {
+                        <li class="list-group-item gwa-empty"><i class="ri-calendar-line"></i> Belum ada agenda terjadwal.</li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        @* ===== Perlu tindakan + tugas saya ===== *@
+        <div class="col-lg-6 col-xl-4">
+            <div class="card h-100 mb-0">
+                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-task-line align-bottom me-1"></i> Perlu tindakan</h5></div>
+                <ul class="list-group list-group-flush">
+                    @foreach (var x in approvals.Where(x => x.Count > 0))
+                    {
+                        <li class="list-group-item">
+                            <a class="gwa-todo" href="@Url.Action("Index", x.Controller, new { area = x.Area })">
+                                <i class="@x.Icon"></i><span class="flex-grow-1">@x.Text</span><span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">@x.Count</span>
+                            </a>
+                        </li>
+                    }
+                    @foreach (var t in d.MyTasks)
+                    {
+                        var telat = t.DueDate != null && t.DueDate < DateOnly.FromDateTime(now);
+                        <li class="list-group-item">
+                            <a class="gwa-todo" href="@Url.Action("Index", t.Kind == "Iuran" ? "IuranSaya" : "DisposisiSaya", new { area = "AreaAnggota" })">
+                                <i class="@(t.Kind == "Iuran" ? "ri-bill-line" : "ri-mail-open-line")"></i>
+                                <span class="flex-grow-1 min-w-0">
+                                    <span class="d-block text-truncate">@t.Kind: @t.Title</span>
+                                    <span class="small text-muted d-block text-truncate">@t.Note</span>
+                                </span>
+                                @if (t.DueDate != null)
+                                {
+                                    <span class="badge rounded-pill @(telat ? "bg-danger-subtle text-danger" : "bg-light text-muted")">@t.DueDate.Value.ToString("d MMM", id)</span>
+                                }
+                            </a>
+                        </li>
+                    }
+                    @if (!approvals.Any(x => x.Count > 0) && d.MyTasks.Count == 0)
+                    {
+                        <li class="list-group-item gwa-empty"><i class="ri-checkbox-circle-line text-success"></i> Semua beres, tidak ada yang menunggu.</li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        @* ===== Papan poin ===== *@
+        <div class="col-12 col-xl-3">
+            <div class="card h-100 mb-0">
+                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-medal-line align-bottom me-1"></i> Poin keaktifan</h5></div>
+                <ol class="list-group list-group-flush gwa-rank">
+                    @{ var rank = 0; var max = Math.Max(1, d.TopPoints.FirstOrDefault()?.Points ?? 1); }
+                    @foreach (var p in d.TopPoints)
+                    {
+                        rank++;
+                        <li class="list-group-item">
+                            <span class="gwa-rank-no r@(rank)">@rank</span>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="d-flex"><span class="text-truncate flex-grow-1">@p.Name</span><strong class="ms-2">@p.Points</strong></div>
+                                <div class="gwa-rank-bar"><span style="width: @(Math.Max(4, p.Points * 100 / max))%"></span></div>
+                            </div>
+                        </li>
+                    }
+                    @if (d.TopPoints.Count == 0)
+                    {
+                        <li class="list-group-item gwa-empty"><i class="ri-medal-line"></i> Belum ada poin.</li>
+                    }
+                </ol>
+            </div>
         </div>
     </div>
+
+    @* ===== Pintasan ===== *@
+    @if (Model.Shortcuts.Count > 0)
+    {
+        <div class="card mb-0">
+            <div class="card-header"><h5 class="card-title mb-0"><i class="ri-flashlight-line align-bottom me-1"></i> Pintasan</h5></div>
+            <div class="card-body">
+                <div class="gwa-shortcuts">
+                    @foreach (var s in Model.Shortcuts)
+                    {
+                        <a href="@s.Url" class="gwa-shortcut"><i class="@s.Icon"></i><span>@s.Title</span></a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
 </div>
-<div class="gwa-welcome mb-4">
-    <span class="gwa-eyebrow">Marching Band Gita Widya Agni</span>
-    <h2>Selamat datang, <em>@User.GetUsername()</em></h2>
-    <p>Pilih menu di samping untuk mulai mengelola kegiatan, anggota, dan keuangan.</p>
-</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            const css = getComputedStyle(document.documentElement);
+            const color = (v, f) => (css.getPropertyValue(v) || f).trim();
+            const rupiah = v => 'Rp ' + Math.round(v).toLocaleString('id-ID');
+            @if (canKeuangan)
+            {
+                <text>
+            $('#chartArusKas').dxChart({
+                dataSource: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(d.CashFlow)),
+                commonSeriesSettings: { argumentField: 'Month', type: 'bar', barPadding: 0.35, cornerRadius: 4 },
+                series: [
+                    { valueField: 'Income', name: 'Pemasukan', color: color('--gwa-leaf', '#1f7a45') },
+                    { valueField: 'Expense', name: 'Pengeluaran', color: color('--gwa-flame', '#c8202a') }
+                ],
+                valueAxis: { label: { customizeText: e => e.value >= 1e6 ? (e.value / 1e6).toLocaleString('id-ID') + ' jt' : e.value >= 1e3 ? (e.value / 1e3).toLocaleString('id-ID') + ' rb' : e.valueText }, grid: { color: '#ece4d3' } },
+                argumentAxis: { grid: { visible: false } },
+                legend: { verticalAlignment: 'top', horizontalAlignment: 'right' },
+                tooltip: { enabled: true, customizeTooltip: e => ({ text: e.seriesName + '\n' + rupiah(e.value) }) }
+            });
+                </text>
+            }
+            @if (canSection)
+            {
+                <text>
+            const sections = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(d.Sections.Where(x => x.Count > 0)));
+            if (sections.length) {
+                $('#chartSection').dxPieChart({
+                    type: 'doughnut', innerRadius: 0.62, dataSource: sections,
+                    palette: ['#9a6b00', '#c8202a', '#1f7a45', '#e8b52a', '#cf4a1d', '#6b4f1d', '#8a8476', '#b5651d'],
+                    series: [{ argumentField: 'Name', valueField: 'Count', label: { visible: false } }],
+                    legend: { horizontalAlignment: 'center', verticalAlignment: 'bottom', itemTextPosition: 'right' },
+                    tooltip: { enabled: true, customizeTooltip: e => ({ text: e.argumentText + ': ' + e.value + ' anggota' }) },
+                    centerTemplate: function (pie, container) {
+                        const total = sections.reduce((s, x) => s + x.Count, 0);
+                        const svg = (tag, attrs, text) => { const el = document.createElementNS('http://www.w3.org/2000/svg', tag); Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v)); if (text != null) el.textContent = text; return el; };
+                        const g = svg('g', {});
+                        g.appendChild(svg('text', { 'text-anchor': 'middle', x: 100, y: 100, style: 'font-size:26px;font-weight:700;fill:#1f1b16' }, total));
+                        g.appendChild(svg('text', { 'text-anchor': 'middle', x: 100, y: 120, style: 'font-size:12px;fill:#5f5849' }, 'anggota'));
+                        container.appendChild(g);
+                    }
+                });
+            } else {
+                $('#chartSection').html('<div class="gwa-empty h-100 d-flex align-items-center justify-content-center"><span><i class="ri-pie-chart-line"></i> Belum ada anggota di section.</span></div>');
+            }
+                </text>
+            }
+        });
+    </script>
+}

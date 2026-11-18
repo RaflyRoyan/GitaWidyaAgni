@@ -16,6 +16,7 @@
     </div>
     <div class="card-body">
         <partial name="_Toolbar" model='new ToolbarModel("Terbitkan Sertifikat", "Sertifikat.add()",
+            ("btn-outline-primary", "ri-printer-line", "Cetak sertifikat"),
             ("btn-outline-info", "ri-file-download-line", "Unduh berkas"),
             ("btn-outline-secondary", "ri-qr-code-line", "Salin tautan verifikasi"),
             ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
@@ -36,6 +37,7 @@
             update: '@Url.Action("Update")',
             cabut: '@Url.Action("Cabut")',
             pulihkan: '@Url.Action("Pulihkan")',
+            cetak: '@Url.Action("Cetak")',
             unduh: '@Url.Action("Unduh")',
             verifikasi: '@Url.Action("VerifikasiSertifikat", "Landing", new { area = "" }, Context.Request.Scheme)'
         };

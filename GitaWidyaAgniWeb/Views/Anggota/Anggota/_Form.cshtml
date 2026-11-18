@@ -17,6 +17,7 @@
                 <div class="gwa-mform-info-meta">
                     <span>No. <b>@(Model.Row.MemberNumber ?? "-")</b></span>
                     <span>Status <b>@editModel!.StatusText</b></span>
+                    <span>Section <b>@(editModel!.SectionText ?? "-")</b> (ubah lewat tombol Riwayat section)</span>
                 </div>
             </div>
         </div>
@@ -54,6 +55,10 @@
                 g.AddSimpleFor(m => m.MemberNumber).Editor(e => e.TextBox().MaxLength(30).InputAttr(new { style = "text-transform:uppercase" }));
                 g.AddSimpleFor(m => m.MemberType).Editor(e => e.SelectBox().DataSource(Model.TipeList).ValueExpr("Value").DisplayExpr("Text"));
                 g.AddSimpleFor(m => m.JoinedAt).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
+                if (!isEdit)
+                {
+                    g.AddSimpleFor(m => m.SectionId).IsRequired(true).Editor(e => e.SelectBox().DataSource(Model.SectionList).ValueExpr("Value").DisplayExpr("Text").Placeholder("Pilih section..."));
+                }
                 g.AddSimpleFor(m => m.UserId).Editor(e => e.SelectBox().DataSource(Model.UserList).ValueExpr("Value").DisplayExpr("Text").SearchEnabled(true).ShowClearButton(true).Placeholder("Belum punya akun"));
                 if (isEdit)
                 {

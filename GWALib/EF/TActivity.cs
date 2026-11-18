@@ -10,6 +10,7 @@ namespace GWALib.EF;
 [Index("CompetitionId", Name = "fk_activity_competition")]
 [Index("CreatedBy", Name = "fk_activity_creator")]
 [Index("DivisionId", Name = "fk_activity_division")]
+[Index("SectionId", Name = "fk_activity_section")]
 [Index("ParentActivityId", Name = "fk_activity_parent")]
 [Index("ProgramId", Name = "fk_activity_program")]
 [Index("StartAt", Name = "ix_activity_start")]
@@ -55,6 +56,12 @@ public partial class TActivity
     /// </summary>
     [Column("division_id")]
     public int? DivisionId { get; set; }
+
+    /// <summary>
+    /// Wajib bila audience_type = SECTION
+    /// </summary>
+    [Column("section_id")]
+    public int? SectionId { get; set; }
 
     [Column("title")]
     [StringLength(200)]
@@ -125,6 +132,10 @@ public partial class TActivity
     [ForeignKey("DivisionId")]
     [InverseProperty("TActivities")]
     public virtual MDivision? Division { get; set; }
+
+    [ForeignKey("SectionId")]
+    [InverseProperty("TActivities")]
+    public virtual MSection? Section { get; set; }
 
     [InverseProperty("ParentActivity")]
     public virtual ICollection<TActivity> InverseParentActivity { get; set; } = new List<TActivity>();

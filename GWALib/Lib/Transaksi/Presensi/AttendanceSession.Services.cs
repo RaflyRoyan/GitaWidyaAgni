@@ -170,8 +170,19 @@ namespace GWALib.Lib.Transaksi.Presensi
         #endregion
 
         #region INTERNAL
-        // Anggota yang wajib hadir sesuai audiens kegiatan (penentu siapa yang dicatat ALPA).
-        internal static List<int> GetExpectedMemberIds(EF.ModelContext context, EF.TActivity activity)
+        // Anggota yang wajib hadir sesuai audiens kegiatan (penentu siapa yang dicatat ALPA). Section memakai riwayat section pada tanggal sesi.
+        // excludeAbsent: buang anggota yang disetujui tidak ikut seluruh kegiatan (ActivityAbsenceRequest); false untuk cek audiens (check-in).
+        internal static List<int> GetExpectedMemberIds(EF.ModelContext context, EF.TActivity activity, DateTime at, bool excludeAbsent = true)
+        {
+            var ids = AudienceMemberIds(context, activity, at);
+            if (excludeAbsent)
+            {
+                var absent = Program.ActivityAbsenceRequest.ApprovedWholeMemberIds(context, activity.Id).ToHashSet();
+                ids = ids.Where(x => !absent.Contains(x)).ToList();
+            }
+            return ids;
+        }
+        private static List<int> AudienceMemberIds(EF.ModelContext context, EF.TActivity activity, DateTime at)
         {
             var active = (int)MemberStatus.Active;
             return (AudienceType)activity.AudienceType switch
@@ -183,6 +194,7 @@ namespace GWALib.Lib.Transaksi.Presensi
                 AudienceType.Divisi => context.TDivisionMembers
                     .Where(x => x.DivisionId == activity.DivisionId && x.IsActive == (int)ActiveStatus.Aktif && x.Member.Status == active)
                     .Select(x => x.MemberId).Distinct().ToList(),
+                AudienceType.Section => Anggota.SectionMember.MemberIdsAt(context, activity.SectionId ?? 0, DateOnly.FromDateTime(at)).Distinct().ToList(),
                 AudienceType.TimPelaksana => context.TCommitteeMembers
                     .Where(x => x.ActivityId == activity.ParentActivityId && x.Status == (int)CommitteeMemberStatus.Aktif && x.Member.Status == active)
                     .Select(x => x.MemberId).ToList(),
@@ -288,7 +300,9 @@ namespace GWALib.Lib.Transaksi.Presensi
             TransaksiHelper.ValidateStatus((AttendanceSessionStatus)row.Status, "menutup sesi", AttendanceSessionStatus.Open);
             var activity = Activity.GetActivity(context, row.ActivityId);
             var recorded = context.TAttendanceRecords.Where(x => x.SessionId == row.Id).Select(x => x.MemberId).ToHashSet();
-            var absent = GetExpectedMemberIds(context, activity).Where(x => !recorded.Contains(x)).Distinct().ToList();
+            var absent = GetExpectedMemberIds(context, activity, row.OpenAt).Where(x => !recorded.Contains(x)).Distinct().ToList();
+            // Izin sesi yang disetujui (ActivityAbsenceRequest) dicatat Izin, sisanya Alpa.
+            var excused = Program.ActivityAbsenceRequest.ApprovedSessionMemberIds(context, row.Id);
             if (absent.Count > 0)
             {
                 var firstId = SequenceUtility.ReserveIds<EF.TAttendanceRecord>(context, absent.Count);
@@ -298,7 +312,7 @@ namespace GWALib.Lib.Transaksi.Presensi
                     Id = firstId + i,
                     SessionId = row.Id,
                     MemberId = memberId,
-                    Status = (int)AttendanceStatus.Alpa,
+                    Status = excused.Contains(memberId) ? (int)AttendanceStatus.Izin : (int)AttendanceStatus.Alpa,
                     InsDate = now,
                     InsBy = userId
                 }));
