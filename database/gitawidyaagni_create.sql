@@ -1,7 +1,7 @@
 -- =====================================================================================
 -- GitaWidyaAgni: skema database lengkap (MySQL 8, utf8mb4_0900_ai_ci)
 -- Dihasilkan dari database pengembangan pada 2026-11-18 (mysqldump --no-data), 135 tabel,
--- sudah termasuk migrasi 2026-11-17 (t_lpj, t_program.division_id / term) dan 2026-11-18 (section, qr_token unit aset, pengajuan tidak ikut kegiatan).
+-- sudah termasuk migrasi 2026-11-17 (t_lpj, t_program.division_id / term) dan 2026-11-18 (section, qr_token unit aset, pengajuan tidak ikut kegiatan) dan 2026-11-19 (attendance_mode jadwal / sesi presensi).
 --
 -- Pakai untuk database BARU. Database lama cukup menjalankan berkas di database/migrations/
 -- yang tanggalnya lebih baru dari skemanya.
@@ -1136,6 +1136,7 @@ CREATE TABLE `t_activity_schedule` (
   `longitude` decimal(10,7) DEFAULT NULL,
   `radius_meter` int DEFAULT NULL,
   `late_tolerance_minute` int NOT NULL DEFAULT '10',
+  `attendance_mode` int NOT NULL DEFAULT '2' COMMENT '1=TANPA_QR, 2=QR',
   `valid_from` date NOT NULL,
   `valid_until` date DEFAULT NULL COMMENT 'NULL = berlaku sampai kegiatan selesai / dinonaktifkan',
   `is_active` int NOT NULL DEFAULT '1' COMMENT '0=Tidak, 1=Ya',
@@ -1348,6 +1349,7 @@ CREATE TABLE `t_attendance_session` (
   `open_at` datetime NOT NULL,
   `close_at` datetime NOT NULL,
   `late_tolerance_minute` int NOT NULL DEFAULT '10' COMMENT 'Check-in lewat open_at + menit ini = TERLAMBAT',
+  `attendance_mode` int NOT NULL DEFAULT '2' COMMENT '1=TANPA_QR, 2=QR',
   `location` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT 'Nama tempat',
   `qr_token` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `latitude` decimal(10,7) DEFAULT NULL,
