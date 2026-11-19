@@ -50,6 +50,12 @@ public partial class TActivitySchedule
     [Column("late_tolerance_minute")]
     public int LateToleranceMinute { get; set; }
 
+    /// <summary>
+    /// 1=TANPA_QR, 2=QR
+    /// </summary>
+    [Column("attendance_mode")]
+    public int AttendanceMode { get; set; }
+
     [Column("valid_from")]
     public DateOnly ValidFrom { get; set; }
 

@@ -1,0 +1,21 @@
+@model GitaWidyaAgniWeb.Models.Kegiatan.PresensiVM.Pantau
+@* Pantauan langsung sesi: isi (_PantauList) dimuat ulang tiap 15 detik selama modal terbuka (Presensi.js). *@
+
+<div class="gwa-mform" id="presensiPantau" data-key="@Model.Key">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <div class="btn-group btn-group-sm" role="group" aria-label="Saring status">
+            <button type="button" class="btn btn-outline-secondary active" data-saring="">Semua</button>
+            <button type="button" class="btn btn-outline-secondary" data-saring="belum">Belum presensi</button>
+            <button type="button" class="btn btn-outline-secondary" data-saring="hadir">Hadir</button>
+            <button type="button" class="btn btn-outline-secondary" data-saring="lain">Izin / Sakit / Alpa</button>
+        </div>
+        <span class="ms-auto small text-muted" aria-live="polite"><i class="ri-refresh-line"></i> diperbarui otomatis tiap 15 detik · <span id="pantauWaktu">@Model.Data.GeneratedAt.ToString("HH:mm:ss")</span></span>
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="Presensi.refreshMonitor()"><i class="ri-refresh-line"></i> Muat ulang</button>
+    </div>
+    <div id="presensiPantauTarget">
+        <partial name="~/Views/Kegiatan/Presensi/_PantauList.cshtml" model="Model" />
+    </div>
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Tutup</button>
+    </div>
+</div>

@@ -8,7 +8,7 @@
 <div class="card">
     <div class="card-header">
         <h5 class="card-title mb-0"><i class="ri-qr-scan-2-line align-bottom me-1"></i> Presensi Kegiatan</h5>
-        <p class="gwa-card-intro">Buka sesi untuk menampilkan QR; anggota scan dari Area Anggota › Presensi dengan foto dan lokasi. Saat sesi ditutup, anggota wajib hadir yang belum presensi dicatat Alpa.</p>
+        <p class="gwa-card-intro">Sesi dibuat otomatis dari jadwal rutin (dan dari kegiatan non-rutin yang punya koordinat), dibuka otomatis 30 menit sebelum mulai, dan ditutup otomatis setelah selesai: anggota wajib hadir yang belum presensi dicatat Alpa. Mode <b>Tanpa QR</b>: anggota check-in langsung dari Area Anggota › Presensi (lokasi + selfie). Mode <b>Wajib Scan QR</b> (mis. rapat): tampilkan QR sesi untuk dipindai.</p>
     </div>
     <div class="card-body">
         <ul class="nav nav-tabs gwa-tabs mb-3" role="tablist">
@@ -21,10 +21,11 @@
             <div class="tab-pane fade show active" id="tabSesi" role="tabpanel">
                 <partial name="_Toolbar" model='new ToolbarModel("Tambah Sesi", "Presensi.add(\"Sesi\")",
                     ("btn-outline-primary", "ri-qr-code-line", "Buka sesi / tampilkan QR"),
+                    ("btn-outline-info", "ri-radar-line", "Pantau langsung"),
                     ("btn-outline-success", "ri-list-check-3", "Rekap & presensi manual"),
                     ("btn-outline-secondary", "ri-lock-line", "Tutup sesi"),
                     ("btn-outline-warning", "ri-edit-2-line", "Ubah sesi"),
-                    ("btn-outline-danger", "ri-close-circle-line", "Batalkan sesi")) { LegendId = "legendSesi" }' />
+                    ("btn-outline-danger", "ri-close-circle-line", "Batalkan sesi")) { LegendId = "legendSesi", Extra = new[] { ("btn-outline-dark", "ri-printer-line", "Cetak Rekap Kehadiran", "Presensi.recapReport()") } }' />
                 <div id="targetSesi" class="mt-3"></div>
             </div>
             <div class="tab-pane fade" id="tabJadwal" role="tabpanel">
@@ -50,6 +51,10 @@
     </div>
 </div>
 
+@section Styles {
+    <link rel="stylesheet" href="~/assets/libs/leaflet/leaflet.css" />
+}
+
 @section Scripts {
     <script>
         window.PresensiUrl = {};
@@ -58,10 +63,18 @@
                 window.PresensiUrl[a.toLowerCase() + t] = '@Url.Action("__")'.replace('__', a + t);
             });
         });
-        ['BukaSesi', 'TutupSesi', 'BatalSesi', 'Qr', 'Rekap', 'RekapList', 'Manual', 'Foto', 'Generate', 'FinalNotulen', 'BerkasNotulen'].forEach(function (a) {
+        ['BukaSesi', 'TutupSesi', 'BatalSesi', 'Qr', 'Rekap', 'RekapList', 'Manual', 'Foto', 'Generate', 'FinalNotulen', 'BerkasNotulen', 'Pantau', 'PantauList', 'CetakRekap'].forEach(function (a) {
             window.PresensiUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
         });
     </script>
+    <script>
+        window.PresensiOpsi = {
+            kegiatan: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.KegiatanOpsi.ToDictionary(x => x.Value.ToString(), x => x.Text))),
+            section: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SectionOpsi.ToDictionary(x => x.Value.ToString(), x => x.Text)))
+        };
+    </script>
+    <script src="~/assets/libs/leaflet/leaflet.js"></script>
+    <script src="~/js/gwa-map-picker.js" asp-append-version="true"></script>
     <script src="~/js/qrcode.min.js" asp-append-version="true"></script>
     <script src="~/Scripts/Kegiatan/Presensi.js" asp-append-version="true"></script>
 }

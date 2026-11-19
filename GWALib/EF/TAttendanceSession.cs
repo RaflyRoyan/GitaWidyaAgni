@@ -45,6 +45,12 @@ public partial class TAttendanceSession
     public int LateToleranceMinute { get; set; }
 
     /// <summary>
+    /// 1=TANPA_QR, 2=QR
+    /// </summary>
+    [Column("attendance_mode")]
+    public int AttendanceMode { get; set; }
+
+    /// <summary>
     /// Nama tempat
     /// </summary>
     [Column("location")]
@@ -81,6 +87,18 @@ public partial class TAttendanceSession
     [Column("cancel_reason")]
     [StringLength(255)]
     public string? CancelReason { get; set; }
+
+    /// <summary>
+    /// Pengingat check-in terkirim
+    /// </summary>
+    [Column("reminder_sent_at", TypeName = "datetime")]
+    public DateTime? ReminderSentAt { get; set; }
+
+    /// <summary>
+    /// Pengingat check-out terkirim
+    /// </summary>
+    [Column("checkout_reminder_sent_at", TypeName = "datetime")]
+    public DateTime? CheckoutReminderSentAt { get; set; }
 
     [Column("ins_date", TypeName = "datetime")]
     public DateTime InsDate { get; set; }

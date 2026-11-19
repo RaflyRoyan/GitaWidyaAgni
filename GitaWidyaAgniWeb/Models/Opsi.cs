@@ -61,6 +61,14 @@ namespace GitaWidyaAgniWeb.Models
                 .ToList();
         }
 
+        // Koordinat kegiatan (id → [lat, lng]) untuk peta pemilih titik presensi.
+        public static Dictionary<int, decimal[]> KoordinatKegiatan()
+        {
+            return GWALib.Lib.Transaksi.Program.Activity.GetDataList()
+                .Where(x => x.Latitude != null && x.Longitude != null)
+                .ToDictionary(x => x.Id, x => new[] { x.Latitude!.Value, x.Longitude!.Value });
+        }
+
         public static List<GwaVM.OpsiItem> Kegiatan(bool hanyaTerbuka = false)
         {
             return GWALib.Lib.Transaksi.Program.Activity.GetDataList()

@@ -15,6 +15,7 @@
         columns.AddFor(m => m.OpenAt).Caption("Dibuka").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
         columns.AddFor(m => m.CloseAt).Caption("Ditutup").DataType(GridColumnDataType.DateTime).Format("dd MMM yyyy HH:mm");
         columns.AddFor(m => m.Location).Caption("Lokasi").Visible(false);
+        columns.AddFor(m => m.ModeText).Caption("Mode").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Presensi.modeTemplate"));
         columns.AddFor(m => m.Geofence).Caption("Geofence").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));
         columns.AddFor(m => m.Hadir).Caption("Hadir").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.countBadgeTemplate"));
         columns.AddFor(m => m.TidakHadir).Caption("Izin/Sakit/Alpa").Alignment(HorizontalAlignment.Center);

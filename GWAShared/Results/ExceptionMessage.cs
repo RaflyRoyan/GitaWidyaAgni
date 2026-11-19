@@ -115,6 +115,9 @@ namespace GWAShared.Results
         // Jadwal & Presensi
         public const string ATTENDANCE_SESSION_NOT_OPEN = "Sesi presensi tidak ditemukan atau sedang tidak dibuka";
         public const string ATTENDANCE_SESSION_HAS_CHECKIN = "Sesi yang sudah ada check-in tidak dapat dibatalkan";
+        public const string ATTENDANCE_SESSION_NOT_STARTED = "Presensi sesi ini baru bisa mulai pukul {0}";
+        public const string ATTENDANCE_SESSION_NEED_QR = "Sesi ini wajib scan QR yang ditampilkan pengurus";
+        public const string ATTENDANCE_AREA_REQUIRED = "Titik lokasi (latitude, longitude) dan radius presensi wajib diisi";
         public const string ATTENDANCE_LOCATION_REQUIRED = "Lokasi perangkat wajib dikirim untuk presensi ini";
         public const string ATTENDANCE_OUT_OF_RANGE = "Lokasi Anda {0} m dari titik presensi (maksimal {1} m)";
         public const string ATTENDANCE_NOT_IN_AUDIENCE = "Anda bukan peserta sasaran kegiatan ini";

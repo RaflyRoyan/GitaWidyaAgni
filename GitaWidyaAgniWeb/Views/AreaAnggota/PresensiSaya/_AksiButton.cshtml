@@ -1,0 +1,25 @@
+@model (GWALib.Lib.Transaksi.Presensi.AttendanceSession.MySession S, bool Keluar, bool Besar)
+@using GWAShared.Enums
+@using System.Globalization
+@* Tombol Check-In / Check-Out satu sesi; data sesi dibaca PresensiSaya.open(this) untuk modal kamera. Besar = tombol utama di kartu hero. *@
+@{
+    var s = Model.S;
+    var qr = s.Mode == AttendanceMode.Qr;
+    var inv = CultureInfo.InvariantCulture;
+    var label = (Model.Keluar ? "Check-Out" : "Check-In") + (qr ? " (scan QR)" : "");
+    var css = Model.Besar ? "ps-go" : Model.Keluar ? "btn btn-sm btn-outline-secondary" : "btn btn-sm btn-success";
+}
+<button type="button" class="@css" onclick="PresensiSaya.open(this)"
+        data-id="@s.Id" data-nama="@s.Name" data-jam="@GitaWidyaAgniWeb.Models.AreaAnggota.PresensiSayaVM.Jam(s)" data-lokasi="@s.Location"
+        data-qr="@(qr ? "1" : "0")" data-keluar="@(Model.Keluar ? "1" : "0")"
+        data-lat="@s.Latitude?.ToString(inv)" data-lng="@s.Longitude?.ToString(inv)" data-radius="@s.RadiusMeter">
+    @if (Model.Besar)
+    {
+        <span><i class="@(Model.Keluar ? "ri-logout-circle-r-line" : "ri-login-circle-line") me-1"></i> @label</span>
+        <span class="go" aria-hidden="true"><i class="ri-arrow-right-line"></i></span>
+    }
+    else
+    {
+        <i class="@(Model.Keluar ? "ri-logout-box-r-line" : "ri-login-box-line") me-1"></i>@label
+    }
+</button>

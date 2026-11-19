@@ -383,14 +383,15 @@ namespace GWASeeder
             // Rapat: QR + foto check-in oleh pengurus, notulen.
             var rapat = Ok(AttendanceSession.Save(new AttendanceSession.NewRow
             {
-                ActivityId = Activities["Rapat"].Id, Name = "Rapat Pengurus November", OpenAt = DateTime.Now.AddMinutes(-30), CloseAt = DateTime.Now.AddHours(3), LateToleranceMinute = 15, Location = "Sekretariat GWA"
+                ActivityId = Activities["Rapat"].Id, Name = "Rapat Pengurus November", OpenAt = DateTime.Now.AddMinutes(-30), CloseAt = DateTime.Now.AddHours(3), LateToleranceMinute = 15, Location = "Sekretariat GWA",
+                AttendanceMode = AttendanceMode.Qr, Latitude = latihan.Latitude, Longitude = latihan.Longitude, RadiusMeter = 300
             }, Admin), "Sesi rapat");
             rapat = Ok(rapat.Open(Admin), "Buka sesi rapat");
             for (var i = 0; i < 8; i++)
             {
-                Ok(AttendanceRecord.CheckIn(new AttendanceRecord.CheckRow { QrToken = rapat.QrToken!, Photo = Avatar(i) }, UserOf(Members[i])), "Check-in rapat");
+                Ok(AttendanceRecord.CheckIn(new AttendanceRecord.CheckRow { QrToken = rapat.QrToken!, Latitude = latihan.Latitude, Longitude = latihan.Longitude, Photo = Avatar(i) }, UserOf(Members[i])), "Check-in rapat");
             }
-            Ok(AttendanceRecord.CheckOut(new AttendanceRecord.CheckRow { QrToken = rapat.QrToken!, Photo = Avatar(0) }, UserOf(Members[0])), "Check-out rapat");
+            Ok(AttendanceRecord.CheckOut(new AttendanceRecord.CheckRow { QrToken = rapat.QrToken!, Latitude = latihan.Latitude, Longitude = latihan.Longitude, Photo = Avatar(0) }, UserOf(Members[0])), "Check-out rapat");
             Ok(AttendanceRecord.SetManual(rapat.Id, Members[9].Id, AttendanceStatus.Izin, "Sakit flu", Admin), "Izin rapat");
             Ok(rapat.Close(Admin), "Tutup sesi rapat");
             var minutes = Ok(MeetingMinutes.Save(new MeetingMinutes.NewRow
@@ -405,7 +406,7 @@ namespace GWASeeder
             Ok(minutes.Finalize(Admin), "Finalisasi notulen");
 
             // Sesi lain: dibatalkan.
-            var cancelled = Ok(AttendanceSession.Save(new AttendanceSession.NewRow { ActivityId = Activities["Brass"].Id, Name = "Sectional Brass (dibatalkan)", OpenAt = DateTime.Today.AddDays(2).AddHours(16), CloseAt = DateTime.Today.AddDays(2).AddHours(18) }, Admin), "Sesi brass");
+            var cancelled = Ok(AttendanceSession.Save(new AttendanceSession.NewRow { ActivityId = Activities["Brass"].Id, Name = "Sectional Brass (dibatalkan)", OpenAt = DateTime.Today.AddDays(2).AddHours(16), CloseAt = DateTime.Today.AddDays(2).AddHours(18), Latitude = latihan.Latitude, Longitude = latihan.Longitude, RadiusMeter = 300 }, Admin), "Sesi brass");
             Ok(cancelled.Cancel("Ruang musik dipakai ujian", Admin), "Batalkan sesi");
         }
     }

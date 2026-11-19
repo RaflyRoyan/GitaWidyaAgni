@@ -16,6 +16,7 @@
         columns.AddFor(m => m.Jam).Caption("Jam");
         columns.AddFor(m => m.Location).Caption("Lokasi");
         columns.AddFor(m => m.LateToleranceMinute).Caption("Toleransi").Alignment(HorizontalAlignment.Center);
+        columns.AddFor(m => m.ModeText).Caption("Mode").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Presensi.modeTemplate"));
         columns.AddFor(m => m.ValidFrom).Caption("Berlaku Mulai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
         columns.AddFor(m => m.ValidUntil).Caption("Sampai").DataType(GridColumnDataType.Date).Format("dd MMM yyyy");
         columns.AddFor(m => m.Aktif).Caption("Aktif").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("AppUI.yesNoTemplate"));

@@ -17,12 +17,15 @@ namespace GWALib.Lib.Transaksi.Presensi
     {
         private const int MAX_TOLERANCE_MINUTE = 240;
         private const int MAX_GENERATE_DAYS = 366;
+        // Sesi dibuat sejauh ini ke depan saat jadwal disimpan (job GENERATE_ATTENDANCE_SESSIONS melanjutkan berkala).
+        public const int SESSION_DAYS_AHEAD = 7;
 
         #region SYNC
         public static List<ActivitySchedule> GetDataList(FilterAktif aktif, int? activityId = null)
         {
             return FilterQuery(aktif, activityId).ToList().MappingData<ActivitySchedule, EF.TActivitySchedule>();
         }
+        // Jadwal tersimpan langsung punya sesi presensi untuk SESSION_DAYS_AHEAD hari ke depan.
         public static Response<ActivitySchedule> Save(NewRow newrow, string user)
         {
             return ServiceHandler.Handle(() =>
@@ -32,6 +35,7 @@ namespace GWALib.Lib.Transaksi.Presensi
                 var row = CreateRow(context, newrow, userId);
                 context.TActivitySchedules.Add(row);
                 context.SaveChanges();
+                Refresh(context, row, userId);
                 return new ActivitySchedule(row);
             }, data => ResponseFactory.DataSaved(data), msg => ResponseFactory.DataSaveFailed<ActivitySchedule>(msg));
         }
@@ -43,10 +47,11 @@ namespace GWALib.Lib.Transaksi.Presensi
                 using var context = DBClass.GetContext();
                 var row = GetRow(context, Id);
                 SetRow(context, row, userId);
-                context.SaveChanges();
+                Refresh(context, row, userId);
                 return new ActivitySchedule(row);
             }, data => ResponseFactory.DataUpdated(data), msg => ResponseFactory.DataUpdateFailed<ActivitySchedule>(msg));
         }
+        // Nonaktif; sesi mendatang yang belum dipakai ikut dihapus / dibatalkan.
         public Response<ActivitySchedule> Delete(string user)
         {
             return ServiceHandler.Handle(() =>
@@ -57,18 +62,19 @@ namespace GWALib.Lib.Transaksi.Presensi
                 row.IsActive = (int)ActiveStatus.TidakAktif;
                 row.UpdDate = DateTime.Now;
                 row.UpdBy = userId;
-                context.SaveChanges();
+                Refresh(context, row, userId);
                 return new ActivitySchedule(row);
             }, data => ResponseFactory.DataDeleted(data), msg => ResponseFactory.DataDeleteFailed<ActivitySchedule>(msg));
         }
         // Membuat sesi presensi dari jadwal aktif untuk rentang tanggal (activityId null = semua kegiatan); hasil = jumlah sesi baru.
-        public static Response<int> GenerateSessions(DateOnly from, DateOnly to, int? activityId, string user)
+        // skipEnded: lewati sesi yang jam selesainya sudah lewat (job), supaya tidak langsung ditutup dengan Alpa.
+        public static Response<int> GenerateSessions(DateOnly from, DateOnly to, int? activityId, string user, bool skipEnded = false)
         {
             return ServiceHandler.Handle(() =>
             {
                 var userId = ValidateUtility.ValidateUser(user);
                 using var context = DBClass.GetContext();
-                var count = Generate(context, from, to, activityId, userId);
+                var count = Generate(context, from, to, activityId, userId, skipEnded);
                 context.SaveChanges();
                 return count;
             }, data => ResponseFactory.DataSaved(data), msg => ResponseFactory.DataSaveFailed<int>(msg));
@@ -89,6 +95,7 @@ namespace GWALib.Lib.Transaksi.Presensi
                 var row = CreateRow(context, newrow, userId);
                 context.TActivitySchedules.Add(row);
                 await context.SaveChangesAsync();
+                Refresh(context, row, userId);
                 return new ActivitySchedule(row);
             }, data => ResponseFactory.DataSaved(data), msg => ResponseFactory.DataSaveFailed<ActivitySchedule>(msg));
         }
@@ -100,7 +107,7 @@ namespace GWALib.Lib.Transaksi.Presensi
                 using var context = DBClass.GetContext();
                 var row = await GetRowAsync(context, Id);
                 SetRow(context, row, userId);
-                await context.SaveChangesAsync();
+                Refresh(context, row, userId);
                 return new ActivitySchedule(row);
             }, data => ResponseFactory.DataUpdated(data), msg => ResponseFactory.DataUpdateFailed<ActivitySchedule>(msg));
         }
@@ -114,17 +121,17 @@ namespace GWALib.Lib.Transaksi.Presensi
                 row.IsActive = (int)ActiveStatus.TidakAktif;
                 row.UpdDate = DateTime.Now;
                 row.UpdBy = userId;
-                await context.SaveChangesAsync();
+                Refresh(context, row, userId);
                 return new ActivitySchedule(row);
             }, data => ResponseFactory.DataDeleted(data), msg => ResponseFactory.DataDeleteFailed<ActivitySchedule>(msg));
         }
-        public static async Task<Response<int>> GenerateSessionsAsync(DateOnly from, DateOnly to, int? activityId, string user)
+        public static async Task<Response<int>> GenerateSessionsAsync(DateOnly from, DateOnly to, int? activityId, string user, bool skipEnded = false)
         {
             return await ServiceHandler.HandleAsync(async () =>
             {
                 var userId = ValidateUtility.ValidateUser(user);
                 using var context = DBClass.GetContext();
-                var count = Generate(context, from, to, activityId, userId);
+                var count = Generate(context, from, to, activityId, userId, skipEnded);
                 await context.SaveChangesAsync();
                 return count;
             }, data => ResponseFactory.DataSaved(data), msg => ResponseFactory.DataSaveFailed<int>(msg));
@@ -154,11 +161,15 @@ namespace GWALib.Lib.Transaksi.Presensi
             return date.DayOfWeek == System.DayOfWeek.Sunday ? ScheduleDay.Minggu : (ScheduleDay)(int)date.DayOfWeek;
         }
         private static void ValidateData(ScheduleDay dayOfWeek, TimeOnly startTime, TimeOnly endTime, decimal? latitude, decimal? longitude, int? radiusMeter,
-            int lateToleranceMinute, DateOnly validFrom, DateOnly? validUntil)
+            int lateToleranceMinute, AttendanceMode mode, DateOnly validFrom, DateOnly? validUntil)
         {
             if (!Enum.IsDefined(dayOfWeek))
             {
                 throw new ArgumentException(string.Format(ExceptionMessage.FIELD_INVALID, "Hari"));
+            }
+            if (!Enum.IsDefined(mode))
+            {
+                throw new ArgumentException(string.Format(ExceptionMessage.FIELD_INVALID, "Mode Presensi"));
             }
             if (endTime <= startTime)
             {
@@ -172,7 +183,7 @@ namespace GWALib.Lib.Transaksi.Presensi
             {
                 throw new ArgumentException(ExceptionMessage.DATE_RANGE_INVALID);
             }
-            GeoFence.ValidateArea(latitude, longitude, radiusMeter);
+            GeoFence.ValidateRequiredArea(latitude, longitude, radiusMeter);
         }
         private static string? ToNullable(string? value)
         {
@@ -182,7 +193,7 @@ namespace GWALib.Lib.Transaksi.Presensi
         {
             Activity.GetOpenActivity(context, newrow.ActivityId);
             ValidateData(newrow.DayOfWeek, newrow.StartTime, newrow.EndTime, newrow.Latitude, newrow.Longitude, newrow.RadiusMeter,
-                newrow.LateToleranceMinute, newrow.ValidFrom, newrow.ValidUntil);
+                newrow.LateToleranceMinute, newrow.AttendanceMode, newrow.ValidFrom, newrow.ValidUntil);
 
             var row = new EF.TActivitySchedule
             {
@@ -196,6 +207,7 @@ namespace GWALib.Lib.Transaksi.Presensi
                 Longitude = newrow.Longitude,
                 RadiusMeter = newrow.RadiusMeter,
                 LateToleranceMinute = newrow.LateToleranceMinute,
+                AttendanceMode = (int)newrow.AttendanceMode,
                 ValidFrom = newrow.ValidFrom,
                 ValidUntil = newrow.ValidUntil,
                 IsActive = (int)ActiveStatus.Aktif,
@@ -205,11 +217,11 @@ namespace GWALib.Lib.Transaksi.Presensi
             GWAShared.Utilities.ValidateUtility.ValidateDAModel(row);
             return row;
         }
-        // Kegiatan tetap. Sesi yang sudah dibuat tidak ikut berubah.
+        // Kegiatan tetap. Sesi mendatang yang belum dipakai disesuaikan oleh Refresh.
         private void SetRow(EF.ModelContext context, EF.TActivitySchedule row, int userId)
         {
             Activity.GetOpenActivity(context, row.ActivityId);
-            ValidateData(DayOfWeek, StartTime, EndTime, Latitude, Longitude, RadiusMeter, LateToleranceMinute, ValidFrom, ValidUntil);
+            ValidateData(DayOfWeek, StartTime, EndTime, Latitude, Longitude, RadiusMeter, LateToleranceMinute, AttendanceMode, ValidFrom, ValidUntil);
             if (!Enum.IsDefined(IsActive))
             {
                 throw new ArgumentException(string.Format(ExceptionMessage.FIELD_INVALID, "Status"));
@@ -223,6 +235,7 @@ namespace GWALib.Lib.Transaksi.Presensi
             row.Longitude = Longitude;
             row.RadiusMeter = RadiusMeter;
             row.LateToleranceMinute = LateToleranceMinute;
+            row.AttendanceMode = (int)AttendanceMode;
             row.ValidFrom = ValidFrom;
             row.ValidUntil = ValidUntil;
             row.IsActive = (int)IsActive;
@@ -230,9 +243,64 @@ namespace GWALib.Lib.Transaksi.Presensi
             row.UpdBy = userId;
             GWAShared.Utilities.ValidateUtility.ValidateDAModel(row);
         }
-        // Hanya kegiatan Planned / Ongoing; tanggal di luar ValidFrom..ValidUntil dilewati, sesi yang sudah ada tidak dibuat ulang.
-        private static int Generate(EF.ModelContext context, DateOnly from, DateOnly to, int? activityId, int userId)
+        // Setelah jadwal disimpan: sesuaikan sesi mendatang, lalu buat sesi SESSION_DAYS_AHEAD hari ke depan (keduanya disimpan).
+        private static void Refresh(EF.ModelContext context, EF.TActivitySchedule row, int userId)
         {
+            SyncFutureSessions(context, row, userId);
+            context.SaveChanges();
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            Generate(context, today, today.AddDays(SESSION_DAYS_AHEAD), row.ActivityId, userId, skipEnded: true);
+            context.SaveChanges();
+        }
+        // Sesi mendatang dari jadwal ini yang masih Terjadwal dan belum ada presensinya mengikuti jadwal terbaru: diubah bila
+        // tanggalnya masih cocok; selain itu dihapus, atau dibatalkan bila sudah dirujuk pengajuan izin / notulen.
+        private static void SyncFutureSessions(EF.ModelContext context, EF.TActivitySchedule row, int userId)
+        {
+            var now = DateTime.Now;
+            var sessions = context.TAttendanceSessions
+                .Where(x => x.ScheduleId == row.Id && x.Status == (int)AttendanceSessionStatus.Scheduled && x.OpenAt > now && !x.TAttendanceRecords.Any())
+                .ToList();
+            if (sessions.Count == 0)
+            {
+                return;
+            }
+            var ids = sessions.Select(x => x.Id).ToList();
+            var used = context.TActivityAbsenceRequests.Where(x => x.SessionId != null && ids.Contains(x.SessionId.Value)).Select(x => x.SessionId!.Value).ToList()
+                .Concat(context.TMeetingMinutes.Where(x => ids.Contains(x.SessionId)).Select(x => x.SessionId).ToList())
+                .ToHashSet();
+            foreach (var session in sessions)
+            {
+                var date = DateOnly.FromDateTime(session.OpenAt);
+                if (row.IsActive == (int)ActiveStatus.Aktif && (int)ToScheduleDay(date) == row.DayOfWeek && row.ValidFrom <= date
+                    && (row.ValidUntil == null || row.ValidUntil >= date))
+                {
+                    session.OpenAt = date.ToDateTime(row.StartTime);
+                    session.CloseAt = date.ToDateTime(row.EndTime);
+                    session.LateToleranceMinute = row.LateToleranceMinute;
+                    session.AttendanceMode = row.AttendanceMode;
+                    session.Location = row.Location;
+                    session.Latitude = row.Latitude;
+                    session.Longitude = row.Longitude;
+                    session.RadiusMeter = row.RadiusMeter;
+                }
+                else if (used.Contains(session.Id))
+                {
+                    session.Status = (int)AttendanceSessionStatus.Cancelled;
+                    session.CancelReason = "Jadwal rutin diubah / dinonaktifkan";
+                }
+                else
+                {
+                    context.TAttendanceSessions.Remove(session);
+                    continue;
+                }
+                session.UpdDate = now;
+                session.UpdBy = userId;
+            }
+        }
+        // Hanya kegiatan Planned / Ongoing; tanggal di luar ValidFrom..ValidUntil dilewati, sesi yang sudah ada tidak dibuat ulang.
+        private static int Generate(EF.ModelContext context, DateOnly from, DateOnly to, int? activityId, int userId, bool skipEnded)
+        {
+            var now = DateTime.Now;
             if (to < from || to.DayNumber - from.DayNumber > MAX_GENERATE_DAYS)
             {
                 throw new ArgumentException(ExceptionMessage.DATE_RANGE_INVALID);
@@ -256,7 +324,8 @@ namespace GWALib.Lib.Transaksi.Presensi
                 foreach (var schedule in schedules.Where(x => x.DayOfWeek == day && x.ValidFrom <= date && (x.ValidUntil == null || x.ValidUntil >= date)))
                 {
                     var openAt = date.ToDateTime(schedule.StartTime);
-                    if (existing.Contains((schedule.Id, openAt)))
+                    var closeAt = date.ToDateTime(schedule.EndTime);
+                    if (existing.Contains((schedule.Id, openAt)) || (skipEnded && closeAt <= now))
                     {
                         continue;
                     }
@@ -266,8 +335,9 @@ namespace GWALib.Lib.Transaksi.Presensi
                         ScheduleId = schedule.Id,
                         Name = TransaksiHelper.Truncate($"{schedule.Activity.Title} - {date:dd/MM/yyyy}", 150)!,
                         OpenAt = openAt,
-                        CloseAt = date.ToDateTime(schedule.EndTime),
+                        CloseAt = closeAt,
                         LateToleranceMinute = schedule.LateToleranceMinute,
+                        AttendanceMode = schedule.AttendanceMode,
                         Location = schedule.Location,
                         Latitude = schedule.Latitude,
                         Longitude = schedule.Longitude,

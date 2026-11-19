@@ -34,6 +34,12 @@ namespace GitaWidyaAgniWeb.Controllers.Kegiatan
         public IActionResult BatalSesi([FromBody] GwaVM.AlasanInput i) => Aksi(u => { VM.Method.LoadSesi(i.Key).Cancel(i.Keterangan, u).Ok(); }, "Sesi dibatalkan.");
 
         [AccessAs(Acc.Index)] public IActionResult Qr(string encKey) => Bagian(() => new VM.Qr(encKey));
+        [AccessAs(Acc.Index)] public IActionResult Pantau(string encKey) => Bagian(() => new VM.Pantau(encKey));
+        [AccessAs(Acc.Index)] public IActionResult PantauList(string encKey) => Bagian(() => new VM.Pantau(encKey), "PantauList");
+        [AccessAs(Acc.Index)]
+        public IActionResult CetakRekap(DateTime? dari, DateTime? sampai, int? kegiatan, int? section)
+            => Laporan(() => Models.Kegiatan.PresensiCetak.Rekap(dari, sampai, kegiatan, section, WebRoot));
+        private string WebRoot => HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath;
         [AccessAs(Acc.Index)] public IActionResult Rekap(string encKey) => Bagian(() => new VM.Rekap(encKey));
         [AccessAs(Acc.Index)] public IActionResult RekapList(string encKey) => Bagian(() => new VM.RekapList(encKey));
         [HttpPost, AccessAs(Acc.Process)] public IActionResult Manual([FromBody] VM.ManualInput m) => Aksi(u => VM.Method.Manual(m, u), "Presensi dicatat.");

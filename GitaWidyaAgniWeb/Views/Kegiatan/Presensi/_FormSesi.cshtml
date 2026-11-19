@@ -31,13 +31,15 @@
             items.AddSimpleFor(m => m.LateToleranceMinute).Editor(e => e.NumberBox().Min(0).Max(240).ShowSpinButtons(true).Format("#0"));
             items.AddSimpleFor(m => m.OpenAt).Editor(e => e.DateBox().Type(DateBoxType.DateTime).DisplayFormat("dd MMM yyyy HH:mm").DateSerializationFormat("yyyy-MM-ddTHH:mm:ss"));
             items.AddSimpleFor(m => m.CloseAt).Editor(e => e.DateBox().Type(DateBoxType.DateTime).DisplayFormat("dd MMM yyyy HH:mm").DateSerializationFormat("yyyy-MM-ddTHH:mm:ss"));
+            items.AddSimpleFor(m => m.AttendanceMode).Editor(e => e.SelectBox().DataSource(Model.ModeOpsi).ValueExpr("Value").DisplayExpr("Text"));
             items.AddSimpleFor(m => m.Location).Editor(e => e.TextBox().MaxLength(255));
             items.AddSimpleFor(m => m.Latitude).Editor(e => e.NumberBox().Format("#0.0000000").Step(0));
             items.AddSimpleFor(m => m.Longitude).Editor(e => e.NumberBox().Format("#0.0000000").Step(0));
             items.AddSimpleFor(m => m.RadiusMeter).Editor(e => e.NumberBox().Min(10).Format("#0"));
         })
     )
-    <p class="gwa-mform-note">Isi titik lokasi + radius untuk mewajibkan anggota berada di sekitar lokasi saat presensi.</p>
+    <partial name="~/Views/Shared/_PetaLokasi.cshtml" model='("frmSesi", Model.KoordinatKegiatan)' />
+    <p class="gwa-mform-note">Titik lokasi + radius wajib: anggota harus berada di sekitar lokasi saat presensi. <b>Tanpa QR</b>: anggota check-in langsung dari Area Anggota › Presensi. <b>Wajib Scan QR</b>: anggota harus memindai QR yang ditampilkan pengurus (cocok untuk rapat). Sesi dibuka otomatis 30 menit sebelum mulai dan ditutup otomatis setelah selesai.</p>
     <div class="gwa-mform-footer">
         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
         <button type="button" class="btn btn-success" onclick="Presensi.save('Sesi', @(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>

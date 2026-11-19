@@ -1,8 +1,13 @@
-@model List<GitaWidyaAgniWeb.Controllers.AreaAnggota.PresensiSayaController.Riwayat>?
+@model GWALib.Lib.Transaksi.Presensi.AttendanceSession.MyAttendance?
 @using GWAShared.Enums
+@using GWALib.Lib.Transaksi.Presensi
 @using GitaWidyaAgniWeb.Infrastructure
+@using static GitaWidyaAgniWeb.Models.AreaAnggota.PresensiSayaVM
+@using System.Globalization
 @{
     ViewData["Title"] = "Presensi";
+    var id = CultureInfo.GetCultureInfo("id-ID");
+    var now = DateTime.Now;
 }
 
 @if (Model == null)
@@ -11,138 +16,194 @@
 }
 else
 {
-    <div class="row g-3">
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0"><i class="ri-qr-scan-2-line align-bottom me-1"></i> Presensi</h5>
-                    <p class="gwa-card-intro mb-0">Scan QR yang ditampilkan panitia, ambil foto selfie, lalu kirim. Izinkan akses kamera dan lokasi bila diminta.</p>
+    var today = Model.Today;
+    var berjalan = today.FirstOrDefault(x => x.CanCheckOut);
+    var siap = today.FirstOrDefault(x => x.CanCheckIn);
+    var nanti = today.FirstOrDefault(x => !x.CanCheckIn && x.RecordStatus == null && x.CheckInFrom > now);
+    var hadirHariIni = today.Count(x => x.CheckInAt != null);
+    var riwayatHadir = Model.History.Count(x => x.CheckInAt != null || x.RecordStatus == AttendanceStatus.Hadir || x.RecordStatus == AttendanceStatus.Terlambat);
+    var persen = Model.History.Count == 0 ? (int?)null : (int)Math.Round(100.0 * riwayatHadir / Model.History.Count);
+
+    <div class="ps">
+        <div class="ps-grid">
+            <aside class="ps-aside">
+                <section class="ps-hero">
+                    <div class="ps-eyebrow"><i class="ri-calendar-2-line"></i> @now.ToString("dddd, d MMMM yyyy", id)</div>
+                    @if (berjalan != null)
+                    {
+                        <h2>@berjalan.Name</h2>
+                        <div class="ps-hero-sub"><i class="ri-time-line"></i> @Jam(berjalan) @(string.IsNullOrWhiteSpace(berjalan.Location) ? "" : " · " + berjalan.Location)</div>
+                        <div class="ps-hero-timer">
+                            <span class="ps-pulse" aria-hidden="true"></span> Sedang berlangsung sejak @berjalan.CheckInAt!.Value.ToString("HH:mm")
+                            · <b data-sejak="@berjalan.CheckInAt.Value.ToString("yyyy-MM-ddTHH:mm:ss")">-</b>
+                        </div>
+                        <partial name="_AksiButton" model="(berjalan, true, true)" />
+                    }
+                    else if (siap != null)
+                    {
+                        <h2>@siap.Name</h2>
+                        <div class="ps-hero-sub"><i class="ri-time-line"></i> @Jam(siap) @(string.IsNullOrWhiteSpace(siap.Location) ? "" : " · " + siap.Location)</div>
+                        <partial name="_AksiButton" model="(siap, false, true)" />
+                    }
+                    else if (nanti != null)
+                    {
+                        <h2>@nanti.Name</h2>
+                        <div class="ps-hero-sub"><i class="ri-time-line"></i> @Jam(nanti)</div>
+                        <div class="ps-hero-note"><i class="ri-lock-unlock-line"></i> Check-in dibuka pukul @nanti.CheckInFrom.ToString("HH:mm")</div>
+                    }
+                    else
+                    {
+                        <h2>@(today.Count == 0 ? "Tidak ada sesi hari ini" : "Presensi hari ini selesai")</h2>
+                        <div class="ps-hero-sub">@(Model.Upcoming.Count > 0 ? "Sesi berikutnya: " + Model.Upcoming[0].Name + ", " + Model.Upcoming[0].OpenAt.ToString("dddd d MMM HH:mm", id) : "Belum ada jadwal mendatang.")</div>
+                    }
+                </section>
+
+                <div class="ps-ringkas">
+                    <div><b>@today.Count</b><span>Sesi hari ini</span></div>
+                    <div><b>@hadirHariIni</b><span>Sudah hadir</span></div>
+                    <div><b>@(persen == null ? "–" : persen + "%")</b><span>Kehadiran</span></div>
                 </div>
-                <div class="card-body">
-                    <ol class="list-unstyled mb-0 d-grid gap-3">
-                        <li>
-                            <div class="fw-semibold mb-2">1. Kode sesi</div>
-                            <div id="qrReader" class="rounded overflow-hidden mb-2" style="max-width:360px"></div>
-                            <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-outline-primary" id="btnScan" onclick="PresensiSaya.scan()"><i class="ri-qr-scan-line me-1"></i> Scan QR</button>
-                                <input id="qrToken" class="form-control" placeholder="atau ketik kode" aria-label="Kode sesi" autocomplete="off" />
-                            </div>
-                        </li>
-                        <li>
-                            <label class="fw-semibold mb-2 d-block" for="fotoSelfie">2. Foto selfie</label>
-                            <input id="fotoSelfie" type="file" accept="image/*" capture="user" class="form-control" onchange="PresensiSaya.preview(this)" />
-                            <img id="fotoPreview" alt="Pratinjau foto" class="mt-2 rounded" style="max-height:160px" hidden />
-                        </li>
-                        <li>
-                            <div class="fw-semibold mb-1">3. Lokasi</div>
-                            <div id="lokasiInfo" class="small text-muted" aria-live="polite">Mengambil lokasi...</div>
-                        </li>
-                        <li class="d-flex flex-wrap gap-2">
-                            <button type="button" class="btn btn-success flex-grow-1" onclick="PresensiSaya.send(false)"><i class="ri-login-box-line me-1"></i> Check-in</button>
-                            <button type="button" class="btn btn-outline-secondary flex-grow-1" onclick="PresensiSaya.send(true)"><i class="ri-logout-box-r-line me-1"></i> Check-out</button>
-                        </li>
-                    </ol>
+            </aside>
+
+            <main class="ps-main">
+                <div class="ps-seg" role="tablist" aria-label="Jadwal presensi">
+                    <button type="button" role="tab" class="is-active" aria-selected="true" data-panel="hariini">Hari Ini<span class="n">@today.Count</span></button>
+                    <button type="button" role="tab" aria-selected="false" data-panel="mendatang">Mendatang<span class="n">@Model.Upcoming.Count</span></button>
+                    <button type="button" role="tab" aria-selected="false" data-panel="riwayat">Riwayat<span class="n">@Model.History.Count</span></button>
                 </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header"><h5 class="card-title mb-0"><i class="ri-history-line align-bottom me-1"></i> Riwayat Presensi</h5></div>
-                @if (Model.Count == 0)
-                {
-                    <div class="card-body text-muted">Belum ada presensi.</div>
-                }
-                else
-                {
-                    <div class="table-responsive" style="max-height:520px">
-                        <table class="table table-sm align-middle mb-0">
-                            <thead class="table-light"><tr><th>Sesi</th><th>Masuk</th><th>Keluar</th><th>Status</th></tr></thead>
-                            <tbody>
-                                @foreach (var r in Model)
+
+                <section class="ps-panel" id="panel-hariini">
+                    @if (today.Count == 0)
+                    {
+                        <div class="ps-empty"><i class="ri-calendar-line"></i><h6>Tidak ada sesi hari ini</h6><div>Sesi latihan dan kegiatan Anda muncul di sini sesuai jadwal.</div></div>
+                    }
+                    else
+                    {
+                        <div class="ps-timeline">
+                            @foreach (var s in today)
+                            {
+                                <partial name="_SesiCard" model="(s, true)" />
+                            }
+                        </div>
+                    }
+                </section>
+
+                <section class="ps-panel" id="panel-mendatang" hidden>
+                    @if (Model.Upcoming.Count == 0)
+                    {
+                        <div class="ps-empty"><i class="ri-calendar-event-line"></i><h6>Belum ada jadwal mendatang</h6><div>Jadwal 7 hari ke depan akan tampil di sini.</div></div>
+                    }
+                    else
+                    {
+                        foreach (var g in Model.Upcoming.GroupBy(x => x.OpenAt.Date))
+                        {
+                            <div class="ps-date">@g.Key.ToString("dddd, d MMMM", id)</div>
+                            <div class="ps-timeline">
+                                @foreach (var s in g)
                                 {
-                                    var st = r.Record.Status;
-                                    <tr>
-                                        <td><div>@r.Sesi</div><div class="small text-muted">@r.OpenAt.ToString("dd MMM yyyy")</div></td>
-                                        <td>@(r.Record.CheckInAt?.ToString("HH:mm") ?? "-")</td>
-                                        <td>@(r.Record.CheckOutAt?.ToString("HH:mm") ?? "-")</td>
-                                        <td><span class="badge @(st == AttendanceStatus.Hadir ? "badge-soft-success" : st == AttendanceStatus.Terlambat ? "badge-soft-warning" : st == AttendanceStatus.Alpa ? "badge-soft-danger" : "badge-soft-info")">@EnumHelper.Text(st)</span></td>
-                                    </tr>
+                                    <partial name="_SesiCard" model="(s, false)" />
                                 }
-                            </tbody>
-                        </table>
+                            </div>
+                        }
+                    }
+                </section>
+
+                <section class="ps-panel" id="panel-riwayat" hidden>
+                    @if (Model.History.Count == 0)
+                    {
+                        <div class="ps-empty"><i class="ri-history-line"></i><h6>Belum ada riwayat</h6><div>Presensi yang sudah tercatat akan tampil di sini.</div></div>
+                    }
+                    else
+                    {
+                        foreach (var g in Model.History.GroupBy(x => x.OpenAt.Date))
+                        {
+                            <div class="ps-date">@g.Key.ToString("dddd, d MMMM yyyy", id)</div>
+                            <div class="ps-timeline">
+                                @foreach (var s in g)
+                                {
+                                    <partial name="_SesiCard" model="(s, false)" />
+                                }
+                            </div>
+                        }
+                    }
+                </section>
+            </main>
+        </div>
+    </div>
+
+    @* ===== Modal check-in / check-out: (scan QR) → foto selfie kamera langsung → lokasi → simpan ===== *@
+    <div class="modal fade" id="modalAbsen" tabindex="-1" aria-labelledby="modalAbsenTitle" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAbsenTitle">Check-In</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="ps-form-hero">
+                        <div>
+                            <div class="ps-form-title" id="absNama">-</div>
+                            <div class="ps-form-sub" id="absInfo">-</div>
+                        </div>
+                        <span class="ps-chip" id="absJam"><i class="ri-time-line"></i> --:--</span>
                     </div>
-                }
+
+                    <div id="absQrStep" class="ps-step" hidden>
+                        <div class="ps-step-title"><i class="ri-qr-scan-2-line"></i> 1. Scan QR sesi</div>
+                        <div class="ps-step-note">Sesi ini wajib scan QR yang ditampilkan pengurus di lokasi.</div>
+                        <div id="absQrReader" class="ps-qr"></div>
+                        <div class="d-flex gap-2 mt-2">
+                            <input id="absQrManual" class="form-control" placeholder="atau ketik kode sesi" aria-label="Kode sesi" autocomplete="off" />
+                            <button type="button" class="btn btn-outline-primary" onclick="PresensiSaya.useCode()">Lanjut</button>
+                        </div>
+                    </div>
+
+                    <div id="absCamStep" class="ps-step">
+                        <div class="ps-step-title"><i class="ri-camera-line"></i> <span id="absCamTitle">Foto selfie</span></div>
+                        <div class="ps-cam">
+                            <video id="absVideo" autoplay playsinline muted></video>
+                            <img id="absPreview" alt="Pratinjau foto" hidden />
+                            <button type="button" id="absFallback" class="ps-cam-fallback" hidden onclick="document.getElementById('absFile').click()">
+                                <i class="ri-upload-cloud-2-line"></i>
+                                <b>Kamera tidak tersedia</b>
+                                <span>Ketuk untuk memilih foto dari galeri</span>
+                            </button>
+                            <div class="ps-cam-bar" id="absCamBar">
+                                <button type="button" class="ps-cam-snap" id="absSnap" onclick="PresensiSaya.snap()"><i class="ri-camera-lens-line"></i> Ambil Foto</button>
+                                <button type="button" class="ps-cam-alt" id="absSwitch" onclick="PresensiSaya.switchCamera()" hidden><i class="ri-camera-switch-line"></i> Ganti</button>
+                                <button type="button" class="ps-cam-alt" id="absRetake" onclick="PresensiSaya.startCamera()" hidden><i class="ri-refresh-line"></i> Foto Ulang</button>
+                            </div>
+                        </div>
+                        <canvas id="absCanvas" class="d-none"></canvas>
+                        <input type="file" id="absFile" class="d-none" accept="image/*" onchange="PresensiSaya.pickFile(this)" />
+
+                        <div class="ps-step-title mt-3"><i class="ri-map-pin-line"></i> Lokasi</div>
+                        <div class="ps-loc" id="absLoc" aria-live="polite"><i class="ri-loader-4-line"></i> <span>Mengambil lokasi...</span></div>
+                        <div class="ps-coord" id="absCoord" hidden>
+                            <div><label>LATITUDE</label><b id="absLat">-</b></div>
+                            <div><label>LONGITUDE</label><b id="absLng">-</b></div>
+                        </div>
+                        <button type="button" class="btn btn-link btn-sm px-0" id="absLocRetry" onclick="PresensiSaya.locate()" hidden><i class="ri-refresh-line"></i> Ambil ulang lokasi</button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-success" id="absSubmit" disabled onclick="PresensiSaya.submit()"><i class="ri-save-3-line me-1"></i> <span>Simpan</span></button>
+                </div>
             </div>
         </div>
     </div>
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/presensi-saya.css" asp-append-version="true" />
 }
 
 @section Scripts {
     @if (Model != null)
     {
         <script src="~/js/html5-qrcode.min.js"></script>
-        <script>
-            window.PresensiSaya = (function () {
-                let scanner = null;
-                let pos = null;
-
-                function locate() {
-                    const info = $('#lokasiInfo');
-                    if (!navigator.geolocation) { info.text('Perangkat tidak mendukung lokasi.'); return; }
-                    navigator.geolocation.getCurrentPosition(function (p) {
-                        pos = p.coords;
-                        info.text('Lokasi didapat (akurasi ±' + Math.round(p.coords.accuracy) + ' m).');
-                    }, function () {
-                        info.text('Lokasi tidak diizinkan. Presensi bisa ditolak bila sesi mewajibkan lokasi.');
-                    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
-                }
-
-                function stopScan() {
-                    if (!scanner) return;
-                    scanner.stop().catch(function () { }).finally(function () { scanner.clear(); scanner = null; });
-                    $('#btnScan').prop('disabled', false);
-                }
-                function scan() {
-                    if (scanner) { stopScan(); return; }
-                    scanner = new Html5Qrcode('qrReader');
-                    $('#btnScan').prop('disabled', true);
-                    scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: 240 }, function (text) {
-                        $('#qrToken').val(text);
-                        AppUI.alertSuccess('QR terbaca.');
-                        stopScan();
-                    }).catch(function () {
-                        AppUI.alertWarning('Kamera tidak bisa dibuka. Ketik kode sesi secara manual.');
-                        scanner = null;
-                        $('#btnScan').prop('disabled', false);
-                    });
-                }
-
-                function preview(input) {
-                    const f = input.files && input.files[0];
-                    const img = $('#fotoPreview');
-                    if (!f) { img.prop('hidden', true); return; }
-                    img.attr('src', URL.createObjectURL(f)).prop('hidden', false);
-                }
-
-                function send(keluar) {
-                    const data = {
-                        token: $.trim($('#qrToken').val() || ''),
-                        keluar: keluar,
-                        foto: ($('#fotoSelfie')[0].files || [])[0] || null,
-                        lat: pos ? pos.latitude.toFixed(7) : null,
-                        lng: pos ? pos.longitude.toFixed(7) : null
-                    };
-                    if (!data.token) { AppUI.alertWarning('Scan QR sesi atau isi kodenya.'); return; }
-                    if (!data.foto) { AppUI.alertWarning('Ambil foto selfie dulu.'); return; }
-                    AppUI.postForm('@Url.Action("Kirim")', AppUI.toFormData(data)).done(function (r) {
-                        AppUI.alertSuccess(r.Message + (r.Data ? ' Status: ' + r.Data + '.' : ''));
-                        setTimeout(function () { window.location.reload(); }, 1200);
-                    });
-                }
-
-                $(locate);
-                return { scan: scan, preview: preview, send: send };
-            })();
-        </script>
+        <script>window.PresensiSayaUrl = { kirim: '@Url.Action("Kirim")' };</script>
+        <script src="~/Scripts/AreaAnggota/PresensiSaya.js" asp-append-version="true"></script>
     }
 }

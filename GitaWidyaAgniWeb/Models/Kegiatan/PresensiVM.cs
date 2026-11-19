@@ -14,6 +14,23 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
     {
         public class Index
         {
+            // Pilihan untuk cetak rekap kehadiran.
+            public List<GwaVM.OpsiItem> KegiatanOpsi { get; set; } = Opsi.Kegiatan();
+            public List<GwaVM.OpsiItem> SectionOpsi { get; set; } = Opsi.Section();
+        }
+
+        // Pantauan langsung satu sesi (dimuat ulang berkala oleh Presensi.js).
+        public class Pantau
+        {
+            public string Key { get; set; } = "";
+            public AttendanceSession.MonitorData Data { get; set; }
+
+            public Pantau(string encKey)
+            {
+                var obj = LibExtensions.Load<AttendanceSession>(encKey, "Sesi presensi");
+                Key = obj.EncDecrKey;
+                Data = obj.GetMonitor();
+            }
         }
 
         // ================= Sesi
@@ -33,6 +50,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
             public string? Location { get; set; }
             public bool Geofence { get; set; }
             public bool DariJadwal { get; set; }
+            public string ModeText { get; set; } = "";
             public int Status { get; set; }
             public string StatusText { get; set; } = "";
             public int Hadir { get; set; }
@@ -44,6 +62,8 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
         {
             public NewSesi Row { get; set; } = new();
             public List<GwaVM.OpsiItem> KegiatanOpsi { get; set; } = Opsi.Kegiatan(true);
+            public List<GwaVM.OpsiItem> ModeOpsi { get; set; } = GwaVM.Opsi<AttendanceMode>();
+            public Dictionary<int, decimal[]> KoordinatKegiatan { get; set; } = Opsi.KoordinatKegiatan();
 
             public AddSesi()
             {
@@ -67,6 +87,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
                     OpenAt = obj.OpenAt,
                     CloseAt = obj.CloseAt,
                     LateToleranceMinute = obj.LateToleranceMinute,
+                    AttendanceMode = (int)obj.AttendanceMode,
                     Location = obj.Location,
                     Latitude = obj.Latitude,
                     Longitude = obj.Longitude,
@@ -98,18 +119,24 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
             [Display(Name = "Toleransi Terlambat (menit)")]
             public int LateToleranceMinute { get; set; } = 10;
 
+            [Display(Name = "Mode Presensi")]
+            public int AttendanceMode { get; set; } = (int)GWAShared.Enums.AttendanceMode.TanpaQr;
+
             [StringLength(255, ErrorMessage = "Lokasi maksimal 255 karakter")]
             [Display(Name = "Lokasi")]
             public string? Location { get; set; }
 
+            [Required(ErrorMessage = "Latitude harus diisi")]
             [Range(-90, 90, ErrorMessage = "Latitude -90 sampai 90")]
             [Display(Name = "Latitude")]
             public decimal? Latitude { get; set; }
 
+            [Required(ErrorMessage = "Longitude harus diisi")]
             [Range(-180, 180, ErrorMessage = "Longitude -180 sampai 180")]
             [Display(Name = "Longitude")]
             public decimal? Longitude { get; set; }
 
+            [Required(ErrorMessage = "Radius harus diisi")]
             [Range(10, 100000, ErrorMessage = "Radius 10 - 100000 meter")]
             [Display(Name = "Radius (meter)")]
             public int? RadiusMeter { get; set; }
@@ -229,6 +256,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
             public DateTime ValidFrom { get; set; }
             public DateTime? ValidUntil { get; set; }
             public int LateToleranceMinute { get; set; }
+            public string ModeText { get; set; } = "";
             public bool Aktif { get; set; }
         }
 
@@ -236,6 +264,8 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
         {
             public NewJadwal Row { get; set; } = new();
             public List<GwaVM.OpsiItem> KegiatanOpsi { get; set; } = Opsi.Kegiatan(true);
+            public List<GwaVM.OpsiItem> ModeOpsi { get; set; } = GwaVM.Opsi<AttendanceMode>();
+            public Dictionary<int, decimal[]> KoordinatKegiatan { get; set; } = Opsi.KoordinatKegiatan();
             public List<GwaVM.OpsiItem> HariOpsi { get; set; } = GwaVM.Opsi<ScheduleDay>();
             public List<GwaVM.OpsiItem> AktifList { get; set; } = GwaVM.OpsiAktif;
 
@@ -263,6 +293,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
                     Longitude = obj.Longitude,
                     RadiusMeter = obj.RadiusMeter,
                     LateToleranceMinute = obj.LateToleranceMinute,
+                    AttendanceMode = (int)obj.AttendanceMode,
                     ValidFrom = Opsi.KeDateTime(obj.ValidFrom),
                     ValidUntil = Opsi.KeDateTime(obj.ValidUntil),
                     IsActive = (int)obj.IsActive
@@ -291,12 +322,17 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
             [Display(Name = "Lokasi")]
             public string? Location { get; set; }
 
+            [Required(ErrorMessage = "Latitude harus diisi")]
+            [Range(-90, 90, ErrorMessage = "Latitude -90 sampai 90")]
             [Display(Name = "Latitude")]
             public decimal? Latitude { get; set; }
 
+            [Required(ErrorMessage = "Longitude harus diisi")]
+            [Range(-180, 180, ErrorMessage = "Longitude -180 sampai 180")]
             [Display(Name = "Longitude")]
             public decimal? Longitude { get; set; }
 
+            [Required(ErrorMessage = "Radius harus diisi")]
             [Range(10, 100000, ErrorMessage = "Radius 10 - 100000 meter")]
             [Display(Name = "Radius (meter)")]
             public int? RadiusMeter { get; set; }
@@ -304,6 +340,9 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
             [Range(0, 240, ErrorMessage = "Toleransi 0 - 240 menit")]
             [Display(Name = "Toleransi Terlambat (menit)")]
             public int LateToleranceMinute { get; set; } = 10;
+
+            [Display(Name = "Mode Presensi")]
+            public int AttendanceMode { get; set; } = (int)GWAShared.Enums.AttendanceMode.TanpaQr;
 
             [Required(ErrorMessage = "Berlaku mulai harus diisi")]
             [Display(Name = "Berlaku Mulai")]

@@ -12,7 +12,8 @@ namespace GWALib.Lib.Transaksi.Presensi
     /// <summary>
     /// Jadwal rutin mingguan kegiatan (t_activity_schedule), mis. latihan tiap Rabu 16:00-18:00 di GOR Kampus.
     /// GenerateSessions membuat sesi presensi untuk setiap tanggal yang cocok (satu sesi per jadwal per tanggal).
-    /// Lokasi (titik + radius) dan toleransi terlambat disalin ke sesi. Delete = nonaktif.
+    /// Lokasi (titik + radius, wajib), toleransi terlambat dan mode presensi disalin ke sesi. Save langsung membuat sesi
+    /// SESSION_DAYS_AHEAD hari ke depan; Update / Delete (nonaktif) menyesuaikan sesi mendatang yang belum dipakai.
     /// </summary>
     public partial class ActivitySchedule : BaseLib
     {
@@ -27,6 +28,7 @@ namespace GWALib.Lib.Transaksi.Presensi
             public decimal? Longitude { get; set; }
             public int? RadiusMeter { get; set; }
             public int LateToleranceMinute { get; set; } = 10;
+            public AttendanceMode AttendanceMode { get; set; } = AttendanceMode.TanpaQr;
             public DateOnly ValidFrom { get; set; }
             public DateOnly? ValidUntil { get; set; }
         }
@@ -41,6 +43,7 @@ namespace GWALib.Lib.Transaksi.Presensi
         public decimal? Longitude { get; set; }
         public int? RadiusMeter { get; set; }
         public int LateToleranceMinute { get; set; }
+        public AttendanceMode AttendanceMode { get; set; }
         public DateOnly ValidFrom { get; set; }
         public DateOnly? ValidUntil { get; set; }
         public ActiveStatus IsActive { get; set; }
@@ -85,6 +88,7 @@ namespace GWALib.Lib.Transaksi.Presensi
             Longitude = row.Longitude;
             RadiusMeter = row.RadiusMeter;
             LateToleranceMinute = row.LateToleranceMinute;
+            AttendanceMode = (AttendanceMode)row.AttendanceMode;
             ValidFrom = row.ValidFrom;
             ValidUntil = row.ValidUntil;
             IsActive = (ActiveStatus)row.IsActive;

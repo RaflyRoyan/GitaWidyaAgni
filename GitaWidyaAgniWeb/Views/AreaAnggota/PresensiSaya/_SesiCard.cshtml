@@ -1,0 +1,73 @@
+@model (GWALib.Lib.Transaksi.Presensi.AttendanceSession.MySession S, bool Aksi)
+@using GWAShared.Enums
+@using GitaWidyaAgniWeb.Infrastructure
+@using static GitaWidyaAgniWeb.Models.AreaAnggota.PresensiSayaVM
+@* Satu sesi di timeline: jam di kiri, kartu di kanan (status, lokasi, mode, jam masuk / keluar, tombol). Aksi = false untuk jadwal mendatang / riwayat. *@
+@{
+    var s = Model.S;
+    var st = StatusOf(s);
+    var qr = s.Mode == AttendanceMode.Qr;
+    var adaAksi = Model.Aksi && (s.CanCheckIn || s.CanCheckOut);
+}
+<div class="ps-shift">
+    <div class="ps-time" aria-hidden="true">
+        <span class="mulai">@s.OpenAt.ToString("HH:mm")</span>
+        <span class="selesai">@s.CloseAt.ToString("HH:mm")</span>
+        <span class="garis"></span>
+    </div>
+    <article class="ps-card st-@st.Key">
+        <div class="ps-card-top">
+            <span class="ps-card-name">@s.Name</span>
+            <span class="ps-badge @st.Css">
+                @if (st.Key == "berjalan")
+                {
+                    <span class="ps-pulse" aria-hidden="true"></span>
+                }
+                else
+                {
+                    <i class="@st.Icon"></i>
+                }
+                @st.Label
+            </span>
+        </div>
+        <div class="ps-meta">
+            @if (s.Name != s.Activity)
+            {
+                <span><i class="ri-flag-line"></i> @s.Activity</span>
+            }
+            <span><i class="ri-time-line"></i> @Jam(s)</span>
+            @if (!string.IsNullOrWhiteSpace(s.Location))
+            {
+                <span><i class="ri-map-pin-2-line"></i> @s.Location</span>
+            }
+            <span><i class="@(qr ? "ri-qr-code-line" : "ri-user-location-line")"></i> @EnumHelper.Text(s.Mode)</span>
+        </div>
+
+        @if (s.CheckInAt != null)
+        {
+            <div class="ps-done">
+                <span><i class="ri-login-box-line" style="color:var(--ps-leaf)"></i> Masuk <b>@s.CheckInAt.Value.ToString("HH:mm")</b></span>
+                <span><i class="ri-logout-box-line" style="color:var(--ps-bronze)"></i> Keluar <b>@(s.CheckOutAt?.ToString("HH:mm") ?? "–")</b></span>
+                @if (s.RecordStatus == AttendanceStatus.Terlambat)
+                {
+                    <span class="ps-badge ps-badge--warn">Terlambat</span>
+                }
+                @if (st.Key == "berjalan")
+                {
+                    <span class="ms-auto"><i class="ri-timer-flash-line"></i> <b data-sejak="@s.CheckInAt.Value.ToString("yyyy-MM-ddTHH:mm:ss")">-</b></span>
+                }
+            </div>
+        }
+        else if (Model.Aksi && st.Key == "terjadwal" && s.CheckInFrom.Date == DateTime.Today)
+        {
+            <div class="ps-hint"><i class="ri-lock-unlock-line"></i> Check-in dibuka pukul @s.CheckInFrom.ToString("HH:mm")</div>
+        }
+
+        @if (adaAksi)
+        {
+            <div class="ps-actions">
+                <partial name="_AksiButton" model="(s, s.CanCheckOut, false)" />
+            </div>
+        }
+    </article>
+</div>

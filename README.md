@@ -3,26 +3,27 @@
 Sistem manajemen **Marching Band Gita Widya Agni (MB GWA) UPN "Veteran" Jawa Timur**. Repo ini berisi:
 
 - **GWALib / GWAShared**: library backend .NET 8 untuk satu organisasi (anggota dan kepengurusan, program dan kegiatan, presensi, keuangan, persuratan, e-voting, pengadaan, sponsorship, inventaris, merchandise, prestasi, formulir, informasi).
-- **GitaWidyaAgniWeb**: aplikasi web ASP.NET Core 8 MVC. Berisi situs publik, dashboard pengurus untuk semua modul, Area Anggota, laporan DevExpress (LPJ dan label QR), serta job terjadwal.
+- **GitaWidyaAgniWeb**: aplikasi web ASP.NET Core 8 MVC. Berisi situs publik, dashboard pengurus untuk semua modul, Area Anggota, laporan DevExpress, dan job terjadwal.
 - **GWASeeder**: console untuk mengisi database dengan data contoh dan katalog hak akses.
 - **database/**: skrip SQL pembuatan database dan migrasi skema.
 
 Organisasi adalah level tertinggi. Tidak ada tenant, kampus, kategori UKM, atau pegawai.
 
-> **Status (17 November 2026)**
+> **Status (19 November 2026)**
 > - Library lengkap: setiap tabel master dan transaksi punya service class.
 > - Web lengkap: landing page, login, 37 halaman pengelolaan, menu LPJ, 11 halaman Area Anggota, dan halaman publik (rekrutmen, verifikasi sertifikat, toko, detail aset dari QR).
-> - Semua halaman admin sudah dites sebagai admin. Halaman Area Anggota baru dites dengan akun admin, yang tidak terhubung ke data anggota; tampilan untuk anggota asli masih perlu dicoba dengan akun anggota.
+> - Presensi tanpa QR (jadwal otomatis, check-in kamera + lokasi, pengingat, pantau langsung, rekap, poin otomatis) dan invoice / kuitansi peminjaman alat sudah dites.
+> - Halaman Area Anggota selain Presensi baru dites dengan akun admin; tampilan untuk anggota asli masih perlu dicoba.
 
 ## Daftar isi
 
-1. [Mulai cepat (setup untuk tim)](#mulai-cepat-setup-untuk-tim)
-2. [Prasyarat](#prasyarat)
+1. [Perangkat yang dipakai](#perangkat-yang-dipakai)
+2. [Setup project dari nol](#setup-project-dari-nol)
 3. [Struktur solution](#struktur-solution)
 4. [Database](#database)
 5. [Konfigurasi](#konfigurasi)
 6. [Data contoh (GWASeeder)](#data-contoh-gwaseeder)
-7. [Fitur dan halaman](#fitur-dan-halaman)
+7. [Panduan per menu](#panduan-per-menu)
 8. [Laporan (DevExpress Reports)](#laporan-devexpress-reports)
 9. [Job terjadwal dan pengiriman pesan](#job-terjadwal-dan-pengiriman-pesan)
 10. [Autentikasi dan hak akses](#autentikasi-dan-hak-akses)
@@ -32,71 +33,137 @@ Organisasi adalah level tertinggi. Tidak ada tenant, kampus, kategori UKM, atau 
 14. [Troubleshooting](#troubleshooting)
 15. [Catatan keamanan](#catatan-keamanan)
 
-## Mulai cepat (setup untuk tim)
+## Perangkat yang dipakai
 
-Langkah dari nol sampai bisa login. Perintah ditulis untuk PowerShell atau Git Bash di Windows.
-
-1. **Pasang prasyarat**: .NET 8 SDK, MySQL 8.0, dan DevExpress 23.2 (lihat [Prasyarat](#prasyarat)).
-2. **Clone repo**:
-   ```
-   git clone https://github.com/RaflyRoyan/GitaWidyaAgni.git
-   cd GitaWidyaAgni
-   ```
-3. **Buat database** dari skrip di repo. Perintah ini membuat database `gitawidyaagni` beserta 135 tabelnya:
-   ```
-   mysql -u root -p < database/gitawidyaagni_create.sql
-   ```
-   Kalau `mysql` belum ada di PATH, pakai path lengkapnya, misalnya `"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"`.
-4. **Isi connection string** di file baru `GitaWidyaAgniWeb/appsettings.Development.json`. File ini di-ignore git, jadi setiap orang membuatnya sendiri:
-   ```json
-   {
-     "ConnectionStrings": {
-       "Default": "server=127.0.0.1;port=3306;database=gitawidyaagni;user=root;password=PASSWORD_MYSQL_KAMU"
-     }
-   }
-   ```
-5. **Buat kunci e-voting**, lalu simpan sebagai user-secret (sekali per mesin):
-   ```powershell
-   $key = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
-   dotnet user-secrets set "EVoting:Key" $key --project GitaWidyaAgniWeb
-   ```
-6. **Isi data**. Pilih salah satu:
-   - **Pengembangan, dengan data contoh**:
-     ```
-     dotnet run --project GWASeeder -- --evoting-key <kunci dari langkah 5> --admin-password <password admin>
-     ```
-     Data yang diisi: profil MB GWA, menu, role, 24 akun contoh, dan data semua modul. Daftar akun ada di [Akun contoh](#akun-contoh).
-   - **Produksi, tanpa data contoh**:
-     1. Isi admin awal:
-        ```
-        dotnet user-secrets set "Bootstrap:AdminUsername" "admin" --project GitaWidyaAgniWeb
-        dotnet user-secrets set "Bootstrap:AdminPassword" "<password kuat>" --project GitaWidyaAgniWeb
-        ```
-     2. Jalankan web sekali; admin hanya dibuat selama tabel `m_user` masih kosong.
-     3. Isi menu, controller, dan role: `dotnet run --project GWASeeder -- --sync-akses`.
-     4. Setelah login pertama, hapus kedua secret `Bootstrap:*`.
-7. **Jalankan web**:
-   ```
-   dotnet run --project GitaWidyaAgniWeb
-   ```
-   Buka URL yang tercetak di konsol (profil `https`). Halaman pertama adalah landing page; tombol **Login** ada di navbar.
-8. **Isi profil organisasi** lewat menu **Organisasi › Profil Organisasi**: nama, logo, visi, misi, dan pembina. Lalu isi **Pengaturan Sistem › Site Setting**: `whatsapp`, `alamat`, `instagram`, `kota`, dan seterusnya (lihat [Konfigurasi](#konfigurasi)).
-
-## Prasyarat
-
-| Komponen | Versi | Catatan |
+| Perangkat | Versi | Untuk apa |
 |---|---|---|
-| .NET SDK | 8.0+ | |
-| MySQL | 8.0 | Collation `utf8mb4_0900_ai_ci` |
-| DevExpress | 23.2.5 | `NuGet.config` mengambil paket DevExtreme dan DevExpress Reporting dari folder lokal hasil instalasi DevExpress 23.2. Tanpa instalasi itu, restore gagal. |
-| Browser | Chrome / Edge terbaru | Scan QR presensi butuh kamera dan izin lokasi (HTTPS) |
+| **Visual Studio 2022** (disarankan) | 17.8 atau lebih baru, Community cukup | IDE utama. Saat instalasi, centang workload **ASP.NET and web development**. Solution (`GitaWidyaAgni.sln`) dibuat dengan Visual Studio 17. |
+| .NET SDK | 8.0 | Ikut terpasang bersama workload di atas. Cek dengan `dotnet --version`. |
+| **DevExpress** | **23.2.5** (installer "DevExpress Universal / ASP.NET & Reporting") | Paket DevExtreme (grid, form, chart) dan DevExpress Reporting (laporan PDF) diambil dari folder hasil instalasi, bukan dari nuget.org. Tanpa instalasi ini, project tidak bisa di-restore. Versi trial boleh untuk pengembangan. |
+| **MySQL Server** | 8.0 (lewat MySQL Installer) | Database. Pilih juga **MySQL Workbench** kalau ingin melihat tabel lewat GUI. |
+| Git | terbaru | Clone dan commit. |
+| Browser | Chrome / Edge terbaru | Presensi memakai kamera dan GPS, yang hanya jalan lewat **HTTPS**. |
 
-Sumber paket di `NuGet.config`:
+Alternatif IDE: **VS Code** dengan ekstensi *C# Dev Kit*, atau **JetBrains Rider**. Semua langkah di bawah juga bisa dijalankan lewat terminal (`dotnet build`, `dotnet run`).
+
+Folder paket DevExpress yang dibaca `NuGet.config`:
 
 - `C:\Program Files\DevExpress 23.2\DevExtreme\System\DevExtreme\Bin\AspNetCore` (DevExtreme.AspNet.*)
 - `C:\Program Files\DevExpress 23.2\Components\System\Components\Packages` (DevExpress.AspNetCore.Reporting)
 
-**Lisensi DevExpress:** instalasi trial membuat PDF hasil laporan berisi tulisan *"This document was created using the trial version of DevExpress components"*. Build dengan instalasi berlisensi supaya tulisan itu hilang.
+Kalau DevExpress dipasang di folder lain, ubah kedua path di `NuGet.config`.
+
+**Lisensi DevExpress:** instalasi trial membuat PDF laporan berisi tulisan *"This document was created using the trial version of DevExpress components"*. Build dengan instalasi berlisensi supaya tulisan itu hilang.
+
+## Setup project dari nol
+
+Langkah dari komputer kosong sampai bisa login. Perintah terminal ditulis untuk **PowerShell** atau **Git Bash** di Windows.
+
+### 1. Pasang perangkat
+
+1. Pasang **Visual Studio 2022** dengan workload **ASP.NET and web development**.
+2. Pasang **DevExpress 23.2.5**. Pada pilihan komponen, centang minimal **ASP.NET Core** (DevExtreme) dan **Reporting**. Biarkan folder instalasi bawaan (`C:\Program Files\DevExpress 23.2`).
+3. Pasang **MySQL 8.0** lewat MySQL Installer (Server, opsional Workbench). Catat password user `root`.
+4. Pasang **Git**.
+5. Percayai sertifikat HTTPS lokal (sekali per komputer), supaya browser tidak menolak `https://localhost`:
+   ```
+   dotnet dev-certs https --trust
+   ```
+
+### 2. Clone repo
+
+```
+git clone https://github.com/RaflyRoyan/GitaWidyaAgni.git
+cd GitaWidyaAgni
+```
+
+### 3. Buat database
+
+Perintah ini membuat database `gitawidyaagni` beserta semua tabelnya (struktur saja, tanpa data):
+
+```
+mysql -u root -p < database/gitawidyaagni_create.sql
+```
+
+- Kalau `mysql` belum ada di PATH, pakai path lengkapnya: `"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe"`.
+- PowerShell tidak mendukung `<`. Jalankan dari **Command Prompt** / **Git Bash**, atau masuk ke `mysql` lalu ketik `source database/gitawidyaagni_create.sql;`.
+- Bisa juga lewat MySQL Workbench: **File › Open SQL Script**, pilih file itu, lalu klik ikon petir (Execute).
+
+### 4. Buka solution di Visual Studio
+
+1. Buka `GitaWidyaAgni.sln` (double-click atau **File › Open › Project/Solution**).
+2. Visual Studio otomatis melakukan *restore* paket. Kalau gagal mencari `DevExtreme.AspNet.*`, berarti DevExpress belum terpasang atau path di `NuGet.config` salah.
+3. Di **Solution Explorer**, klik kanan **GitaWidyaAgniWeb › Set as Startup Project**.
+4. Di toolbar, pilih profil **https** (bukan IIS Express) pada tombol Run.
+
+### 5. Isi connection string
+
+Buat file baru `GitaWidyaAgniWeb/appsettings.Development.json`. File ini di-ignore git, jadi setiap orang membuatnya sendiri:
+
+```json
+{
+  "ConnectionStrings": {
+    "Default": "server=127.0.0.1;port=3306;database=gitawidyaagni;user=root;password=PASSWORD_MYSQL_KAMU"
+  }
+}
+```
+
+### 6. Buat kunci e-voting (user-secret)
+
+Kunci ini mengenkripsi suara pemilihan. Simpan sebagai user-secret (sekali per komputer), jangan di file yang di-commit.
+
+- **Lewat Visual Studio:** klik kanan **GitaWidyaAgniWeb › Manage User Secrets**, lalu isi:
+  ```json
+  {
+    "EVoting:Key": "<kunci base64 32 byte>"
+  }
+  ```
+- **Lewat terminal:**
+  ```powershell
+  $key = [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(32))
+  dotnet user-secrets set "EVoting:Key" $key --project GitaWidyaAgniWeb
+  ```
+
+Untuk mendapatkan kunci acak tanpa terminal, jalankan seeder (langkah 7) tanpa `--evoting-key`; seeder mencetak kunci yang dibuatnya.
+
+### 7. Isi data
+
+Pilih salah satu:
+
+- **Pengembangan, dengan data contoh** (disarankan untuk tim):
+  ```
+  dotnet run --project GWASeeder -- --evoting-key <kunci dari langkah 6> --admin-password <password admin>
+  ```
+  Dari Visual Studio: klik kanan **GWASeeder › Properties › Debug › Open debug launch profiles UI**, isi *Command line arguments* `--evoting-key ... --admin-password ...`, lalu klik kanan **GWASeeder › Debug › Start New Instance**.
+
+  Seeder mengisi profil MB GWA, menu, role, 24 akun contoh, dan data semua modul. Daftar akun ada di [Akun contoh](#akun-contoh).
+- **Produksi, tanpa data contoh**:
+  1. Isi admin awal sebagai user-secret: `Bootstrap:AdminUsername` dan `Bootstrap:AdminPassword`.
+  2. Jalankan web sekali; admin hanya dibuat selama tabel `m_user` masih kosong.
+  3. Isi menu, controller, dan role: `dotnet run --project GWASeeder -- --sync-akses`.
+  4. Setelah login pertama, hapus kedua secret `Bootstrap:*`.
+
+### 8. Jalankan web
+
+- **Visual Studio:** tekan **F5** (dengan debugger) atau **Ctrl+F5** (tanpa debugger). Browser terbuka di `https://localhost:7061`.
+- **Terminal:** `dotnet run --project GitaWidyaAgniWeb --launch-profile https`.
+
+Halaman pertama adalah landing page; tombol **Login** ada di navbar. Login dengan `admin` dan password dari langkah 7.
+
+### 9. Lengkapi data awal
+
+Setelah login sebagai admin:
+
+1. **Organisasi › Profil Organisasi**: nama, kode, logo, visi, misi, pembina.
+2. **Pengaturan Sistem › Site Setting**: `whatsapp`, `alamat`, `instagram`, `kota`, dan seterusnya (lihat [Konfigurasi](#konfigurasi)).
+3. **Organisasi › Periode**: pastikan ada satu periode berstatus Active.
+4. Isi data master lain di [Data master yang perlu diisi](#data-master-yang-perlu-diisi-sebelum-dipakai).
+
+### 10. Setiap kali `git pull`
+
+1. Lihat apakah ada berkas baru di `database/migrations/`. Jalankan berkas yang belum pernah dijalankan ke database lokal, urut tanggal (lihat [Database](#database)).
+2. Kalau ada halaman baru, jalankan `dotnet run --project GWASeeder -- --sync-akses`.
+3. Hentikan web yang sedang berjalan sebelum build ulang (kalau tidak, build gagal `MSB3027`).
 
 ## Struktur solution
 
@@ -116,14 +183,14 @@ GitaWidyaAgni.sln
 │       └── Transaksi/<Modul>/ Service tabel transaksi (t_*)
 ├── GitaWidyaAgniWeb/          ASP.NET Core 8 MVC (template Velzon + DevExtreme + DevExpress Reports)
 │   ├── Controllers/<Area>/    Satu area per header menu sidebar (Akses, Keuangan, Inventaris, Lpj, AreaAnggota, ...)
-│   ├── Models/<Area>/         View model <Nama>VM (Index, List, Row, Add, Edit, NewRow, Method)
+│   ├── Models/<Area>/         View model <Nama>VM (Index, List, Row, Add, Edit, NewRow, Method) dan penyusun data laporan (*Cetak)
 │   ├── Views/<Area>/<Ctrl>/   Index, _List, _Add, _Edit, _Form
-│   ├── Reports/               Laporan DevExpress lewat kode: LpjReport, LabelQrUnitReport
+│   ├── Reports/               Laporan DevExpress lewat kode (LPJ, persuratan, sertifikat, label QR, peminjaman, rekap presensi)
 │   ├── Infrastructure/        BaseController, AccessFilter, AccessService, ActivityLogFilter, AsetLabel, Jobs/
-│   └── wwwroot/               assets/ (Velzon), css/, js/ (AppUI site.js, grid-export.js), Scripts/<Area>/, lib/dxreporting-23.2.5/
+│   └── wwwroot/               assets/ (Velzon), css/, js/ (AppUI site.js, grid-export.js, gwa-map-picker.js), Scripts/<Area>/, lib/dxreporting-23.2.5/
 ├── GWASeeder/                 Console data contoh + katalog hak akses (Seed.*.cs)
 └── database/
-    ├── gitawidyaagni_create.sql   Skema lengkap (135 tabel)
+    ├── gitawidyaagni_create.sql   Skema lengkap
     ├── migrations/                Perubahan skema per tanggal
     └── README.md                  Cara pakai skrip database
 ```
@@ -141,12 +208,14 @@ Struktur dan konvensinya mengikuti project ClubSphere (ClubLib / ClubShared). Pa
 | [`database/README.md`](database/README.md) | Cara pakai dan aturan menambah migrasi. |
 
 - **Database baru:** jalankan create script saja.
-- **Database lama:** jalankan migrasi yang tanggalnya lebih baru dari skema database itu, urut tanggal:
+- **Database lama:** jalankan migrasi yang belum pernah dijalankan, urut tanggal:
   ```
   mysql -u root -p gitawidyaagni < database/migrations/2026-11-17_lpj.sql
   mysql -u root -p gitawidyaagni < database/migrations/2026-11-18_section.sql
   mysql -u root -p gitawidyaagni < database/migrations/2026-11-18_asset_qr_token.sql
   mysql -u root -p gitawidyaagni < database/migrations/2026-11-18_activity_absence.sql
+  mysql -u root -p gitawidyaagni < database/migrations/2026-11-19_attendance_mode.sql
+  mysql -u root -p gitawidyaagni < database/migrations/2026-11-19_attendance_reminder.sql
   ```
 
 Riwayat migrasi:
@@ -157,6 +226,8 @@ Riwayat migrasi:
 | 2026-11-18 | `2026-11-18_section.sql` | Tabel `m_section` (section musik) dan `t_section_member` (riwayat section anggota); kolom `t_activity.section_id` (audiens 6 = Section) dan `t_management_assignment.section_id` (Section Leader) |
 | 2026-11-18 | `2026-11-18_asset_qr_token.sql` | Kolom `m_asset_unit.qr_token`: token acak isi QR label, menggantikan kode unit di URL `/aset/...`. Label lama harus dicetak ulang |
 | 2026-11-18 | `2026-11-18_activity_absence.sql` | Tabel `t_activity_absence_request`: anggota otomatis ikut kegiatan audiensnya (mis. latihan rutin) dan mengajukan tidak ikut satu pertemuan atau seluruh kegiatan, disetujui pengurus |
+| 2026-11-19 | `2026-11-19_attendance_mode.sql` | Kolom `attendance_mode` pada `t_activity_schedule` dan `t_attendance_session` (1 = Tanpa QR, 2 = Wajib scan QR). Data lama otomatis mode QR |
+| 2026-11-19 | `2026-11-19_attendance_reminder.sql` | Kolom `reminder_sent_at` dan `checkout_reminder_sent_at` pada `t_attendance_session` (pengingat presensi tidak terkirim dua kali) |
 
 ### Konvensi skema
 
@@ -174,7 +245,7 @@ Riwayat migrasi:
 | Inti & akses | `m_organization`, `m_user`, `m_role`, `m_user_role`, `m_controller`, `m_controller_action`, `m_header_menu`, `m_sub_menu`, `m_role_menu`, `m_sequence` |
 | Sistem | `m_site_setting`, `m_document_number_format`, `m_approval_flow(_step)`, `m_message_template`, `t_message_outbox`, `t_notification`, `t_activity_log`, `t_scheduled_job_log`, `t_user_token` |
 | Anggota | `m_member`, `m_section`, `t_section_member`, `m_division`, `m_position`, `m_management_period`, `t_management_assignment`, `t_recruitment(_applicant)`, `t_period_handover(_item)`, `m_alumni_profile` |
-| Program & kegiatan | `t_program`, `t_program_task`, `t_timeline_plan`, `t_activity`, `t_activity_participant`, `t_activity_report`, `t_gallery(_photo)`, `t_lpj` |
+| Program & kegiatan | `t_program`, `t_program_task`, `t_timeline_plan`, `t_activity`, `t_activity_participant`, `t_activity_absence_request`, `t_activity_report`, `t_gallery(_photo)`, `t_lpj` |
 | Tim pelaksana & presensi | `t_committee_*`, `t_activity_rundown`, `t_activity_checklist`, `t_activity_schedule`, `t_attendance_session`, `t_attendance_record`, `t_meeting_minutes` |
 | Keuangan | `m_financial_account`, `m_financial_category`, `t_financial_transaction`, `t_budget(_item)`, `t_funding_request`, `m_dues_setting`, `t_dues_bill`, `t_debt`, `t_period_balance` |
 | Mitra, sponsorship, pengadaan | `m_external_party(_contact)`, `m_sponsorship_package`, `t_sponsorship`, `t_sponsorship_mou`, `t_procurement_*` |
@@ -186,21 +257,21 @@ Riwayat migrasi:
 1. Tulis berkas migrasi baru di `database/migrations/` lalu jalankan ke database pengembangan.
 2. Perbarui entity EF di `GWALib/EF/`, lewat scaffold ulang Pomelo atau ditulis tangan. Scaffold menimpa file EF; biarkan `OnConfiguring` tetap dikomentari.
 3. Tambah atau ubah enum di `GWAShared/Enums/` sesuai `COMMENT` kolom.
-4. Buat ulang `database/gitawidyaagni_create.sql` (perintah `mysqldump` ada di `database/README.md`) dan tambahkan baris di tabel riwayat migrasi di atas.
+4. Perbarui `database/gitawidyaagni_create.sql` (perintah `mysqldump` ada di `database/README.md`) dan tambahkan baris di tabel riwayat migrasi di atas.
 
 ## Konfigurasi
 
 ### appsettings / user-secrets / environment
 
-Nilai rahasia (password, token, kunci) **tidak boleh** masuk `appsettings.json`. Simpan di `appsettings.Development.json` (di-ignore git), di user-secrets (`dotnet user-secrets set "<key>" "<nilai>" --project GitaWidyaAgniWeb`), atau di environment variable server (titik dua jadi `__`, misalnya `ConnectionStrings__Default`).
+Nilai rahasia (password, token, kunci) **tidak boleh** masuk `appsettings.json`. Simpan di `appsettings.Development.json` (di-ignore git), di user-secrets (Visual Studio: **Manage User Secrets**; terminal: `dotnet user-secrets set "<key>" "<nilai>" --project GitaWidyaAgniWeb`), atau di environment variable server (titik dua jadi `__`, misalnya `ConnectionStrings__Default`).
 
 | Key | Wajib | Fungsi |
 |---|---|---|
 | `ConnectionStrings:Default` | Ya | Connection string MySQL. Web gagal start kalau kosong. |
 | `EVoting:Key` | Untuk e-voting | Base64 dari 32 byte acak. Tanpa kunci ini, membuka pemungutan suara, memilih, dan finalisasi ditolak. **Jangan diganti** sebelum semua pemilihan yang memakainya difinalisasi. Seeder dan web harus memakai kunci yang sama. |
 | `Bootstrap:AdminUsername` / `Bootstrap:AdminPassword` | Sekali | Membuat role SUPERADMIN + user admin selama `m_user` kosong. Hapus setelah login pertama. |
-| `App:PublicUrl` | Produksi | URL publik aplikasi, misalnya `https://gwa.example.org`. Dipakai sebagai isi QR label aset. Kalau kosong, dipakai host request; label yang dicetak dari `localhost` tidak bisa dibuka dari HP. |
-| `Jobs:Enabled` | - | Bawaan `true`. Pada server dengan beberapa instance, aktifkan di satu instance saja. |
+| `App:PublicUrl` | Produksi | URL publik aplikasi, misalnya `https://gwa.example.org`. Dipakai sebagai isi QR label aset dan QR sertifikat. Kalau kosong, dipakai host request; label yang dicetak dari `localhost` tidak bisa dibuka dari HP. |
+| `Jobs:Enabled` | - | Bawaan `true`. Pada server dengan beberapa instance, aktifkan di satu instance saja. Saat menguji dengan data asli, set `false` supaya sesi presensi tidak ditutup otomatis. |
 | `Jobs:Username` | - | User yang menjalankan job. Kosong = user SUPERADMIN aktif pertama. |
 | `Jobs:NotificationRetentionDays` / `ActivityLogRetentionDays` / `TokenRetentionDays` / `JobLogRetentionDays` / `SessionDaysAhead` | - | Bawaan 90 / 365 / 30 / 90 / 7. |
 | `Smtp:Host`, `Port`, `EnableSsl`, `Username`, `Password`, `From`, `FromName` | Untuk email | Pengiriman email dari antrian `t_message_outbox`. |
@@ -213,16 +284,29 @@ Saluran email atau WhatsApp yang belum dikonfigurasi tidak dikirim, dan pesannya
 | Key `m_site_setting` | Dipakai di |
 |---|---|
 | `hero_title`, `hero_subtitle` | Hero landing page |
-| `alamat`, `instagram`, `youtube`, `tiktok` | Kontak dan footer landing page |
+| `alamat`, `instagram`, `youtube`, `tiktok` | Kontak dan footer landing page, kop surat laporan |
 | `whatsapp` | Tombol WhatsApp: landing, konfirmasi pesanan toko, halaman detail aset |
-| `kota` | Kota pada tanda tangan LPJ (bawaan Surabaya) |
+| `kota` | Kota pada tanda tangan laporan (bawaan Surabaya) |
+
+### Template pesan (dari menu Pengaturan Sistem)
+
+| Kode | Saluran | Dipakai untuk | Placeholder |
+|---|---|---|---|
+| `RESET_PASSWORD`, `VERIFY_EMAIL` | Email | Lupa password, verifikasi email | `{name} {link} {app}` |
+| `DUES_BILL` | Email / WhatsApp | Tagihan iuran | `{name} {period} {amount} {due}` |
+| `BORROW_DUE` | WhatsApp | Peminjaman jatuh tempo | `{name} {number} {due}` |
+| `ATTENDANCE_REMINDER` | WhatsApp | Pengingat presensi dibuka | `{name} {session} {time} {place}` |
+| `ATTENDANCE_CHECKOUT` | WhatsApp | Pengingat check-out | `{name} {session} {time} {place}` |
+
+Template WhatsApp presensi bersifat opsional: tanpa template, pengingat tetap dikirim sebagai notifikasi in-app.
 
 ### Data master yang perlu diisi sebelum dipakai
 
 - **Profil organisasi**: nama, kode (untuk `{org}` di nomor dokumen), logo, visi, misi, dan nama pembina (tanda tangan LPJ kepengurusan).
-- **Periode kepengurusan** yang berstatus Active, beserta section, divisi dan jabatan. Setiap anggota wajib punya section (Brass, Battery, Front Ensemble, Colour Guard); divisi (Humas, Logistik, Danus, ...) hanya untuk anggota pilihan Ketua Umum. Penanda tangan LPJ dicari dari jabatan "Ketua Umum" dan "Sekretaris".
+- **Periode kepengurusan** yang berstatus Active, beserta section, divisi dan jabatan. Setiap anggota wajib punya section (Brass, Battery, Front Ensemble, Colour Guard); divisi (Humas, Logistik, Danus, ...) hanya untuk anggota pilihan Ketua Umum. Penanda tangan laporan dicari dari jabatan "Ketua Umum", "Sekretaris", dan "Bendahara".
 - **Format nomor dokumen** dan **alur persetujuan** untuk `FUNDING_REQUEST`, `PROCUREMENT`, dan `LETTER`. Tanpa alur aktif, pengajuan dana dan pengadaan tidak bisa diajukan.
-- **Akun keuangan** dan **kategori**, termasuk kategori untuk iuran, sewa alat, denda, penjualan, dan sponsorship.
+- **Akun keuangan** dan **kategori**, termasuk kategori untuk iuran, sewa alat, denda, penjualan, dan sponsorship. Akun Bank / E-Wallet aktif tampil sebagai rekening transfer di invoice peminjaman.
+- **Aturan poin** (Prestasi › Aturan Poin) untuk Hadir Kegiatan, Panitia, Pemateri, Pengurus, dan Prestasi.
 
 ## Data contoh (GWASeeder)
 
@@ -276,76 +360,188 @@ Hak akses per role:
 | SEKRETARIS | Anggota, Alumni, Rekrutmen, Kegiatan, LPJ, Presensi, Surat, Dokumen, Sertifikat, Formulir, Aspirasi, Berita |
 | BENDAHARA | Transaksi, Anggaran, Pengajuan Dana, Iuran, Hutang, Pengadaan, Merchandise, Sponsorship |
 | KADIV | Program Kerja, Kegiatan, Tim Pelaksana, Presensi, Galeri, Aset, Peminjaman, Prestasi, Berita |
+| SECTION_LEADER | Section, Kegiatan, Presensi, Galeri, Aset, Peminjaman, Prestasi |
 | ANGGOTA | Hanya Area Anggota (semua role juga mendapat menu ini) |
 
 Siapa yang boleh menyetujui dokumen tetap ditentukan alur persetujuan. Pada data contoh, pengajuan dana dan pengadaan disetujui Bendahara lalu Ketua Umum, dan surat keluar disetujui Sekretaris lalu Ketua Umum.
 
-## Fitur dan halaman
+## Panduan per menu
+
+Bagian ini menjelaskan **untuk apa** setiap menu, siapa yang biasanya memakainya, dan alur kerjanya. URL dashboard berbentuk `/<Area>/<Controller>`. Semua grid punya pencarian, filter, dan **export Excel + PDF**; tombol **Tampilkan Legenda** menjelaskan arti setiap tombol aksi di grid.
 
 ### Halaman publik (tanpa login)
 
-| URL | Isi |
+| URL | Untuk apa |
 |---|---|
-| `/` | Landing page: hero dengan banner, tentang, seksi musik, agenda, prestasi, galeri, berita, rekrutmen yang sedang buka, kontak |
-| `/Landing/Berita`, `/berita/{slug}` | Daftar dan detail berita publik |
-| `/rekrutmen/{id?}` | Pendaftaran open recruitment, termasuk pertanyaan tambahan dari formulir |
-| `/sertifikat/verifikasi?kode=` | Cek keaslian sertifikat dari kode verifikasi |
-| `/toko` | Pesan merchandise tanpa login (nama + WhatsApp), konfirmasi lewat WhatsApp, dan lacak pesanan dengan nomor pesanan + nomor WhatsApp |
-| `/aset/{token}` | Hasil scan label QR alat (token acak per unit, bukan kode unit): detail unit, kondisi, status, lokasi, dan foto. Harga, tarif, dan data peminjam tidak ditampilkan. |
+| `/` | Wajah organisasi untuk umum: hero dengan banner, tentang MB GWA, seksi musik, agenda, prestasi, galeri, berita, ajakan open recruitment, dan kontak. Isinya diambil dari menu Profil Organisasi, Banner, Kegiatan (publik), Prestasi (publik), Galeri, dan Berita. |
+| `/Landing/Berita`, `/berita/{slug}` | Membaca berita dan pengumuman publik. |
+| `/rekrutmen/{id?}` | Calon anggota mendaftar open recruitment tanpa akun, termasuk menjawab pertanyaan tambahan dari formulir. |
+| `/sertifikat/verifikasi?kode=` | Siapa saja bisa mengecek keaslian sertifikat dari kode / QR yang tercetak di sertifikat. |
+| `/toko` | Pembeli umum memesan merchandise (nama + WhatsApp), konfirmasi lewat WhatsApp, dan melacak pesanan dengan nomor pesanan + nomor WhatsApp. |
+| `/aset/{token}` | Hasil scan label QR alat: detail unit, kondisi, status, lokasi, dan foto. Harga, tarif, dan data peminjam tidak ditampilkan. |
 
-### Dashboard pengurus
+### Dashboard
 
-Menu sidebar dan area URL-nya (`/<Area>/<Controller>`):
+Halaman pertama setelah login. Menampilkan sapaan dan periode aktif, kartu ringkas (jumlah anggota, kegiatan mendatang, saldo kas, iuran belum lunas), grafik arus kas 6 bulan dan anggota per section, agenda terdekat, daftar **Perlu tindakan** (pengajuan yang menunggu persetujuan Anda, izin kegiatan, disposisi, iuran sendiri), 5 poin tertinggi, dan pintasan menu. Bagian yang tampil menyesuaikan hak akses.
 
-| Menu | Controller | Isi |
-|---|---|---|
-| Akses › User / Role / Menu | `User`, `Role`, `Menu` | Akun, role per periode, hak aksi, menu sidebar, reset password |
-| Pengaturan Sistem | `Pengaturan` | Site setting, format nomor, alur persetujuan, template pesan, sequence, log job, antrian pesan, log aktivitas |
-| Organisasi › Profil / Periode / Section / Divisi / Jabatan / Kepengurusan | `Organisasi`, `Periode`, `Section`, `Divisi`, `Jabatan`, `Kepengurusan` | Profil + logo, periode dan serah terima (dengan berkas LPJ), section musik dan riwayat section anggota (pindah kapan saja), divisi dan anggota pilihannya, jabatan, penugasan pengurus (termasuk Section Leader) |
-| Anggota › Data Anggota / Alumni / Rekrutmen | `Anggota`, `Alumni`, `Rekrutmen` | Data anggota dan foto, profil alumni, rekrutmen dan seleksi pelamar |
-| Program Kerja | `ProgramKerja` | Program kerja (dengan **bidang** dan **jangka**), tugas, timeline |
-| Kegiatan › Daftar / Tim Pelaksana / Presensi / Galeri | `Kegiatan`, `TimPelaksana`, `Presensi`, `Galeri` | Kegiatan, peserta, kolaborator, laporan; panitia, rundown, checklist; jadwal rutin, sesi QR, notulen; galeri foto |
-| **LPJ** | `Lpj` | Laporan pertanggungjawaban kegiatan dan kepengurusan (lihat [Laporan](#laporan-devexpress-reports)) |
-| Keuangan › Transaksi / Anggaran / Pengajuan Dana / Iuran / Hutang | `Transaksi`, `Anggaran`, `PengajuanDana`, `Iuran`, `Hutang` | Transaksi + saldo periode, RAB, pengajuan dana + realisasi, tagihan iuran, hutang |
-| Inventaris › Aset / Peminjaman | `Aset`, `Peminjaman` | Aset, unit ber-QR + cetak label, foto, mutasi, inspeksi, perawatan; peminjaman dengan checkout dan pengembalian lewat scan QR, sewa, denda |
-| Pengadaan | `Pengadaan` | Usulan, penawaran, persetujuan, pembelian, penerimaan (bisa langsung jadi aset) |
-| Merchandise | `Merchandise` | Produk, varian, stok, pesanan (termasuk pesanan tamu dari `/toko`), pembayaran |
-| Kemitraan › Mitra / Sponsorship | `Mitra`, `Sponsorship` | Pihak luar + kontak; paket, sponsorship, benefit, MoU |
-| Persuratan › Surat / Arsip Dokumen | `Surat`, `Dokumen` | Template surat, surat masuk/keluar + persetujuan + disposisi, arsip dokumen |
-| Prestasi › Lomba & Prestasi / Sertifikat | `Prestasi`, `Sertifikat` | Lomba, materi, peserta, prestasi, aturan poin, leaderboard; sertifikat |
-| Formulir › Formulir / Aspirasi | `Formulir`, `Aspirasi` | Pembuat formulir, ringkasan jawaban; aspirasi anggota |
-| E-Voting | `EVoting` | Pemilihan, kandidat, pemilih, hasil, log audit |
-| Informasi › Berita / Banner | `Berita`, `Banner` | Berita/pengumuman, banner landing page |
+### Akses (SUPERADMIN)
 
-Semua grid punya pencarian, filter, dan **export Excel + PDF**.
-
-### Area Anggota (`/AreaAnggota/...`, cukup login)
-
-| Menu | Isi |
+| Menu | Untuk apa |
 |---|---|
-| Profil Saya | Ubah kontak dan foto, lihat riwayat section, jabatan dan divisi, ganti password |
-| Presensi | Scan QR sesi (atau ketik kode), selfie, lokasi, check-in / check-out, riwayat |
-| Kegiatan Saya | Kegiatan untuk anggota (mis. latihan rutin) otomatis diikuti; ajukan tidak ikut satu pertemuan atau seluruh kegiatan (disetujui pengurus). Kegiatan dengan pendaftaran terbuka: daftar / batal. Melamar tim pelaksana, tugas panitia |
-| Iuran Saya | Tagihan iuran sendiri |
-| Peminjaman Alat | Mengajukan dan membatalkan peminjaman |
-| Toko Merchandise | Katalog dan pesanan sebagai anggota |
-| Formulir & Aspirasi | Mengisi formulir, mengirim aspirasi |
-| E-Voting | Memilih, menerima tanda terima, cek tanda terima, hasil |
-| Prestasi & Poin | Prestasi, poin dan peringkat, lomba, sertifikat |
-| Disposisi | Disposisi surat untuk saya |
-| Notifikasi | Daftar notifikasi; lonceng di header menampilkan jumlah yang belum dibaca |
+| **User** | Membuat akun login, menghubungkan akun ke data anggota, memberi role (boleh terikat periode kepengurusan), mengaktifkan / menonaktifkan akun, dan reset password. |
+| **Role** | Membuat role (KETUA, BENDAHARA, ...) dan mencentang aksi serta menu yang boleh dibuka role itu. |
+| **Menu** | Mengatur controller, daftar aksinya, header menu sidebar, dan sub menu. Biasanya cukup lewat `--sync-akses`; menu ini untuk penyesuaian manual. |
+
+### Pengaturan Sistem (SUPERADMIN)
+
+Satu halaman dengan beberapa tab untuk mengatur perilaku aplikasi:
+
+- **Site Setting**: teks landing page, kontak, kota tanda tangan (tabel di [Konfigurasi](#site-setting-dari-menu-pengaturan-sistem)).
+- **Format Nomor**: pola nomor dokumen per jenis (surat, pengajuan dana, pengadaan, sertifikat, peminjaman, ...).
+- **Alur Persetujuan**: urutan pemberi persetujuan per jenis dokumen (per role, per jabatan, atau user tertentu).
+- **Template Pesan**: isi email / WhatsApp / in-app (tabel [Template pesan](#template-pesan-dari-menu-pengaturan-sistem)).
+- **Sequence**: nomor id terakhir per tabel (hanya bisa dinaikkan).
+- **Log Job**, **Antrian Pesan** (kirim ulang yang gagal), dan **Log Aktivitas** (siapa mengubah apa, kapan, dari IP mana).
+
+### Organisasi
+
+| Menu | Untuk apa |
+|---|---|
+| **Profil Organisasi** | Identitas MB GWA: nama, kode, logo, deskripsi, visi, misi, kontak, data pembina + SK, dan foto organisasi. Dipakai di landing page, kop surat, dan tanda tangan laporan. |
+| **Periode** | Periode kepengurusan (Draft → Active → Closed) dan **serah terima** ke periode berikutnya: daftar barang / dokumen / MoU yang diserahkan, berkas LPJ, diajukan lalu disetujui. Persetujuan menutup periode lama dan mengaktifkan periode baru. |
+| **Section** | Section musik (Brass, Battery, Front Ensemble, Colour Guard) dan **riwayat section** tiap anggota. Anggota bisa dipindah section kapan saja; riwayatnya tersimpan. |
+| **Divisi** | Divisi kepanitiaan organisasi (Humas, Logistik, Danus, ...) dan anggota pilihan Ketua Umum di tiap divisi. |
+| **Jabatan** | Daftar jabatan pengurus (Ketua Umum, Sekretaris, Bendahara, Kepala Divisi, Section Leader, ...), termasuk penanda jabatan inti. |
+| **Kepengurusan** | Menugaskan anggota ke jabatan pada periode (bisa memimpin divisi atau section) dan mengakhiri penugasan. Data ini dipakai untuk penanda tangan laporan dan hak menyetujui. |
+
+### Anggota
+
+| Menu | Untuk apa |
+|---|---|
+| **Data Anggota** | Buku induk anggota: NIA, NIM, fakultas, kontak, foto, section, jenis (anggota / pengurus), status (aktif / alumni / keluar), dan akun login. Tombol riwayat section ada di sini. |
+| **Alumni** | Profil alumni (pekerjaan, kontak) untuk anggota berstatus Alumni. |
+| **Rekrutmen** | Membuka pendaftaran anggota baru (Draft → Open → Closed), kuota, formulir tambahan, lalu menyeleksi pelamar. Pelamar yang diterima otomatis menjadi data anggota (wajib pilih section). |
+
+### Program Kerja
+
+Rencana kerja periode: program per **bidang** (divisi) dan **jangka** (pendek / panjang), status (Planned → Ongoing → Done / Cancelled), tugas per program (Belum → Proses → Selesai), dan **timeline** bulanan yang bisa dihubungkan ke kegiatan. Data ini menjadi bahan evaluasi program di LPJ kepengurusan.
+
+### Kegiatan
+
+| Menu | Untuk apa |
+|---|---|
+| **Daftar Kegiatan** | Semua kegiatan: latihan, rapat, event, lomba, piket. Atur jenis, **audiens** (semua anggota, pengurus, divisi, section, peserta terdaftar, tim pelaksana), waktu, lokasi + koordinat, dan publik / disorot di landing. Di sini juga peserta, kolaborator (mitra), laporan kegiatan (diajukan → disetujui), dan **pengajuan tidak ikut** dari anggota (setujui / tolak). |
+| **Tim Pelaksana** | Kepanitiaan per kegiatan: sie (seksi), anggota panitia dan perannya (Ketua Pelaksana, Bendahara, Koordinator Sie, Staf), open recruitment panitia, rundown acara, checklist persiapan (bisa dari template), dan daftar rombongan perjalanan beserta surat izin. |
+| **Presensi** | Mengatur kehadiran anggota. Lihat penjelasan lengkap di bawah tabel. |
+| **Galeri** | Album foto kegiatan (Draft → Published → Archived) dan foto sampul. Album publik tampil di landing page dan menjadi lampiran dokumentasi LPJ. |
+
+**Presensi** terdiri dari tiga tab:
+
+- **Jadwal Rutin**: jadwal mingguan (mis. latihan Selasa & Jumat 18.30–21.00). Isi hari, jam, toleransi terlambat, **mode presensi**, dan **titik lokasi + radius** lewat peta (klik peta, tombol *Lokasi saya*, atau *Lokasi kegiatan*). Begitu disimpan, sesi 7 hari ke depan langsung dibuat, lalu job menambah sesi berikutnya. Mengubah atau menonaktifkan jadwal ikut menyesuaikan sesi yang belum dipakai.
+- **Sesi**: satu pertemuan yang diabsen. Dibuat otomatis dari jadwal rutin, otomatis untuk kegiatan non-rutin yang punya koordinat (satu sesi dari jam mulai sampai selesai), atau manual.
+  - **Mode Tanpa QR**: anggota langsung check-in dari Area Anggota › Presensi.
+  - **Mode Wajib Scan QR** (cocok untuk rapat): anggota harus memindai QR yang ditampilkan pengurus (**Tampilkan QR**, bisa layar penuh / proyektor).
+  - Sesi **dibuka otomatis 30 menit sebelum mulai** dan **ditutup otomatis setelah selesai**; yang tidak hadir dicatat Alpa (atau Izin bila izinnya disetujui), dan yang hadir langsung mendapat **poin Hadir Kegiatan**. Tombol Buka / Tutup manual tetap ada.
+  - **Pantau langsung**: daftar siapa yang sudah / belum hadir, jam masuk dan keluar, jarak dari titik (merah bila di luar radius), dan foto selfie; diperbarui tiap 15 detik.
+  - **Rekap & presensi manual**: mencatat Izin / Sakit / Alpa / Hadir oleh pengurus atau mengoreksi Alpa otomatis (poin ikut disesuaikan).
+  - **Cetak Rekap Kehadiran**: laporan per anggota untuk rentang tanggal, kegiatan, dan section tertentu.
+- **Notulen**: notulen rapat untuk sesi yang sudah dibuka / ditutup (agenda, pembahasan, keputusan, tindak lanjut, lampiran), Draft → Final.
+
+### LPJ
+
+Menyusun Laporan Pertanggungjawaban **kegiatan** atau **kepengurusan** secara otomatis dari data aplikasi, lalu mencetak / memfinalkan PDF-nya. Lihat [Laporan](#lpj-menu-lpj).
+
+### Keuangan
+
+| Menu | Untuk apa |
+|---|---|
+| **Transaksi** | Buku kas: pemasukan dan pengeluaran per akun (kas, bank, e-wallet) dan kategori, lampiran bukti, Draft → Posted → Void. Tab **Saldo Periode** membuka dan menutup saldo per akun per periode (setelah ditutup, transaksi periode itu terkunci). Transaksi dari modul lain (iuran, peminjaman, penjualan, sponsorship, pengadaan) muncul di sini otomatis. |
+| **Anggaran** | RAB per periode: item anggaran (qty × harga satuan), diajukan lalu disetujui, dan realisasi tiap item dari transaksi. |
+| **Pengajuan Dana** | Anggota / panitia mengajukan dana untuk kegiatan (mengacu ke item RAB), disetujui sesuai alur, dicairkan (otomatis membuat transaksi pengeluaran), lalu dipertanggungjawabkan dengan realisasi dan bukti; sisa dana dikembalikan atau kekurangan dibayarkan. |
+| **Iuran** | Mengatur jenis iuran (bulanan / semester / tahunan / sekali), membuat tagihan untuk anggota aktif, mencatat pembayaran (otomatis jadi pemasukan), membebaskan tagihan. Anggota melihat tagihannya di Area Anggota. |
+| **Hutang** | Mencatat hutang organisasi (termasuk pinjaman kas), pembayaran cicilan, lampiran, dan penghapusan. |
+
+### Inventaris
+
+| Menu | Untuk apa |
+|---|---|
+| **Aset** | Daftar alat musik dan barang: kategori, jumlah, kondisi, lokasi, harga, tarif sewa & denda per hari. Aset **per unit** (mis. 12 snare) punya kode unit dan **label QR** yang bisa dicetak. Juga foto, mutasi masuk / keluar, inspeksi kondisi, dan jadwal perawatan (biaya perawatan bisa langsung jadi pengeluaran). |
+| **Peminjaman** | Peminjaman alat oleh anggota, organisasi / instansi, atau perorangan luar: pengajuan → disetujui → **serahkan barang** (scan QR unit) → pengembalian (scan per unit atau per jumlah, catat kondisi / hilang). Menghitung sewa dan denda keterlambatan, mencatat pembayaran, membebaskan denda, serta **cetak invoice** dan **kuitansi** (per pembayaran atau gabungan). |
+
+### Pengadaan
+
+Pembelian barang organisasi: usulan dengan item dan perkiraan harga (peringatan bila melebihi sisa anggaran), penawaran vendor, persetujuan sesuai alur, pembelian (dibayar langsung atau lewat pengajuan dana), lalu penerimaan barang. Barang aset yang diterima bisa langsung tercatat sebagai aset inventaris.
+
+### Merchandise
+
+Danus / penjualan merchandise: produk dan varian (ukuran, warna), stok (masuk, penyesuaian, rusak), pre-order dengan batas waktu, pesanan dari anggota dan dari toko publik `/toko`, pembayaran (otomatis jadi pemasukan), status siap diambil → selesai, dan pembatalan (stok dikembalikan).
+
+### Kemitraan
+
+| Menu | Untuk apa |
+|---|---|
+| **Mitra** | Daftar pihak luar (sponsor, vendor, kampus, komunitas, media) dan kontak personnya; mitra bisa diblacklist. |
+| **Sponsorship** | Paket sponsor beserta benefitnya, kerja sama sponsorship (dana atau barang), checklist pemenuhan benefit dengan bukti, penerimaan dana (jadi pemasukan), dan MoU (nomor otomatis, dokumen). |
+
+### Persuratan
+
+| Menu | Untuk apa |
+|---|---|
+| **Surat** | Template surat, surat keluar (draft → persetujuan → nomor otomatis → dikirim → arsip) dan surat masuk, disposisi ke anggota, serta cetakan surat berkop, lembar disposisi, dan buku agenda. |
+| **Arsip Dokumen** | Menyimpan dokumen penting (SK, AD/ART, proposal, ...) per kategori dengan hak lihat, dan mencetak daftar arsip. |
+
+### Prestasi
+
+| Menu | Untuk apa |
+|---|---|
+| **Lomba & Prestasi** | Lomba yang diikuti (pendaftaran, peserta, materi latihan), prestasi yang diraih (otomatis memberi poin), **aturan poin** untuk setiap sumber (hadir kegiatan, panitia, pemateri, pengurus, prestasi), poin manual, dan **leaderboard**. |
+| **Sertifikat** | Menerbitkan sertifikat peserta / panitia / pemateri / pengurus / prestasi dengan nomor dan kode verifikasi, mencetaknya (QR verifikasi), dan mencabut / memulihkan. |
+
+### Formulir
+
+| Menu | Untuk apa |
+|---|---|
+| **Formulir** | Membuat formulir dan survei (evaluasi kegiatan, pendaftaran rekrutmen, survei umum) dengan berbagai jenis pertanyaan, membuka / menutup, dan melihat ringkasan jawaban (jumlah per pilihan, rata-rata skala). |
+| **Aspirasi** | Menampung aspirasi / saran anggota (boleh anonim) dan menanggapinya (Baru → Diproses → Selesai / Ditolak). |
+
+### E-Voting
+
+Pemilihan ketua umum atau lainnya secara rahasia: kandidat (pendaftaran dan verifikasi), daftar pemilih, membuka pemungutan, menutup, lalu **finalisasi** hasil (suara dienkripsi dan baru dibuka saat finalisasi). Pemilih mendapat tanda terima untuk mengecek bahwa suaranya tercatat. Semua tindakan tercatat di log audit.
+
+### Informasi
+
+| Menu | Untuk apa |
+|---|---|
+| **Berita** | Berita dan pengumuman (publik atau khusus anggota), sampul, Draft → Published → Archived. Berita baru mengirim notifikasi ke anggota. |
+| **Banner** | Gambar slide di hero landing page, dengan tombol, tautan, urutan, dan jadwal tayang. |
+
+### Area Anggota (`/AreaAnggota/...`, untuk semua anggota yang login)
+
+| Menu | Untuk apa |
+|---|---|
+| **Profil Saya** | Mengubah kontak dan foto, melihat riwayat section, jabatan dan divisi, mengganti password. |
+| **Presensi** | Absensi gaya aplikasi lapangan: kartu sesi yang sedang berlangsung / berikutnya, tab **Hari Ini / Mendatang / Riwayat**, dan tombol **Check-In / Check-Out**. Check-in membuka kamera langsung untuk selfie (bisa ganti kamera / foto ulang, atau pilih dari galeri bila kamera tidak tersedia), mengambil lokasi otomatis beserta jarak ke titik, lalu simpan. Sesi mode QR meminta scan QR dulu. Check-in bisa sejak 30 menit sebelum mulai. |
+| **Kegiatan Saya** | Kegiatan yang otomatis diikuti (mis. latihan rutin) dan **ajukan tidak ikut** satu pertemuan atau seluruh kegiatan; daftar / batal kegiatan dengan pendaftaran; melamar tim pelaksana dan melihat tugas panitia. |
+| **Iuran Saya** | Melihat tagihan iuran sendiri dan statusnya. |
+| **Peminjaman Alat** | Mengajukan dan membatalkan peminjaman alat sebagai anggota. |
+| **Toko Merchandise** | Katalog, memesan sebagai anggota, dan membatalkan pesanan sendiri. |
+| **Formulir & Aspirasi** | Mengisi formulir yang sedang dibuka dan mengirim aspirasi. |
+| **E-Voting** | Memilih, menerima tanda terima satu kali, mengecek tanda terima, dan melihat hasil. |
+| **Prestasi & Poin** | Prestasi, poin dan peringkat, lomba yang diikuti, serta mengunduh sertifikat sendiri. |
+| **Disposisi** | Disposisi surat yang ditujukan ke saya dan menandainya selesai. |
+| **Notifikasi** | Semua notifikasi (persetujuan, tagihan, pengingat presensi, ...); lonceng di header menampilkan jumlah yang belum dibaca. |
 
 User yang belum terhubung ke data anggota melihat pesan "bukan anggota" di halaman ini.
 
 ### Layanan lintas modul
 
-- **Notifikasi in-app** otomatis untuk: pengajuan dan keputusan persetujuan (surat, pengajuan dana, pengadaan), disposisi, tagihan iuran, pemilihan dibuka, hasil lamaran panitia, pesanan siap diambil, keputusan dan keterlambatan peminjaman, sertifikat terbit, tanggapan aspirasi, penugasan pengurus, dan berita baru.
+- **Notifikasi in-app** otomatis untuk: pengajuan dan keputusan persetujuan (surat, pengajuan dana, pengadaan), disposisi, tagihan iuran, pemilihan dibuka, hasil lamaran panitia, pesanan siap diambil, keputusan dan keterlambatan peminjaman, sertifikat terbit, tanggapan aspirasi, penugasan pengurus, berita baru, keputusan izin kegiatan, serta **pengingat presensi** (check-in dibuka dan jelang check-out).
 - **Log aktivitas**: setiap simpan, ubah, dan hapus yang berhasil tercatat (modul, aksi, data, IP, user agent). Lihat di Pengaturan Sistem.
 - **Penomoran dokumen** otomatis sesuai format di Pengaturan Sistem, dengan placeholder `{seq} {type} {org} {month_roman} {month} {year} {yy}`.
 
 ## Laporan (DevExpress Reports)
 
-Laporan cetak memakai DevExpress XtraReport + Web Document Viewer, bukan cetak dari browser. Viewer terbuka di modal layar penuh; dari viewer bisa cetak, atau export ke PDF, Word (DOCX), dan Excel.
+Laporan cetak memakai DevExpress XtraReport + Web Document Viewer, bukan cetak dari browser. Viewer terbuka di modal layar penuh; dari viewer bisa cetak, atau export ke PDF, Word (DOCX), dan Excel. Untuk PDF langsung tanpa viewer, tambahkan `pdf=1` pada URL cetakan.
 
 ### LPJ (menu LPJ)
 
@@ -385,7 +581,20 @@ Semua cetakan Persuratan memakai kop surat: logo, nama organisasi, universitas, 
 | Pratinjau template | Tab Template › **Pratinjau di kop surat** | Isi template di atas kop, dengan tanda air **CONTOH** |
 | Daftar arsip dokumen | Arsip Dokumen › **Cetak Daftar Arsip** | Semua dokumen per kategori: judul, keterangan, berkas, ukuran, akses, tanggal unggah |
 
-Untuk mendapatkan PDF langsung tanpa viewer, tambahkan `pdf=1` pada URL cetakan. Contoh: `/Persuratan/Surat/Agenda?arah=1&pdf=1`.
+### Sertifikat
+
+A4 landscape dengan bingkai emas, logo, nomor, nama penerima dan NIA, kalimat peran sesuai jenis sertifikat, tempat dan tanggal, tanda tangan (Ketua Pelaksana + Ketua Umum untuk kegiatan; Ketua Umum + Pembina untuk lainnya), dan QR verifikasi. Sertifikat yang dicabut diberi tanda air **DICABUT**. Admin mencetak dari **Sertifikat › Cetak**, anggota mengunduh sertifikatnya sendiri dari Area Anggota › Prestasi & Poin.
+
+### Peminjaman alat (invoice dan kuitansi)
+
+| Cetakan | Tombol | Isi |
+|---|---|---|
+| Invoice | Baris peminjaman › **Cetak invoice** (kecuali Ditolak / Dibatalkan) | Data peminjam, waktu pinjam dan kembali, skema biaya, jaminan; tabel sewa per barang (jumlah × hari × tarif, kode unit) dan denda; ringkasan total, pembebasan denda, setiap pembayaran, dan sisa tagihan; rekening transfer (akun Bank / E-Wallet aktif) selama masih ada sisa; tanda tangan Bendahara; tanda air **LUNAS / DITOLAK / DIBATALKAN**. |
+| Kuitansi | Baris peminjaman › **Cetak kuitansi** (gabungan semua pembayaran) atau tombol kuitansi per pembayaran di modal Detail | Nomor transaksi, "telah terima dari", jumlah uang dan **terbilang**, keperluan, kotak nominal, sisa tagihan, tanda tangan penyetor dan Bendahara. |
+
+### Rekap kehadiran
+
+**Kegiatan › Presensi › Cetak Rekap Kehadiran**: pilih rentang tanggal, kegiatan, dan section. Isinya ringkasan (jumlah sesi ditutup, jumlah anggota, rata-rata hadir) dan tabel per anggota: jumlah sesi, hadir (berapa yang terlambat), izin / sakit, alpa, dan persentase hadir. Baris dengan kehadiran di bawah 75% diberi latar. Ditandatangani Sekretaris yang sedang menjabat.
 
 ### Label QR inventaris (Aset › Unit & label QR)
 
@@ -400,12 +609,15 @@ Web menjalankan job lewat `ScheduledJobService` (hosted service, dicek tiap meni
 | Job | Interval | Isi |
 |---|---|---|
 | `SEND_OUTBOX` | 1 menit | Kirim `t_message_outbox` yang jatuh tempo (email SMTP, WhatsApp via gateway). Gagal 5 kali = Gagal, bisa diulang dari Pengaturan. |
+| `SYNC_ATTENDANCE_SESSIONS` | 1 menit | Presensi: kirim pengingat (check-in dibuka / jelang check-out), buka sesi 30 menit sebelum mulai, tutup sesi yang sudah selesai (Alpa + poin hadir). Dicatat di log hanya bila ada perubahan. |
 | `CLOSE_EXPIRED_ELECTION` | 5 menit | `Election.CloseExpired()` |
 | `MARK_BORROW_OVERDUE` | 30 menit | `BorrowRequest.MarkOverdue` (anggota peminjam mendapat notifikasi) |
-| `GENERATE_ATTENDANCE_SESSIONS` | 6 jam | Sesi presensi dari jadwal rutin, hari ini s.d. `Jobs:SessionDaysAhead` hari ke depan |
+| `GENERATE_ATTENDANCE_SESSIONS` | 6 jam | Sesi presensi dari jadwal rutin, hari ini s.d. `Jobs:SessionDaysAhead` hari ke depan (tanggal yang jamnya sudah lewat dilewati) |
 | `PURGE_OLD_DATA` | harian | Notifikasi dibaca > 90 hari, log aktivitas > 365 hari, token > 30 hari, log job > 90 hari |
 
-Konfigurasi ada di [Konfigurasi](#konfigurasi). Method library yang dipanggil job (`Election.CloseExpired`, `BorrowRequest.MarkOverdue`, `ActivitySchedule.GenerateSessions`, `Notification.Purge`, `ActivityLog.Purge`, `UserToken.Purge`, `ScheduledJobLog.Purge`) juga punya versi `...Async` bila ingin dijalankan dari scheduler lain.
+Konfigurasi ada di [Konfigurasi](#konfigurasi). Method library yang dipanggil job juga punya versi `...Async` bila ingin dijalankan dari scheduler lain.
+
+> **Perhatian:** saat job presensi pertama kali jalan, semua sesi lama yang masih Terjadwal tetapi jamnya sudah lewat ikut ditutup dan anggotanya dicatat Alpa. Batalkan dulu sesi-sesi itu bila tidak diinginkan, atau jalankan web dengan `Jobs:Enabled = false` saat menguji.
 
 ## Autentikasi dan hak akses
 
@@ -437,17 +649,24 @@ Kosakata aksi per controller:
 - **Dashboard:** Velzon dengan palet GWA lewat salinan `assets/css/*.gwa.min.css` (primary bronze `#9a6b00`, secondary merah api, success hijau pita, warning emas, latar gading). File asli Velzon tidak diubah; kalau Velzon diperbarui, buat ulang salinannya dengan pemetaan warna yang sama.
 - **Sidebar dan header** mengikuti model SurabayaTaxWeb (`wwwroot/css/gwa-sidebar.css`): sidebar gradasi merah api ke oranye, menu aktif berupa pill dengan garis emas, panel melayang saat sidebar diciutkan, dan dropdown user di header.
 - **Widget DevExtreme** memakai tema `dx.material.blue.light.compact` + `css/gwa-devextreme.css` (header grid bronze, baris zebra gading).
+- **Presensi anggota** memakai `wwwroot/css/presensi-saya.css` (pola absensi aplikasi lapangan). Peta pemilih lokasi memakai Leaflet (`assets/libs/leaflet`) dengan tile OpenStreetMap.
 - **Logo** diambil dari profil organisasi lewat `/Brand/Logo`; kalau belum ada, dipakai `assets/images/gwa-logo.png`.
 
 ## Panduan pengembangan
 
 ### Build
 
-```
-dotnet build GitaWidyaAgni.sln
-```
+- **Visual Studio:** **Build › Build Solution** (Ctrl+Shift+B).
+- **Terminal:**
+  ```
+  dotnet build GitaWidyaAgni.sln
+  ```
 
 Belum ada project test. Sekitar 18 warning build berasal dari helper yang disalin dari ClubShared.
+
+### Menguji dengan beberapa akun
+
+Login dengan akun berbeda di jendela browser yang berbeda (mis. jendela biasa untuk `admin`, jendela InPrivate / Incognito untuk `anggota01`). Kamera dan GPS presensi hanya jalan lewat `https://`; di HP dalam jaringan yang sama, pakai alamat HTTPS yang bisa diakses HP atau server uji.
 
 ### Konfigurasi library saat startup
 
@@ -470,9 +689,10 @@ Ikuti pola yang sudah ada (contoh paling sederhana: `Informasi/Banner`; detail l
 
 ### Menambah laporan
 
-1. Buat kelas laporan lewat kode di `GitaWidyaAgniWeb/Reports/` (tanpa `.repx`). Untuk dokumen, turunkan dari `DocumentReport`, yang sudah menyediakan blok kop surat, judul, paragraf, tabel, isi HTML, tanda tangan, dan tanda air. Identitas organisasi diambil dari `ReportBrand.Load(webRoot)`.
-2. Aksi controller cukup memanggil `return Laporan(() => report);`. Hasilnya halaman viewer bersama; dengan `?pdf=1`, hasilnya PDF langsung.
-3. Di JS, buka viewernya dengan `AppUI.openReport(judul, url)`. Tombol tambahan di toolbar bisa ditambahkan lewat `ToolbarModel.Extra`.
+1. Buat kelas laporan lewat kode di `GitaWidyaAgniWeb/Reports/` (tanpa `.repx`). Untuk dokumen, turunkan dari `DocumentReport`, yang sudah menyediakan blok kop surat, judul, paragraf, tabel, isi HTML, tanda tangan, tanda air, dan `Terbilang`. Identitas organisasi diambil dari `ReportBrand.Load(webRoot)`.
+2. Susun datanya di `Models/<Area>/<Nama>Cetak.cs`.
+3. Aksi controller cukup memanggil `return Laporan(() => report);`. Hasilnya halaman viewer bersama; dengan `?pdf=1`, hasilnya PDF langsung.
+4. Di JS, buka viewernya dengan `AppUI.openReport(judul, url)`. Tombol tambahan di toolbar bisa ditambahkan lewat `ToolbarModel.Extra`.
 
 Satuan bawaan laporan adalah 1/100 inci (A4 = 827 × 1169).
 
@@ -484,23 +704,31 @@ Satuan bawaan laporan adalah 1/100 inci (A4 = 827 × 1169).
 - `<summary>` setiap enum mencantumkan semua `tabel.kolom` yang memakainya, dan setiap nilainya diberi `[Description]` berbahasa Indonesia.
 - `EncryptString<T>()` / `DecryptString<T>()` memakai kunci yang bergantung pada nama kelas dan tanggal hari ini, jadi encKey hanya berlaku pada hari yang sama. Nama kelas maksimal 24 karakter. Kirim encKey sebagai query string (`?key=`), bukan segmen path, karena encKey bisa berisi `/`.
 - Jangan menulis ulang file repo lewat PowerShell `Get-Content` / `Set-Content`, karena karakter UTF-8 bisa rusak. Pakai editor biasa.
+- Commit hanya perubahan yang sudah dibuild. Jangan commit `appsettings.Development.json` atau secret.
 
 ## Deploy ke server
 
 1. Buat database dari `database/gitawidyaagni_create.sql`. Untuk server yang sudah ada, jalankan migrasi yang belum diterapkan.
-2. Publish: `dotnet publish GitaWidyaAgniWeb -c Release -o ./publish`. Build di mesin yang punya DevExpress 23.2 berlisensi.
+2. Publish: `dotnet publish GitaWidyaAgniWeb -c Release -o ./publish` (atau Visual Studio: klik kanan GitaWidyaAgniWeb › **Publish**). Build di mesin yang punya DevExpress 23.2 berlisensi.
 3. Isi environment variable server: `ConnectionStrings__Default`, `EVoting__Key`, `App__PublicUrl`, `Smtp__*`, `WhatsApp__*`, dan `Jobs__Enabled` (`false` di instance tambahan).
 4. Jalankan di belakang HTTPS. Cookie login `Secure`, serta kamera dan lokasi untuk presensi, hanya bekerja di HTTPS.
 5. Isi menu dan hak akses dengan `dotnet run --project GWASeeder -- --sync-akses` (connection string dari env `GWA_DB`), lalu buat admin pertama lewat `Bootstrap:*`.
+6. Isi template pesan WhatsApp (`ATTENDANCE_REMINDER`, `ATTENDANCE_CHECKOUT`, dan lainnya) di Pengaturan Sistem bila ingin pengingat lewat WhatsApp.
 
 ## Troubleshooting
 
 | Gejala | Penyebab / solusi |
 |---|---|
 | Restore gagal mencari `DevExtreme.AspNet.*` / `DevExpress.AspNetCore.Reporting` | DevExpress 23.2 belum terpasang, atau terpasang di folder lain. Sesuaikan path di `NuGet.config`. |
-| Build gagal `MSB3027 ... locked by "GitaWidyaAgniWeb"` | Web masih berjalan. Hentikan prosesnya dulu. |
+| Build gagal `MSB3027 ... locked by "GitaWidyaAgniWeb"` | Web masih berjalan. Hentikan prosesnya dulu (Stop di Visual Studio, atau tutup terminal `dotnet run`). |
+| Browser menolak `https://localhost` | Jalankan `dotnet dev-certs https --trust` lalu buka ulang browser. |
 | Web gagal start: connection string kosong | `appsettings.Development.json` belum dibuat, atau env `ConnectionStrings__Default` belum diisi. |
+| `Unknown column ... in 'field list'` | Database belum menjalankan migrasi terbaru. Jalankan berkas di `database/migrations/` yang belum diterapkan. |
+| `mysql ... < file.sql` gagal di PowerShell | PowerShell tidak mendukung `<`. Pakai Command Prompt / Git Bash, atau `source file.sql;` di dalam `mysql`. |
 | Menu baru tidak muncul / halaman ditolak | Controller belum ada di katalog, atau `--sync-akses` belum dijalankan. Login ulang, atau tunggu 5 menit sampai cache menu habis. |
+| Check-in ditolak "Lokasi Anda ... m dari titik presensi" | Anggota di luar radius sesi. Mendekat ke lokasi, atau perbesar radius di sesi / jadwal. |
+| Check-in ditolak "Sesi ini wajib scan QR" | Sesi bermode Wajib Scan QR. Scan QR dari pengurus, atau ubah mode sesi menjadi Tanpa QR. |
+| Kamera / lokasi tidak muncul di presensi | Halaman dibuka lewat `http://`, atau izin kamera / lokasi browser ditolak. Buka lewat HTTPS dan izinkan. |
 | E-voting ditolak "Kunci enkripsi e-voting belum dikonfigurasi" | `EVoting:Key` kosong. Pakai kunci yang sama dengan saat pemilihan dibuka. |
 | Label QR membuka `localhost` di HP | `App:PublicUrl` belum diisi saat label dicetak. Isi lalu cetak ulang label. |
 | PDF laporan bertuliskan "trial version of DevExpress" | Build memakai DevExpress trial. Build ulang dengan lisensi. |
@@ -514,3 +742,4 @@ Satuan bawaan laporan adalah 1/100 inci (A4 = 827 × 1169).
 - `GWALib/EF/ModelContext.cs` masih memuat baris `OnConfiguring` lama yang dikomentari, dengan password root database. Baris itu sudah ada di riwayat git. **Ganti password root MySQL tersebut** dan hapus barisnya.
 - Akun dan password contoh dari GWASeeder hanya untuk pengembangan. Jangan jalankan seeder data contoh di database produksi.
 - Kunci `EVoting:Key` membuka isi suara pemilihan yang belum difinalisasi. Simpan hanya di secret server.
+- Foto selfie dan lokasi presensi adalah data pribadi anggota; hanya role yang punya akses menu Presensi yang bisa melihatnya.

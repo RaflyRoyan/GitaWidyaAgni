@@ -1,7 +1,7 @@
 -- =====================================================================================
 -- GitaWidyaAgni: skema database lengkap (MySQL 8, utf8mb4_0900_ai_ci)
 -- Dihasilkan dari database pengembangan pada 2026-11-18 (mysqldump --no-data), 135 tabel,
--- sudah termasuk migrasi 2026-11-17 (t_lpj, t_program.division_id / term) dan 2026-11-18 (section, qr_token unit aset, pengajuan tidak ikut kegiatan) dan 2026-11-19 (attendance_mode jadwal / sesi presensi).
+-- sudah termasuk migrasi 2026-11-17 (t_lpj, t_program.division_id / term) dan 2026-11-18 (section, qr_token unit aset, pengajuan tidak ikut kegiatan) dan 2026-11-19 (attendance_mode jadwal / sesi presensi, pengingat presensi).
 --
 -- Pakai untuk database BARU. Database lama cukup menjalankan berkas di database/migrations/
 -- yang tanggalnya lebih baru dari skemanya.
@@ -1357,6 +1357,8 @@ CREATE TABLE `t_attendance_session` (
   `radius_meter` int DEFAULT NULL COMMENT 'Radius geofence yang diizinkan',
   `status` int NOT NULL DEFAULT '1' COMMENT '1=SCHEDULED, 2=OPEN, 3=CLOSED, 4=CANCELLED',
   `cancel_reason` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT 'Diisi jika status 4, mis. libur UTS',
+  `reminder_sent_at` datetime DEFAULT NULL COMMENT 'Pengingat check-in terkirim (in-app + WhatsApp bila ada template ATTENDANCE_REMINDER)',
+  `checkout_reminder_sent_at` datetime DEFAULT NULL COMMENT 'Pengingat check-out terkirim (template ATTENDANCE_CHECKOUT)',
   `ins_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `ins_by` int DEFAULT NULL,
   `upd_date` datetime DEFAULT NULL,

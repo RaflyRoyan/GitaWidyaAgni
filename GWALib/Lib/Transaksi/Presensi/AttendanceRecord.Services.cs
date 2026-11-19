@@ -148,15 +148,38 @@ namespace GWALib.Lib.Transaksi.Presensi
                     && (status == null || x.Status == (int)status))
                 .OrderBy(x => x.SessionId).ThenBy(x => x.Member.Fullname);
         }
-        // Sesi Open dari token QR dan masih dalam rentang OpenAt - CloseAt.
-        private static EF.TAttendanceSession GetOpenSession(EF.ModelContext context, string qrToken)
+        // Sesi dari token QR, atau dari id untuk sesi mode Tanpa QR. Check-in / check-out diterima sejak
+        // OpenAt - EARLY_CHECKIN_MINUTE s.d. CloseAt; sesi Tanpa QR yang masih Terjadwal langsung dibuka.
+        private static EF.TAttendanceSession GetOpenSession(EF.ModelContext context, CheckRow input, int userId)
         {
-            var token = qrToken?.Trim().ToLowerInvariant() ?? string.Empty;
-            var session = token.Length == 0 ? null : context.TAttendanceSessions.SingleOrDefault(x => x.QrToken == token);
+            var token = input.QrToken?.Trim().ToLowerInvariant() ?? string.Empty;
+            EF.TAttendanceSession? session = null;
+            if (token.Length > 0)
+            {
+                session = context.TAttendanceSessions.SingleOrDefault(x => x.QrToken == token);
+            }
+            else if (input.SessionId > 0)
+            {
+                session = context.TAttendanceSessions.SingleOrDefault(x => x.Id == input.SessionId);
+                if (session != null && session.AttendanceMode == (int)AttendanceMode.Qr)
+                {
+                    throw new ArgumentException(ExceptionMessage.ATTENDANCE_SESSION_NEED_QR);
+                }
+            }
             var now = DateTime.Now;
-            if (session == null || session.Status != (int)AttendanceSessionStatus.Open || now < session.OpenAt || now > session.CloseAt)
+            var status = (AttendanceSessionStatus?)session?.Status;
+            if (session == null || (status != AttendanceSessionStatus.Open && status != AttendanceSessionStatus.Scheduled) || now > session.CloseAt)
             {
                 throw new ArgumentException(ExceptionMessage.ATTENDANCE_SESSION_NOT_OPEN);
+            }
+            var start = AttendanceSession.CheckInStart(session);
+            if (now < start)
+            {
+                throw new ArgumentException(string.Format(ExceptionMessage.ATTENDANCE_SESSION_NOT_STARTED, start.ToString("HH:mm")));
+            }
+            if (status == AttendanceSessionStatus.Scheduled)
+            {
+                AttendanceSession.OpenRow(context, session, userId);
             }
             return session;
         }
@@ -173,7 +196,7 @@ namespace GWALib.Lib.Transaksi.Presensi
         }
         private static EF.TAttendanceRecord AddCheckIn(EF.ModelContext context, CheckRow input, int userId)
         {
-            var session = GetOpenSession(context, input.QrToken);
+            var session = GetOpenSession(context, input, userId);
             var member = GetMemberOfUser(context, userId);
             var activity = Activity.GetActivity(context, session.ActivityId);
             if (activity.AudienceType != (int)AudienceType.SemuaAnggota && !AttendanceSession.GetExpectedMemberIds(context, activity, session.OpenAt, false).Contains(member.Id))
@@ -214,7 +237,7 @@ namespace GWALib.Lib.Transaksi.Presensi
         }
         private static EF.TAttendanceRecord AddCheckOut(EF.ModelContext context, CheckRow input, int userId)
         {
-            var session = GetOpenSession(context, input.QrToken);
+            var session = GetOpenSession(context, input, userId);
             var member = GetMemberOfUser(context, userId);
             var row = context.TAttendanceRecords.SingleOrDefault(x => x.SessionId == session.Id && x.MemberId == member.Id);
             if (row == null || row.CheckInAt == null)
@@ -280,6 +303,11 @@ namespace GWALib.Lib.Transaksi.Presensi
             }
             row.Status = (int)status;
             row.Notes = TransaksiHelper.Truncate(notes, NOTES_LENGTH) ?? row.Notes;
+            // Koreksi setelah sesi ditutup ikut memperbarui poin Hadir Kegiatan.
+            if (session.Status == (int)AttendanceSessionStatus.Closed)
+            {
+                AttendanceSession.ApplyPoint(context, row, Activity.GetActivity(context, session.ActivityId), session.OpenAt, userId);
+            }
             return row;
         }
         #endregion

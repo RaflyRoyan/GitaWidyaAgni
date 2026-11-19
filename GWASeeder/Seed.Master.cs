@@ -339,7 +339,9 @@ namespace GWASeeder
                 ("DUES_BILL", NotificationChannel.Email, "Tagihan iuran {period}", "Halo {name}, tagihan iuran {period} sebesar Rp{amount} jatuh tempo {due}."),
                 ("FUNDING_APPROVAL", NotificationChannel.InApp, "Pengajuan dana menunggu persetujuan", "Pengajuan dana {number} ({purpose}) menunggu persetujuan Anda."),
                 ("LETTER_APPROVAL", NotificationChannel.InApp, "Surat menunggu persetujuan", "Surat {subject} menunggu persetujuan Anda."),
-                ("BORROW_DUE", NotificationChannel.WhatsApp, null, "Halo {name}, peminjaman {number} jatuh tempo {due}. Mohon segera dikembalikan.")
+                ("BORROW_DUE", NotificationChannel.WhatsApp, null, "Halo {name}, peminjaman {number} jatuh tempo {due}. Mohon segera dikembalikan."),
+                ("ATTENDANCE_REMINDER", NotificationChannel.WhatsApp, null, "Halo {name}, presensi {session} sudah dibuka. Mulai pukul {time} di {place}. Check-in dari Area Anggota > Presensi. - MB GWA"),
+                ("ATTENDANCE_CHECKOUT", NotificationChannel.WhatsApp, null, "Halo {name}, {session} selesai pukul {time}. Jangan lupa check-out di Area Anggota > Presensi. - MB GWA")
             };
             foreach (var t in templates)
             {

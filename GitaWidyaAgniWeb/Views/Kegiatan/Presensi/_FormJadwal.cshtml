@@ -22,6 +22,7 @@
             items.AddSimpleFor(m => m.ValidFrom).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd"));
             items.AddSimpleFor(m => m.ValidUntil).Editor(e => e.DateBox().DisplayFormat("dd MMM yyyy").DateSerializationFormat("yyyy-MM-dd").ShowClearButton(true));
             items.AddSimpleFor(m => m.LateToleranceMinute).Editor(e => e.NumberBox().Min(0).Max(240).ShowSpinButtons(true).Format("#0"));
+            items.AddSimpleFor(m => m.AttendanceMode).Editor(e => e.SelectBox().DataSource(Model.ModeOpsi).ValueExpr("Value").DisplayExpr("Text"));
             items.AddSimpleFor(m => m.Location).Editor(e => e.TextBox().MaxLength(255));
             items.AddSimpleFor(m => m.Latitude).Editor(e => e.NumberBox().Format("#0.0000000").Step(0));
             items.AddSimpleFor(m => m.Longitude).Editor(e => e.NumberBox().Format("#0.0000000").Step(0));
@@ -32,6 +33,8 @@
             }
         })
     )
+    <partial name="~/Views/Shared/_PetaLokasi.cshtml" model='("frmJadwal", Model.KoordinatKegiatan)' />
+    <p class="gwa-mform-note">Sesi presensi 7 hari ke depan langsung dibuat saat jadwal disimpan; sesi mendatang yang belum dipakai ikut disesuaikan saat jadwal diubah. Titik lokasi + radius wajib.</p>
     <div class="gwa-mform-footer">
         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
         <button type="button" class="btn btn-success" onclick="Presensi.save('Jadwal', @(isEdit ? "true" : "false"))"><i class="ri-save-3-line align-bottom me-1"></i> @(isEdit ? "Simpan Perubahan" : "Simpan")</button>

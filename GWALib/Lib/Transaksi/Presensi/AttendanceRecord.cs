@@ -13,14 +13,16 @@ namespace GWALib.Lib.Transaksi.Presensi
     /// <summary>
     /// Catatan presensi anggota per sesi (t_attendance_record), satu per (sesi, anggota). Bukti check-in / check-out
     /// (foto wajib + koordinat) ada di t_attendance_record_in / _out dan tidak ikut dimuat (GetCheckInPhoto / GetCheckOutPhoto).
-    /// CheckIn lewat token QR: status Hadir, atau Terlambat bila lewat OpenAt + toleransi. SetManual untuk Izin / Sakit / Alpa / Hadir oleh pengurus.
+    /// CheckIn lewat token QR, atau SessionId untuk sesi mode Tanpa QR (sejak 30 menit sebelum mulai): status Hadir, atau Terlambat bila lewat OpenAt + toleransi. SetManual untuk Izin / Sakit / Alpa / Hadir oleh pengurus.
     /// </summary>
     public partial class AttendanceRecord : BaseLib
     {
         // Data check-in / check-out dari aplikasi anggota.
+        // Sesi dipilih lewat QrToken (hasil scan) atau SessionId (daftar sesi hari ini; hanya untuk sesi mode Tanpa QR).
         public class CheckRow
         {
-            public string QrToken { get; set; } = null!;
+            public string? QrToken { get; set; }
+            public int? SessionId { get; set; }
             public decimal? Latitude { get; set; }
             public decimal? Longitude { get; set; }
             // Isi file foto asli; dikompres oleh ImageUtility.

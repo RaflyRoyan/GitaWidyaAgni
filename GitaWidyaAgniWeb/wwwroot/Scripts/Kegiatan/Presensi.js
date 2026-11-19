@@ -87,6 +87,71 @@ window.Presensi = (function () {
             .done(function () { refresh('Sesi'); });
     }
 
+    /* ===== Pantau langsung ===== */
+
+    let monitorTimer = null;
+    let monitorFilter = '';
+
+    function monitor(row) {
+        monitorFilter = '';
+        AppUI.openModal(MODAL_LARGE, 'Pantau Langsung — ' + row.Name, URL.pantau, { encKey: row.EncDecrKey }).done(function () {
+            bindMonitorFilter();
+            applyMonitorFilter();
+        });
+        clearInterval(monitorTimer);
+        monitorTimer = setInterval(refreshMonitor, 15000);
+        $('#' + MODAL_LARGE).one('hidden.bs.modal', function () {
+            clearInterval(monitorTimer);
+            monitorTimer = null;
+            refresh('Sesi');
+        });
+    }
+    function refreshMonitor() {
+        const key = $('#presensiPantau').data('key');
+        if (!key) return;
+        $.get(URL.pantauList, { encKey: key }).done(function (html) {
+            if (typeof html !== 'string') return;
+            $('#presensiPantauTarget').html(html);
+            $('#pantauWaktu').text($('#pantauRingkas').data('waktu') || '');
+            applyMonitorFilter();
+        });
+    }
+    function bindMonitorFilter() {
+        $('#presensiPantau [data-saring]').on('click', function () {
+            monitorFilter = $(this).data('saring') || '';
+            $('#presensiPantau [data-saring]').removeClass('active');
+            $(this).addClass('active');
+            applyMonitorFilter();
+        });
+    }
+    function applyMonitorFilter() {
+        $('#presensiPantauTarget tbody tr[data-kelompok]').each(function () {
+            $(this).toggle(!monitorFilter || $(this).data('kelompok') === monitorFilter);
+        });
+    }
+
+    /* ===== Cetak rekap kehadiran ===== */
+
+    function recapReport() {
+        const today = new Date();
+        const first = new Date(today.getFullYear(), today.getMonth(), 1);
+        const opsi = window.PresensiOpsi || { kegiatan: {}, section: {} };
+        const title = 'Rekap Kehadiran';
+        AppUI.promptInput({ title: title, text: 'Dari tanggal', input: 'date', value: AppUI.toIsoDate(first), required: true, label: 'Dari', confirmText: 'Lanjut' }).then(function (dari) {
+            if (dari === null) return;
+            AppUI.promptInput({ title: title, text: 'Sampai tanggal', input: 'date', value: AppUI.toIsoDate(today), required: true, label: 'Sampai', confirmText: 'Lanjut' }).then(function (sampai) {
+                if (sampai === null) return;
+                AppUI.promptInput({ title: title, text: 'Kegiatan', input: 'select', options: new Map([['', 'Semua kegiatan']].concat(Object.entries(opsi.kegiatan))), value: '', confirmText: 'Lanjut' }).then(function (kegiatan) {
+                    if (kegiatan === null) return;
+                    AppUI.promptInput({ title: title, text: 'Section', input: 'select', options: new Map([['', 'Semua section']].concat(Object.entries(opsi.section))), value: '', confirmText: 'Cetak' }).then(function (section) {
+                        if (section === null) return;
+                        AppUI.openReport(title, URL.cetakRekap + '?' + $.param({ dari: dari, sampai: sampai, kegiatan: kegiatan || '', section: section || '' }));
+                    });
+                });
+            });
+        });
+    }
+
     /* ===== Rekap ===== */
 
     function recap(row) {
@@ -182,7 +247,7 @@ window.Presensi = (function () {
     function sessionTemplate(container, options) {
         const d = options.data;
         $('<div class="gwa-cell-main">').text(d.Name).appendTo(container);
-        const sub = [d.DariJadwal ? 'dari jadwal rutin' : null, d.AdaNotulen ? 'ada notulen' : null].filter(Boolean).join(' · ');
+        const sub = [d.DariJadwal ? 'dari jadwal rutin' : null, d.Status === SESSION.SCHEDULED ? 'dibuka otomatis 30 menit sebelum mulai' : null, d.AdaNotulen ? 'ada notulen' : null].filter(Boolean).join(' · ');
         if (sub) $('<div class="gwa-cell-sub">').text(sub).appendTo(container);
     }
 
@@ -192,6 +257,9 @@ window.Presensi = (function () {
             btn(container, 'btn-outline-primary', 'ri-qr-code-line', 'Buka sesi', function () { open(row); });
         } else if (row.Status === SESSION.OPEN) {
             btn(container, 'btn-outline-primary', 'ri-qr-code-line', 'Tampilkan QR', function () { showQr(row); });
+        }
+        if (row.Status !== SESSION.CANCELLED) {
+            btn(container, 'btn-outline-info', 'ri-radar-line', 'Pantau langsung', function () { monitor(row); });
         }
         if (row.Status !== SESSION.SCHEDULED) {
             btn(container, 'btn-outline-success', 'ri-list-check-3', 'Rekap & presensi manual', function () { recap(row); });
@@ -216,14 +284,15 @@ window.Presensi = (function () {
         }
     }
 
-    const sessionStatusTemplate = AppUI.badgeTemplate({ Terjadwal: 'secondary', Dibuka: 'success', Ditutup: 'dark', Dibatalkan: 'danger' });
+    const modeTemplate = AppUI.badgeTemplate({ 'Tanpa QR': 'success', 'Wajib Scan QR': 'primary' });
+    const sessionStatusTemplate =AppUI.badgeTemplate({ Terjadwal: 'secondary', Dibuka: 'success', Ditutup: 'dark', Dibatalkan: 'danger' });
     const recordStatusTemplate = AppUI.badgeTemplate({ Hadir: 'success', Terlambat: 'warning', Izin: 'info', Sakit: 'primary', Alpa: 'danger' });
     const minuteStatusTemplate = AppUI.badgeTemplate({ Draft: 'secondary', Final: 'success' });
 
     return {
-        add: add, save: save, saveMinute: saveMinute, rotateQr: rotateQr, fullscreenQr: fullscreenQr, manual: manual, generate: generate,
+        add: add, save: save, saveMinute: saveMinute, refreshMonitor: refreshMonitor, recapReport: recapReport, rotateQr: rotateQr, fullscreenQr: fullscreenQr, manual: manual, generate: generate,
         sessionTemplate: sessionTemplate, sessionActionTemplate: sessionActionTemplate, scheduleActionTemplate: scheduleActionTemplate,
-        recordActionTemplate: recordActionTemplate, minuteActionTemplate: minuteActionTemplate,
+        recordActionTemplate: recordActionTemplate, minuteActionTemplate: minuteActionTemplate, modeTemplate: modeTemplate,
         sessionStatusTemplate: sessionStatusTemplate, recordStatusTemplate: recordStatusTemplate, minuteStatusTemplate: minuteStatusTemplate
     };
 })();

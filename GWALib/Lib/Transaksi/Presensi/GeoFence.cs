@@ -22,7 +22,16 @@ namespace GWALib.Lib.Transaksi.Presensi
                 throw new ArgumentException(string.Format(ExceptionMessage.FIELD_INVALID, "Radius Lokasi"));
             }
         }
-        // Tanpa titik + radius = lokasi tidak dicek. Dengan geofence, posisi wajib dikirim dan harus di dalam radius.
+        // Jadwal / sesi baru wajib punya titik + radius, baik mode QR maupun tanpa QR.
+        internal static void ValidateRequiredArea(decimal? latitude, decimal? longitude, int? radiusMeter)
+        {
+            if (latitude == null || longitude == null || radiusMeter == null)
+            {
+                throw new ArgumentException(ExceptionMessage.ATTENDANCE_AREA_REQUIRED);
+            }
+            ValidateArea(latitude, longitude, radiusMeter);
+        }
+        // Tanpa titik + radius (data lama) = lokasi tidak dicek. Dengan geofence, posisi wajib dikirim dan harus di dalam radius.
         internal static void ValidatePosition(decimal? areaLatitude, decimal? areaLongitude, int? radiusMeter, decimal? latitude, decimal? longitude)
         {
             if (areaLatitude == null || areaLongitude == null || radiusMeter == null)

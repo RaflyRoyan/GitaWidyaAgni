@@ -30,6 +30,8 @@ mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-17_lpj.sql
 mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-18_section.sql
 mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-18_asset_qr_token.sql
 mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-18_activity_absence.sql
+mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-19_attendance_mode.sql
+mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-19_attendance_reminder.sql
 ```
 
 ## Aturan perubahan skema

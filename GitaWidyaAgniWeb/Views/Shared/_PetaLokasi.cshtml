@@ -1,0 +1,19 @@
+@model (string FormId, Dictionary<int, decimal[]> Koordinat)
+@* Peta pemilih titik + radius untuk dxForm (field Latitude / Longitude / RadiusMeter / ActivityId). Halaman memuat
+   assets/libs/leaflet (css + js) dan js/gwa-map-picker.js. *@
+@{
+    var mapId = "peta_" + Model.FormId;
+    var koordinat = System.Text.Json.JsonSerializer.Serialize(Model.Koordinat.ToDictionary(x => x.Key.ToString(), x => x.Value));
+}
+<div class="gwa-map mt-2">
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <span class="fw-medium"><i class="ri-map-pin-range-line me-1"></i> Titik lokasi presensi</span>
+        <button type="button" class="btn btn-sm btn-outline-primary" data-peta="saya"><i class="ri-focus-3-line me-1"></i> Lokasi saya</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-peta="kegiatan"><i class="ri-flag-line me-1"></i> Lokasi kegiatan</button>
+        <span class="small text-muted ms-auto">Klik peta untuk menaruh titik; lingkaran merah = radius.</span>
+    </div>
+    <div id="@mapId" class="rounded border" style="height:280px" role="application" aria-label="Peta titik lokasi presensi"></div>
+</div>
+<script>
+    GwaMapPicker.attach({ formId: '@Model.FormId', mapId: '@mapId', koordinat: @Html.Raw(koordinat) });
+</script>

@@ -39,6 +39,7 @@ namespace GitaWidyaAgniWeb.Infrastructure.Jobs
         public const string JOB_CLOSE_ELECTION = "CLOSE_EXPIRED_ELECTION";
         public const string JOB_BORROW_OVERDUE = "MARK_BORROW_OVERDUE";
         public const string JOB_GENERATE_SESSIONS = "GENERATE_ATTENDANCE_SESSIONS";
+        public const string JOB_SYNC_SESSIONS = "SYNC_ATTENDANCE_SESSIONS";
         public const string JOB_PURGE = "PURGE_OLD_DATA";
         private const int OUTBOX_BATCH = 50;
 
@@ -62,6 +63,7 @@ namespace GitaWidyaAgniWeb.Infrastructure.Jobs
                 new Job(JOB_CLOSE_ELECTION, TimeSpan.FromMinutes(5), (u, t) => Task.FromResult((Election.CloseExpired(), (string?)null))),
                 new Job(JOB_BORROW_OVERDUE, TimeSpan.FromMinutes(30), (u, t) => Task.FromResult((BorrowRequest.MarkOverdue(u).Ok(), (string?)null))),
                 new Job(JOB_GENERATE_SESSIONS, TimeSpan.FromHours(6), GenerateSessionsAsync),
+                new Job(JOB_SYNC_SESSIONS, TimeSpan.FromMinutes(1), SyncSessionsAsync, LogWhenIdle: false),
                 new Job(JOB_PURGE, TimeSpan.FromDays(1), PurgeAsync)
             };
         }
@@ -198,8 +200,27 @@ namespace GitaWidyaAgniWeb.Infrastructure.Jobs
         private Task<(int, string?)> GenerateSessionsAsync(string user, CancellationToken token)
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
-            var count = ActivitySchedule.GenerateSessions(today, today.AddDays(_options.SessionDaysAhead), null, user).Ok();
+            var count = ActivitySchedule.GenerateSessions(today, today.AddDays(_options.SessionDaysAhead), null, user, skipEnded: true).Ok();
             return Task.FromResult((count, (string?)$"{today:yyyy-MM-dd} s.d. +{_options.SessionDaysAhead} hari"));
+        }
+
+        // Pengingat presensi (check-in dibuka / jelang selesai), buka sesi 30 menit sebelum mulai, tutup setelah selesai (ALPA + poin hadir).
+        // Dicatat di ScheduledJobLog hanya bila ada perubahan.
+        private Task<(int, string?)> SyncSessionsAsync(string user, CancellationToken token)
+        {
+            var result = AttendanceSession.Synchronize(user).Ok();
+            var count = result.Opened + result.Closed + result.Reminded;
+            if (count == 0)
+            {
+                return Task.FromResult((0, (string?)null));
+            }
+            var summary = $"{result.Opened} dibuka, {result.Closed} ditutup, {result.Absent} Alpa, {result.Reminded} pengingat";
+            var start = ScheduledJobLog.Start(JOB_SYNC_SESSIONS, user);
+            if (start.Status == ResponseStatus.Success && start.Data != null)
+            {
+                start.Data.Finish(count, summary, user);
+            }
+            return Task.FromResult((count, (string?)summary));
         }
 
         private Task<(int, string?)> PurgeAsync(string user, CancellationToken token)

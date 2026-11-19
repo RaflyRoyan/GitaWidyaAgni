@@ -30,6 +30,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
                     Location = x.Location,
                     Geofence = x.Latitude.HasValue && x.RadiusMeter.HasValue,
                     DariJadwal = x.ScheduleId.HasValue,
+                    ModeText = EnumHelper.Text(x.AttendanceMode),
                     Status = (int)x.Status,
                     StatusText = EnumHelper.Text(x.Status),
                     Hadir = rekap.TryGetValue(x.Id, out var r) ? r.Hadir : 0,
@@ -46,6 +47,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
                     OpenAt = input.OpenAt ?? DateTime.Now,
                     CloseAt = input.CloseAt ?? DateTime.Now,
                     LateToleranceMinute = input.LateToleranceMinute,
+                    AttendanceMode = (AttendanceMode)input.AttendanceMode,
                     Location = input.Location,
                     Latitude = input.Latitude,
                     Longitude = input.Longitude,
@@ -59,6 +61,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
                 obj.OpenAt = input.OpenAt ?? obj.OpenAt;
                 obj.CloseAt = input.CloseAt ?? obj.CloseAt;
                 obj.LateToleranceMinute = input.LateToleranceMinute;
+                obj.AttendanceMode = (AttendanceMode)input.AttendanceMode;
                 obj.Location = input.Location;
                 obj.Latitude = input.Latitude;
                 obj.Longitude = input.Longitude;
@@ -95,6 +98,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
                     ValidFrom = x.ValidFrom.ToDateTime(TimeOnly.MinValue),
                     ValidUntil = Opsi.KeDateTime(x.ValidUntil),
                     LateToleranceMinute = x.LateToleranceMinute,
+                    ModeText = EnumHelper.Text(x.AttendanceMode),
                     Aktif = x.IsActive == ActiveStatus.Aktif
                 }).OrderBy(x => x.Kegiatan).ThenBy(x => x.Hari);
             }
@@ -114,6 +118,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
                     Longitude = input.Longitude,
                     RadiusMeter = input.RadiusMeter,
                     LateToleranceMinute = input.LateToleranceMinute,
+                    AttendanceMode = (AttendanceMode)input.AttendanceMode,
                     ValidFrom = Opsi.TanggalWajib(input.ValidFrom, "Berlaku mulai"),
                     ValidUntil = Opsi.Tanggal(input.ValidUntil)
                 }, user).Ok();
@@ -129,6 +134,7 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
                 obj.Longitude = input.Longitude;
                 obj.RadiusMeter = input.RadiusMeter;
                 obj.LateToleranceMinute = input.LateToleranceMinute;
+                obj.AttendanceMode = (AttendanceMode)input.AttendanceMode;
                 obj.ValidFrom = Opsi.TanggalWajib(input.ValidFrom, "Berlaku mulai");
                 obj.ValidUntil = Opsi.Tanggal(input.ValidUntil);
                 obj.IsActive = (ActiveStatus)input.IsActive;

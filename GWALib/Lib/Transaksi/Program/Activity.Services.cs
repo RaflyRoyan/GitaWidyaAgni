@@ -40,6 +40,7 @@ namespace GWALib.Lib.Transaksi.Program
                 using var context = DBClass.GetContext();
                 var row = CreateRow(context, newrow, userId);
                 context.TActivities.Add(row);
+                Presensi.AttendanceSession.AddForActivity(context, row, userId);
                 context.SaveChanges();
                 return new Activity(Reload(row.Id));
             }, data => ResponseFactory.DataSaved(data), msg => ResponseFactory.DataSaveFailed<Activity>(msg));
@@ -51,7 +52,9 @@ namespace GWALib.Lib.Transaksi.Program
                 var userId = ValidateUtility.ValidateUser(user);
                 using var context = DBClass.GetContext();
                 var row = GetRow(context, Id);
+                var oldStartAt = row.StartAt;
                 SetRow(context, row, userId);
+                Presensi.AttendanceSession.SyncForActivity(context, row, oldStartAt, userId);
                 context.SaveChanges();
                 return new Activity(Reload(row.Id));
             }, data => ResponseFactory.DataUpdated(data), msg => ResponseFactory.DataUpdateFailed<Activity>(msg));
@@ -76,6 +79,7 @@ namespace GWALib.Lib.Transaksi.Program
                 using var context = DBClass.GetContext();
                 var row = GetRow(context, Id);
                 ValidateDelete(context, row);
+                Presensi.AttendanceSession.RemoveForActivity(context, row.Id);
                 var data = new Activity(Reload(row.Id));
                 context.TActivities.Remove(row);
                 context.SaveChanges();
@@ -108,6 +112,7 @@ namespace GWALib.Lib.Transaksi.Program
                 using var context = DBClass.GetContext();
                 var row = CreateRow(context, newrow, userId);
                 context.TActivities.Add(row);
+                Presensi.AttendanceSession.AddForActivity(context, row, userId);
                 await context.SaveChangesAsync();
                 return new Activity(Reload(row.Id));
             }, data => ResponseFactory.DataSaved(data), msg => ResponseFactory.DataSaveFailed<Activity>(msg));
@@ -119,7 +124,9 @@ namespace GWALib.Lib.Transaksi.Program
                 var userId = ValidateUtility.ValidateUser(user);
                 using var context = DBClass.GetContext();
                 var row = await GetRowAsync(context, Id);
+                var oldStartAt = row.StartAt;
                 SetRow(context, row, userId);
+                Presensi.AttendanceSession.SyncForActivity(context, row, oldStartAt, userId);
                 await context.SaveChangesAsync();
                 return new Activity(Reload(row.Id));
             }, data => ResponseFactory.DataUpdated(data), msg => ResponseFactory.DataUpdateFailed<Activity>(msg));
@@ -144,6 +151,7 @@ namespace GWALib.Lib.Transaksi.Program
                 using var context = DBClass.GetContext();
                 var row = await GetRowAsync(context, Id);
                 ValidateDelete(context, row);
+                Presensi.AttendanceSession.RemoveForActivity(context, row.Id);
                 var data = new Activity(Reload(row.Id));
                 context.TActivities.Remove(row);
                 await context.SaveChangesAsync();
@@ -286,7 +294,7 @@ namespace GWALib.Lib.Transaksi.Program
             var used = context.TActivities.Where(x => x.Id == row.Id)
                 .Select(x => x.InverseParentActivity.Any() || x.MProducts.Any() || x.TActivityChecklists.Any() || x.TActivityCollaborators.Any()
                     || x.TActivityParticipants.Any() || x.TActivityReports.Any() || x.TActivityRundowns.Any() || x.TActivitySchedules.Any()
-                    || x.TActivityTripMembers.Any() || x.TAttendanceSessions.Any() || x.TCertificates.Any() || x.TCommitteeMembers.Any()
+                    || x.TActivityTripMembers.Any() || x.TAttendanceSessions.Any(s => s.Status != (int)AttendanceSessionStatus.Scheduled || s.TAttendanceRecords.Any()) || x.TCertificates.Any() || x.TCommitteeMembers.Any()
                     || x.TCommitteeSections.Any() || x.TFinancialTransactions.Any() || x.TForms.Any() || x.TFundingRequests.Any()
                     || x.TGalleries.Any() || x.TProcurementRequests.Any() || x.TSalesOrders.Any() || x.TSponsorships.Any() || x.TTimelinePlans.Any())
                 .Single();
