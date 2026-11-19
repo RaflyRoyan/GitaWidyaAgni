@@ -16,6 +16,8 @@
             ("btn-outline-success", "ri-check-double-line", "Setujui"),
             ("btn-outline-primary", "ri-hand-heart-line", "Serahkan barang (checkout)"),
             ("btn-outline-dark", "ri-money-dollar-circle-line", "Catat pembayaran"),
+            ("btn-outline-primary", "ri-file-text-line", "Cetak invoice"),
+            ("btn-outline-success", "ri-receipt-line", "Cetak kuitansi (semua pembayaran)"),
             ("btn-outline-warning", "ri-edit-2-line", "Ubah (Menunggu)"),
             ("btn-outline-secondary", "ri-close-circle-line", "Tolak / batalkan"),
             ("btn-outline-danger", "ri-delete-bin-line", "Hapus"))' />
@@ -27,7 +29,7 @@
     <script>
         window.PeminjamanUrl = {};
         ['List', 'Add', 'Edit', 'SimpanBaru', 'Update', 'Delete', 'Setujui', 'Tolak', 'Batal', 'Detail', 'TambahItem', 'HapusItem', 'Checkout', 'SimpanCheckout',
-            'KembaliJumlah', 'KembaliUnit', 'Bayar', 'SimpanBayar', 'BatalBayar', 'BebasDenda'].forEach(function (a) {
+            'KembaliJumlah', 'KembaliUnit', 'Bayar', 'SimpanBayar', 'BatalBayar', 'BebasDenda', 'Invoice', 'Kuitansi'].forEach(function (a) {
             window.PeminjamanUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
         });
     </script>

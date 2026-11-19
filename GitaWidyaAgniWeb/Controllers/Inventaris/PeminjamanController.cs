@@ -1,5 +1,6 @@
 using GitaWidyaAgniWeb.Infrastructure;
 using GitaWidyaAgniWeb.Models;
+using GitaWidyaAgniWeb.Models.Inventaris;
 using Microsoft.AspNetCore.Mvc;
 using VM = GitaWidyaAgniWeb.Models.Inventaris.PeminjamanVM;
 
@@ -46,5 +47,12 @@ namespace GitaWidyaAgniWeb.Controllers.Inventaris
         [HttpPost, AccessAs(Acc.Payment)] public IActionResult SimpanBayar([FromBody] GwaVM.BayarInput m) => Aksi(u => VM.Method.Bayar(m, u), "Pembayaran dicatat.");
         [HttpPost, AccessAs(Acc.Payment)] public IActionResult BatalBayar([FromBody] VM.BatalBayarInput m) => Aksi(u => VM.Method.BatalBayar(m, u), "Pembayaran dibatalkan.");
         [HttpPost, AccessAs(Acc.Payment)] public IActionResult BebasDenda([FromBody] VM.BebasDendaInput m) => Aksi(u => VM.Method.BebasDenda(m, u), "Denda dibebaskan.");
+
+        // ---------- Cetak (DevExpress Reports; viewer di iframe, ?pdf=1 = unduh PDF)
+        private string WebRoot => HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath;
+
+        [AccessAs(Acc.Index)] public IActionResult Invoice(string key) => Laporan(() => PeminjamanCetak.Invoice(key, WebRoot));
+        /// <summary>trx = id transaksi pembayaran; kosong = kuitansi gabungan semua pembayaran.</summary>
+        [AccessAs(Acc.Index)] public IActionResult Kuitansi(string key, int? trx) => Laporan(() => PeminjamanCetak.Kuitansi(key, trx, WebRoot));
     }
 }

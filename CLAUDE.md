@@ -679,6 +679,10 @@ Suggested order: Akses & Pengaturan first, so admins can manage roles and menus 
     - Signers: Ketua Pelaksana + Ketua Umum for activity certificates; Ketua Umum + Pembina for the others. Ketua Umum is taken from the period that contains the issue date, else the Active period.
     - A QR links to `/sertifikat/verifikasi?kode=` (base from `AsetLabel.BaseUrl`). A revoked certificate gets a DICABUT watermark.
     - Admin: `Sertifikat/Cetak?key=` (Index). Member: `AreaAnggota/PrestasiSaya/CetakSertifikat?key=&pdf=1`, only for the member's own Terbit certificates. An uploaded file is still downloadable separately.
+  - **Peminjaman (invoice + kuitansi):** `Reports/PeminjamanReport`, with data from `Models/Inventaris/PeminjamanCetak` (borrow request, items with unit codes, Posted Income transactions of the request, active bank / e-wallet accounts, and the current Bendahara of the Active period as signer).
+    - **Invoice** (`Peminjaman/Invoice?key=`, Index): borrower, borrow times, scheme, guarantee, a table of rent and late-fee lines, a summary (rent, late fee, waiver, total, one line per payment, remaining), notes, and transfer accounts while something is still due. Optional empty fields are left out so it fits one page. Watermark LUNAS / DITOLAK / DIBATALKAN. The grid shows the action except for Rejected / Cancelled.
+    - **Kuitansi** (`Peminjaman/Kuitansi?key=&trx=`, Index): `trx` = one payment, empty = all payments combined. It has the amount in words (`DocumentReport.Terbilang`), an amount box, and signatures of the payer and the Bendahara. The grid action shows when something is paid; the Detail modal has a per-payment button that opens in a new tab, so modals are not stacked.
+    - `DocumentReport.Signatures` takes an optional `gap` (space above the place/date line; default 30).
   - `Lpj/Pratinjau?key=` builds the report from current data; `Lpj/Finalisasi` (Process) exports it with `ExportToPdf` and calls `Lpj.Finalize`; `Lpj/Unduh?key=` returns the stored PDF.
   - The DevExpress install on this device is a trial: exported PDFs carry "created using the trial version of DevExpress components". A licensed install removes it.
 

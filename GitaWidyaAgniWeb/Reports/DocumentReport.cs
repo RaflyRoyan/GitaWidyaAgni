@@ -351,33 +351,34 @@ namespace GitaWidyaAgniWeb.Reports
         /// knownLast = penanda tangan terakhir di bawah tengah dengan "Mengetahui," (LPJ); selain itu semua sejajar
         /// (satu penanda tangan di kanan). Gambar tanda tangan dipasang di atas nama bila ada.
         /// </summary>
-        protected void Signatures(string? place, DateTime? date, List<Signer> signers, bool knownLast)
+        /// gap = jarak kosong di atas baris tempat/tanggal (lebih kecil untuk dokumen satu halaman yang padat, mis. invoice).
+        protected void Signatures(string? place, DateTime? date, List<Signer> signers, bool knownLast, float gap = 30)
         {
             var block = Block(new List<Row> { new() });
             var top = knownLast && signers.Count > 1 ? signers.Take(signers.Count - 1).ToList() : signers;
-            var height = knownLast && signers.Count > 1 ? 400 : 230;
+            var height = (knownLast && signers.Count > 1 ? 400 : 230) - 30 + gap;
             var detail = new DetailBand { HeightF = height, KeepTogether = true };
             // place null = tanpa baris tempat/tanggal (surat: tanggal sudah di kepala surat).
             if (place != null)
             {
                 var dateText = date == null ? $"{place}, ...................." : $"{place}, {date.Value.ToString("d MMMM yyyy", ID)}";
-                detail.Controls.Add(Label(new RectangleF(W / 2, 30, W / 2, 20), dateText, align: TextAlignment.TopCenter));
+                detail.Controls.Add(Label(new RectangleF(W / 2, gap, W / 2, 20), dateText, align: TextAlignment.TopCenter));
             }
             if (top.Count == 1)
             {
-                SignerBlock(detail, top[0], W / 2, 60, W / 2, null);
+                SignerBlock(detail, top[0], W / 2, gap + 30, W / 2, null);
             }
             else
             {
                 var colWidth = W / Math.Max(top.Count, 1);
                 for (var i = 0; i < top.Count; i++)
                 {
-                    SignerBlock(detail, top[i], i * colWidth, 60, colWidth, null);
+                    SignerBlock(detail, top[i], i * colWidth, gap + 30, colWidth, null);
                 }
             }
             if (knownLast && signers.Count > 1)
             {
-                SignerBlock(detail, signers[^1], (W - 260) / 2, 240, 260, "Mengetahui,");
+                SignerBlock(detail, signers[^1], (W - 260) / 2, gap + 210, 260, "Mengetahui,");
             }
             block.Bands.Add(detail);
         }
@@ -418,5 +419,32 @@ namespace GitaWidyaAgniWeb.Reports
         protected static string Num(decimal value) => value.ToString("N0", ID);
         protected static string Date(DateOnly? value) => value == null ? "-" : value.Value.ToString("d MMMM yyyy", ID);
         protected static string Date(DateTime? value) => value == null ? "-" : value.Value.ToString("d MMMM yyyy", ID);
+
+        /// <summary>Angka (dibulatkan ke rupiah) dalam kata bahasa Indonesia, mis. 150000 → "seratus lima puluh ribu".</summary>
+        protected static string Terbilang(decimal value)
+        {
+            var n = (long)Math.Round(Math.Abs(value), MidpointRounding.AwayFromZero);
+            var text = n == 0 ? "nol" : string.Join(" ", Kata(n).Split(' ', StringSplitOptions.RemoveEmptyEntries));
+            return value < 0 ? "minus " + text : text;
+        }
+
+        private static readonly string[] Satuan = { "", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas" };
+
+        private static string Kata(long n)
+        {
+            return n switch
+            {
+                < 12 => Satuan[n],
+                < 20 => Kata(n - 10) + " belas",
+                < 100 => Kata(n / 10) + " puluh " + Kata(n % 10),
+                < 200 => "seratus " + Kata(n - 100),
+                < 1000 => Kata(n / 100) + " ratus " + Kata(n % 100),
+                < 2000 => "seribu " + Kata(n - 1000),
+                < 1_000_000 => Kata(n / 1000) + " ribu " + Kata(n % 1000),
+                < 1_000_000_000 => Kata(n / 1_000_000) + " juta " + Kata(n % 1_000_000),
+                < 1_000_000_000_000 => Kata(n / 1_000_000_000) + " miliar " + Kata(n % 1_000_000_000),
+                _ => Kata(n / 1_000_000_000_000) + " triliun " + Kata(n % 1_000_000_000_000)
+            };
+        }
     }
 }

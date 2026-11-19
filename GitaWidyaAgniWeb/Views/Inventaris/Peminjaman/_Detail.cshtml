@@ -109,6 +109,7 @@
                     <span class="gwa-code">@b.Nomor</span>
                     <span>@b.Tanggal.ToString("dd MMM yyyy") · @b.Kategori</span>
                     <span class="ms-auto fw-semibold">@b.Amount.ToString("#,##0")</span>
+                    <button type="button" class="btn btn-sm btn-icon btn-outline-success" title="Cetak kuitansi (tab baru)" aria-label="Cetak kuitansi" onclick="Peminjaman.printPaymentReceipt(@b.TransactionId)"><i class="ri-receipt-line"></i></button>
                     <button type="button" class="btn btn-sm btn-icon btn-outline-danger" title="Batalkan pembayaran" aria-label="Batalkan pembayaran" onclick="Peminjaman.cancelPayment(@b.TransactionId)"><i class="ri-close-line"></i></button>
                 </li>
             }

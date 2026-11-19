@@ -88,6 +88,19 @@ window.Peminjaman = (function () {
                 });
             });
     }
+    /* ===== Cetak (DevExpress Reports) ===== */
+
+    function printInvoice(row) {
+        AppUI.openReport('Invoice ' + row.RequestNumber, URL.invoice + '?key=' + encodeURIComponent(row.EncDecrKey));
+    }
+    function printReceipt(row) {
+        AppUI.openReport('Kuitansi ' + row.RequestNumber, URL.kuitansi + '?key=' + encodeURIComponent(row.EncDecrKey));
+    }
+    // Dari modal Detail: viewer dibuka di tab baru (modal layar penuh tidak ditumpuk di atas modal Detail).
+    function printPaymentReceipt(transactionId) {
+        window.open(URL.kuitansi + '?' + $.param({ key: detailKey, trx: transactionId }), '_blank');
+    }
+
     function cancelPayment(transactionId) {
         AppUI.reasonPost('Batalkan pembayaran? Transaksinya di-void.', URL.batalBayar, { Key: detailKey, TransactionId: transactionId }, 'Keterangan', 'Batalkan', 'btn-danger').done(reloadDetail);
     }
@@ -156,6 +169,12 @@ window.Peminjaman = (function () {
         if (row.Status !== STATUS.REJECTED && row.Status !== STATUS.CANCELLED && (row.Seikhlasnya || row.Bayar === PAY.BELUM || row.Bayar === PAY.SEBAGIAN)) {
             btn(container, 'btn-outline-dark', 'ri-money-dollar-circle-line', 'Catat pembayaran', function () { AppUI.openModal(MODAL, 'Pembayaran Peminjaman', URL.bayar, { encKey: row.EncDecrKey }, 'lg'); });
         }
+        if (row.Status !== STATUS.REJECTED && row.Status !== STATUS.CANCELLED) {
+            btn(container, 'btn-outline-primary', 'ri-file-text-line', 'Cetak invoice', function () { printInvoice(row); });
+        }
+        if (row.PaidAmount > 0) {
+            btn(container, 'btn-outline-success', 'ri-receipt-line', 'Cetak kuitansi', function () { printReceipt(row); });
+        }
         if (row.Status === STATUS.RETURNED && row.Tagihan > row.PaidAmount && !row.Seikhlasnya) {
             btn(container, 'btn-outline-info', 'ri-gift-line', 'Bebaskan denda', function () {
                 AppUI.promptInput({ title: 'Bebaskan denda', input: 'number', label: 'Nominal dibebaskan', required: true, confirmText: 'Lanjut' }).then(function (amount) {
@@ -173,7 +192,7 @@ window.Peminjaman = (function () {
 
     return {
         add: add, save: save, update: update, pay: pay, addItem: addItem, removeItem: removeItem, returnUnit: returnUnit, returnQuantity: returnQuantity,
-        cancelPayment: cancelPayment, saveCheckout: saveCheckout, borrowerTemplate: borrowerTemplate, statusTemplate: statusTemplate,
+        cancelPayment: cancelPayment, printPaymentReceipt: printPaymentReceipt, saveCheckout: saveCheckout, borrowerTemplate: borrowerTemplate, statusTemplate: statusTemplate,
         paymentTemplate: paymentTemplate, actionTemplate: actionTemplate
     };
 })();
