@@ -784,6 +784,7 @@ Satuan bawaan laporan adalah 1/100 inci (A4 = 827 × 1169).
 | Pesan email / WhatsApp tetap Menunggu | `Smtp:*` atau `WhatsApp:*` belum diisi, atau `Jobs:Enabled` = false. |
 | "Form edit sudah kedaluwarsa" | Kunci edit tersimpan sekali pakai, dan encKey berganti tiap hari. Buka ulang form edit. |
 | Tes halaman login lewat curl gagal | Cookie `Secure` tidak dikirim lewat `http://`. Jalankan web di `https://localhost:<port>` dan pakai `curl -k` dengan cookie jar. |
+| Login ditolak "Verifikasi gagal atau kedaluwarsa" | Captcha belum diselesaikan, atau tokennya sudah dipakai / lewat 10 menit. Seret ikon musik yang sama ke kotak lagi. Bila web dijalankan di beberapa server, aktifkan sticky session karena jawaban captcha disimpan di memori server. |
 
 ## Catatan keamanan
 

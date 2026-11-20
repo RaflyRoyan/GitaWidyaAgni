@@ -18,8 +18,10 @@ Satu akun bisa punya lebih dari satu peran. Misalnya Bendahara juga anggota, jad
 ### Masuk dan keluar
 
 1. Buka alamat aplikasi, lalu klik **Login** di kanan atas halaman depan.
-2. Isi username dan password, lalu klik **Masuk**. Tombol mata menampilkan password; peringatan muncul bila Caps Lock menyala.
-3. Untuk keluar, klik nama Anda di kanan atas, lalu **Logout**.
+2. Isi username dan password. Tombol mata menampilkan password; peringatan muncul bila Caps Lock menyala.
+3. **Verifikasi**: seret ikon musik yang **sama bentuk dan arahnya** dengan ikon di kotak kuning ke kotak itu (atau pilih ikon dengan Tab lalu Enter). Tanda centang hijau = berhasil. Salah pilih atau terlalu lama (lebih dari 5 menit) memuat gambar baru; tombol ↻ juga mengganti gambar.
+4. Klik **Masuk**.
+5. Untuk keluar, klik nama Anda di kanan atas, lalu **Logout**.
 
 Sesi login berlaku 8 jam dan diperpanjang selama Anda aktif. Lupa password? Minta sekretaris atau administrator mereset password Anda. Ganti password sendiri di **Area Anggota › Profil Saya › Ganti Password**.
 

@@ -37,6 +37,8 @@ builder.Services.AddMemoryCache();
 builder.Services.AddDevExpressControls();
 builder.Services.ConfigureReportingServices(cfg => cfg.ConfigureWebDocumentViewer(viewer => viewer.UseCachedReportSourceBuilder()));
 builder.Services.AddSingleton<AccessService>();
+// Captcha login "seret ikon musik yang sama" (Infrastructure/MusicCaptcha.cs); jawaban / token di IMemoryCache.
+builder.Services.AddSingleton<GitaWidyaAgniWeb.Infrastructure.MusicCaptcha>();
 builder.Services.AddScoped<AccessFilter>();
 // Job terjadwal (README "Job terjadwal") dan pengirim t_message_outbox (Smtp:* / WhatsApp:* dari user-secrets).
 builder.Services.AddHttpClient();

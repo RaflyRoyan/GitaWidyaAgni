@@ -57,6 +57,27 @@
         <div class="field-hint" id="capsHint" role="status"><i class="ri-information-line" aria-hidden="true"></i>Caps Lock aktif</div>
     </div>
 
+    @* Captcha seret ikon musik: puzzle dari Login/Captcha, verifikasi Login/CaptchaVerifikasi → token sekali pakai di CaptchaToken
+       (Infrastructure/MusicCaptcha.cs, Scripts/Login/MusicCaptcha.js). Selalu kosong saat render: token hangus setelah dicek. *@
+    <input type="hidden" id="CaptchaToken" name="CaptchaToken" value="" />
+    <div class="field">
+        <span class="field-label" id="captchaLabel">Verifikasi</span>
+        <div class="music-captcha" id="musicCaptcha" role="group" aria-labelledby="captchaLabel"
+             data-url-captcha="@Url.Action("Captcha", "Login", new { area = "" })"
+             data-url-verifikasi="@Url.Action("CaptchaVerifikasi", "Login", new { area = "" })">
+            <button type="button" class="mc-refresh" id="mcRefresh" title="Ganti gambar" aria-label="Ganti gambar captcha"><i class="ri-refresh-line" aria-hidden="true"></i></button>
+            <p class="mc-judul">Seret ikon yang <strong>sama bentuk &amp; arahnya</strong> ke kotak</p>
+            <div class="mc-target" id="mcTarget">
+                <img id="mcTargetImg" alt="Ikon contoh" draggable="false" />
+                <span class="mc-check" aria-hidden="true"><i class="ri-check-line"></i></span>
+            </div>
+            <div class="mc-pilihan" id="mcPilihan">
+                <span class="mc-loading">Memuat captcha…</span>
+            </div>
+            <div class="mc-pesan" id="mcPesan" aria-live="polite"></div>
+        </div>
+    </div>
+
     <button class="btn-gwa btn-gold btn-submit" type="submit" id="btnLogin">
         <span class="spinner" aria-hidden="true"></span>
         <i class="ri-login-circle-line label-icon" aria-hidden="true"></i>
@@ -70,6 +91,7 @@
 }
 
 @section scripts {
+    <script src="~/Scripts/Login/MusicCaptcha.js" asp-append-version="true"></script>
     <script>
         (function () {
             var form = document.getElementById('frmLogin');
@@ -99,6 +121,11 @@
                     e.preventDefault();
                     empty.setAttribute('aria-invalid', 'true');
                     empty.focus();
+                    return;
+                }
+                if (!MusicCaptcha.terverifikasi()) {
+                    e.preventDefault();
+                    MusicCaptcha.tandaiBelum();
                     return;
                 }
                 btn.disabled = true;
