@@ -73,6 +73,110 @@
         <div class="alert alert-warning">@Model.Error</div>
     }
 
+    @* ===== Ringkasan saya (user yang punya data anggota) ===== *@
+    @if (Model.Saya != null)
+    {
+        var s = Model.Saya;
+        var bulan = s.ThisMonth;
+        var rendah = s.PeriodSessions > 0 && s.PeriodPercent < GWALib.Lib.Transaksi.Presensi.AttendanceSession.LOW_PERCENT;
+        var anggotaUrl = (string ctrl) => Url.Action("Index", ctrl, new { area = "AreaAnggota" });
+        <section class="card mb-4 gwa-mine" aria-labelledby="judulSaya">
+            <div class="card-header d-flex align-items-center flex-wrap gap-2">
+                <h5 class="card-title mb-0 flex-grow-1" id="judulSaya"><i class="ri-user-heart-line align-bottom me-1"></i> Ringkasan saya</h5>
+                <span class="small text-muted">@(s.Section ?? "Tanpa section") · @EnumHelper.Text(s.MemberType)</span>
+                <a class="btn btn-sm btn-soft-primary" href="@anggotaUrl("ProfilSaya")">Profil &amp; rapor</a>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-6 col-xl-3">
+                        <a class="gwa-stat gwa-stat-link" href="@anggotaUrl("PresensiSaya")">
+                            <span class="gwa-stat-icon" style="--c: @(rendah ? "var(--gwa-flame)" : "var(--gwa-leaf)")"><i class="ri-calendar-check-line"></i></span>
+                            <div>
+                                <div class="gwa-stat-label">Kehadiran @(s.PeriodName != null ? "periode ini" : "6 bulan")</div>
+                                <div class="gwa-stat-value @(rendah ? "text-danger" : "")">@(s.PeriodSessions == 0 ? "-" : s.PeriodPercent.ToString("0.#", id) + "%")</div>
+                                <div class="gwa-stat-sub">Bulan ini: @bulan.Sessions sesi@(bulan.Sessions > 0 ? $" · hadir {bulan.Hadir + bulan.Terlambat} · alpa {bulan.Alpa}" : "")</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-xl-3">
+                        <a class="gwa-stat gwa-stat-link" href="@anggotaUrl("PrestasiSaya")">
+                            <span class="gwa-stat-icon" style="--c: var(--gwa-bronze)"><i class="ri-medal-line"></i></span>
+                            <div>
+                                <div class="gwa-stat-label">Poin keaktifan</div>
+                                <div class="gwa-stat-value">@s.Points.ToString("N0", id)</div>
+                                <div class="gwa-stat-sub">@(s.Rank > 0 ? $"Peringkat {s.Rank} dari {s.RankedMembers}" : "Belum masuk peringkat")</div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-xl-3">
+                        <a class="gwa-stat gwa-stat-link" href="@anggotaUrl("IuranSaya")">
+                            <span class="gwa-stat-icon" style="--c: @(s.UnpaidDuesCount > 0 ? "#b5651d" : "var(--gwa-leaf)")"><i class="ri-bill-line"></i></span>
+                            <div>
+                                <div class="gwa-stat-label">Iuran belum dibayar</div>
+                                <div class="gwa-stat-value">@(s.UnpaidDuesCount == 0 ? "Lunas" : Rp(s.UnpaidDues))</div>
+                                <div class="gwa-stat-sub @(s.NextDueDate < DateOnly.FromDateTime(now) ? "text-danger" : "")">
+                                    @(s.UnpaidDuesCount == 0 ? "Tidak ada tagihan" : s.UnpaidDuesCount + " tagihan" + (s.NextDueDate != null ? " · jatuh tempo " + s.NextDueDate.Value.ToString("d MMM", id) : ""))
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6 col-xl-3">
+                        <a class="gwa-stat gwa-stat-link" href="@anggotaUrl("KegiatanSaya")">
+                            <span class="gwa-stat-icon" style="--c: var(--gwa-flame)"><i class="ri-team-line"></i></span>
+                            <div>
+                                <div class="gwa-stat-label">Kepanitiaan mendatang</div>
+                                <div class="gwa-stat-value">@s.CommitteeDuties</div>
+                                <div class="gwa-stat-sub">@s.Achievements prestasi · @s.Certificates sertifikat@(s.BorrowActive > 0 ? $" · {s.BorrowActive} pinjaman" : "")</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                @if (rendah)
+                {
+                    <div class="alert alert-danger small mt-3 mb-0" role="status">
+                        <i class="ri-alarm-warning-line me-1"></i> Kehadiranmu di bawah @(GWALib.Lib.Transaksi.Presensi.AttendanceSession.LOW_PERCENT)%. Ajukan izin lewat Presensi Saya bila berhalangan.
+                    </div>
+                }
+                <h6 class="gwa-mine-subtitle mt-3"><i class="ri-time-line me-1"></i> Jadwal presensi saya</h6>
+                <ul class="list-group gwa-agenda gwa-mine-sessions">
+                    @foreach (var x in Model.SesiSaya)
+                    {
+                        var sedang = x.OpenAt <= now && x.CloseAt >= now;
+                        <li class="list-group-item">
+                            <div class="gwa-agenda-date"><strong>@x.OpenAt.ToString("dd")</strong><span>@x.OpenAt.ToString("MMM", id)</span></div>
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="fw-semibold text-truncate">@x.Activity</div>
+                                <div class="small text-muted text-truncate">
+                                    @x.OpenAt.ToString("ddd", id), @x.OpenAt.ToString("HH:mm")–@x.CloseAt.ToString("HH:mm")@if (x.Location != null) { <text> · @x.Location</text> }
+                                </div>
+                            </div>
+                            @if (x.RecordStatus != null)
+                            {
+                                <span class="badge bg-success-subtle text-success">@EnumHelper.Text(x.RecordStatus.Value)</span>
+                            }
+                            else if (x.AbsenceStatus == AbsenceRequestStatus.Disetujui)
+                            {
+                                <span class="badge bg-info-subtle text-info">Izin disetujui</span>
+                            }
+                            else if (x.CanCheckIn || x.CanCheckOut)
+                            {
+                                <a class="btn btn-sm btn-primary" href="@anggotaUrl("PresensiSaya")">@(x.CanCheckOut ? "Check-out" : "Check-in")</a>
+                            }
+                            else if (sedang)
+                            {
+                                <span class="badge bg-warning-subtle text-warning-emphasis">Berlangsung</span>
+                            }
+                        </li>
+                    }
+                    @if (Model.SesiSaya.Count == 0)
+                    {
+                        <li class="list-group-item gwa-empty"><i class="ri-calendar-line"></i> Tidak ada sesi presensi 7 hari ke depan.</li>
+                    }
+                </ul>
+            </div>
+        </section>
+    }
+
     @* ===== Angka utama ===== *@
     <div class="row g-3 mb-4">
         @if (canAnggota)

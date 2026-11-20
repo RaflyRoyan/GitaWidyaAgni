@@ -55,6 +55,25 @@
                         </div>
                     </div>
                 }
+                var periodeRapor = GitaWidyaAgniWeb.Models.Anggota.RaporCetak.PeriodeOpsi();
+                @if (periodeRapor.Count > 0)
+                {
+                    <div class="card-body border-top">
+                        <div class="fw-semibold mb-1"><i class="ri-file-chart-line me-1"></i> Rapor Anggota</div>
+                        <p class="small text-muted mb-2">Kehadiran, poin, jabatan, kepanitiaan, prestasi, dan sertifikat dalam satu periode kepengurusan.</p>
+                        <label class="visually-hidden" for="raporPeriode">Periode</label>
+                        <select id="raporPeriode" class="form-select form-select-sm mb-2">
+                            @foreach (var p in periodeRapor)
+                            {
+                                <option value="@p.Value" selected="@p.Text.EndsWith("(aktif)")">@p.Text</option>
+                            }
+                        </select>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-sm btn-primary" onclick="AppUI.openReport('Rapor Anggota', '@Url.Action("Rapor")?periode=' + encodeURIComponent($('#raporPeriode').val()))"><i class="ri-eye-line me-1"></i> Lihat Rapor</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.location.href = '@Url.Action("Rapor")?pdf=1&periode=' + encodeURIComponent($('#raporPeriode').val())"><i class="ri-download-2-line me-1"></i> Unduh PDF</button>
+                        </div>
+                    </div>
+                }
             }
         </div>
     </div>

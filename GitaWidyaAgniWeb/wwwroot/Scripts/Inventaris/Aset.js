@@ -194,7 +194,27 @@ window.Aset = (function () {
         }
     }
 
+    /* ===== Laporan inventaris ===== */
+
+    // Kategori (kosong = semua), lalu rentang riwayat perawatan; viewer DevExpress (ekspor PDF / Excel dari toolbar viewer).
+    function report() {
+        const opsi = window.AsetOpsi || { kategori: [], dari: '' };
+        const title = 'Laporan Inventaris';
+        AppUI.promptInput({ title: title, text: 'Kategori aset', input: 'select', options: new Map([['', 'Semua kategori']].concat(opsi.kategori)), value: '', confirmText: 'Lanjut' }).then(function (kategori) {
+            if (kategori === null) return;
+            AppUI.promptInput({ title: title, text: 'Riwayat perawatan dari tanggal', input: 'date', value: opsi.dari, required: true, label: 'Dari', confirmText: 'Lanjut' }).then(function (dari) {
+                if (!dari) return;
+                AppUI.promptInput({ title: title, text: 'Sampai tanggal', input: 'date', value: AppUI.toIsoDate(new Date()), required: true, label: 'Sampai', confirmText: 'Cetak' }).then(function (sampai) {
+                    if (!sampai) return;
+                    if (sampai < dari) { AppUI.alertWarning('Tanggal akhir harus sesudah tanggal awal.'); return; }
+                    AppUI.openReport(title, URL.cetakLaporan + '?' + $.param({ kategori: kategori || '', dari: dari, sampai: sampai }));
+                });
+            });
+        });
+    }
+
     return {
+        report: report,
         add: add, save: save, addUnit: addUnit, removeUnit: removeUnit, printLabels: printLabels, addPhoto: addPhoto, removePhoto: removePhoto,
         saveMovement: saveMovement, finish: finish, saveInspection: saveInspection,
         nameTemplate: nameTemplate, qtyTemplate: qtyTemplate, statusTemplate: statusTemplate, conditionTemplate: conditionTemplate,

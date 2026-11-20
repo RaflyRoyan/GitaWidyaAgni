@@ -9,7 +9,7 @@ namespace GWALib.Lib.Transaksi.Information
     /// anggota per divisi, persetujuan tertunda, inventaris, papan poin, dan tugas pribadi anggota login.
     /// Web memilih bagian yang boleh tampil sesuai hak akses user.
     /// </summary>
-    public class Dashboard
+    public partial class Dashboard
     {
         public record AgendaLine(int Id, string Title, ActivityType Type, DateTime StartAt, string? Location);
         public record MonthLine(string Month, decimal Income, decimal Expense);

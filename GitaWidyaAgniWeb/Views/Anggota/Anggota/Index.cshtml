@@ -37,9 +37,13 @@
             hapusFoto: '@Url.Action("HapusFoto")',
             cetakKta: '@Url.Action("CetakKta")',
             cetakKtaMassal: '@Url.Action("CetakKtaMassal")',
-            gantiQrKta: '@Url.Action("GantiQrKta")'
+            gantiQrKta: '@Url.Action("GantiQrKta")',
+            rapor: '@Url.Action("Rapor")'
         };
-        window.AnggotaOpsi = { section: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SectionOpsi.ToDictionary(x => x.Value.ToString(), x => x.Text))) };
+        window.AnggotaOpsi = {
+            section: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SectionOpsi.ToDictionary(x => x.Value.ToString(), x => x.Text))),
+            periode: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PeriodeOpsi.Select(x => new[] { x.Value.ToString(), x.Text })))
+        };
     </script>
     <script>
         window.SectionRiwayatUrl = {

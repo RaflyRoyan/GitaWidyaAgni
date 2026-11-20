@@ -25,7 +25,7 @@
                     ("btn-outline-info", "ri-image-line", "Foto"),
                     ("btn-outline-primary", "ri-arrow-left-right-line", "Mutasi stok (aset per jumlah)"),
                     ("btn-outline-warning", "ri-edit-2-line", "Ubah"),
-                    ("btn-outline-danger", "ri-delete-bin-line", "Hapuskan aset")) { LegendId = "legendAset" }' />
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapuskan aset")) { LegendId = "legendAset", Extra = new[] { ("btn-outline-dark", "ri-printer-line", "Cetak Laporan Inventaris", "Aset.report()") } }' />
                 <div id="targetAset" class="mt-3"></div>
             </div>
             <div class="tab-pane fade" id="tabPerawatan" role="tabpanel">
@@ -63,9 +63,15 @@
                 window.AsetUrl[a.toLowerCase() + t] = '@Url.Action("__")'.replace('__', a + t);
             });
         });
-        ['Unit', 'TambahUnit', 'HapusUnit', 'CetakLabel', 'LabelQr', 'Foto', 'Gambar', 'TambahFoto', 'HapusFoto', 'Mutasi', 'MulaiPerawatan', 'Selesai', 'SimpanSelesai', 'FotoInspeksi'].forEach(function (a) {
+        ['Unit', 'TambahUnit', 'HapusUnit', 'CetakLabel', 'LabelQr', 'Foto', 'Gambar', 'TambahFoto', 'HapusFoto', 'Mutasi', 'MulaiPerawatan', 'Selesai', 'SimpanSelesai', 'FotoInspeksi', 'CetakLaporan'].forEach(function (a) {
             window.AsetUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
         });
+    </script>
+    <script>
+        window.AsetOpsi = {
+            kategori: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(GWALib.Lib.Master.Inventaris.AssetCategory.GetDataList(GWAShared.Enums.FilterAktif.Semua).OrderBy(x => x.Name).Select(x => new[] { x.Id.ToString(), x.Name }))),
+            dari: '@GitaWidyaAgniWeb.Models.Inventaris.InventarisCetak.DariBawaan(DateOnly.FromDateTime(DateTime.Today)).ToString("yyyy-MM-dd")'
+        };
     </script>
     <script src="~/Scripts/Inventaris/Aset.js" asp-append-version="true"></script>
 }

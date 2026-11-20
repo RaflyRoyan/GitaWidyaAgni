@@ -90,5 +90,10 @@ namespace GitaWidyaAgniWeb.Controllers.Anggota
         public IActionResult GantiQrKta([FromBody] GwaVM.KeyInput input)
             => Aksi(user => { LibExtensions.Load<GWALib.Lib.Master.Anggota.Member>(input.Key, "Anggota").RenewCard(user).Ok(); },
                 "QR KTA diganti. Kartu lama tidak berlaku lagi; cetak ulang KTA.");
+
+        // ---------- Rapor anggota per periode (kosong = periode Aktif; ?pdf=1 = unduh)
+        [AccessAs(Acc.Index)]
+        public IActionResult Rapor(string key, int? periode)
+            => Laporan(() => RaporCetak.Pengurus(LibExtensions.Load<GWALib.Lib.Master.Anggota.Member>(key, "Anggota").Id, periode, WebRoot));
     }
 }

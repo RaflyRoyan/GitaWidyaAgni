@@ -16,6 +16,8 @@ namespace GitaWidyaAgniWeb.Models.Anggota
         {
             // Saringan cetak KTA massal.
             public List<GwaVM.OpsiItem> SectionOpsi { get; set; } = Opsi.Section();
+            // Pilihan periode rapor.
+            public List<GwaVM.OpsiItem> PeriodeOpsi { get; set; } = RaporCetak.PeriodeOpsi();
         }
 
         public class List

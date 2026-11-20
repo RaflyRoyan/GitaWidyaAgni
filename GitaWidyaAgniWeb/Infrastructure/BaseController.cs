@@ -166,12 +166,25 @@ namespace GitaWidyaAgniWeb.Infrastructure
             try
             {
                 var report = buat();
+                var nama = string.IsNullOrWhiteSpace(report.DisplayName) ? "laporan" : report.DisplayName.Replace('/', '-');
                 // ?pdf=1 = unduh PDF langsung tanpa viewer.
                 if (Request.Query["pdf"] == "1")
                 {
                     using var ms = new MemoryStream();
                     report.ExportToPdf(ms);
-                    return File(ms.ToArray(), "application/pdf", (string.IsNullOrWhiteSpace(report.DisplayName) ? "laporan" : report.DisplayName.Replace('/', '-')) + ".pdf");
+                    return File(ms.ToArray(), "application/pdf", nama + ".pdf");
+                }
+                // ?xlsx=1 = unduh Excel (satu sheet, tata letak mengikuti laporan; angka tetap teks seperti di laporan).
+                if (Request.Query["xlsx"] == "1")
+                {
+                    using var ms = new MemoryStream();
+                    report.ExportToXlsx(ms, new DevExpress.XtraPrinting.XlsxExportOptions
+                    {
+                        ExportMode = DevExpress.XtraPrinting.XlsxExportMode.SingleFile,
+                        SheetName = nama.Length > 31 ? nama[..31] : nama,
+                        ShowGridLines = false
+                    });
+                    return File(ms.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", nama + ".xlsx");
                 }
                 return View("~/Views/Shared/_ReportViewer.cshtml", report);
             }

@@ -75,6 +75,48 @@ window.Transaksi = (function () {
         AppUI.confirmPost('Hapus lampiran?', 'Berkas dihapus permanen.', URL.hapusLampiran, { Key: key }, 'Hapus', 'btn-danger').done(reloadAttachments);
     }
 
+    /* ===== Laporan keuangan ===== */
+
+    const REPORT_TITLE = { bukukas: 'Buku Kas', aruskas: 'Laporan Arus Kas', realisasi: 'Realisasi Anggaran', iuran: 'Rekap Iuran' };
+
+    function report() {
+        AppUI.openModal(MODAL, 'Cetak Laporan Keuangan', URL.formLaporan, null, 'lg');
+    }
+
+    function reportTypeChanged() {
+        const jenis = $('#lapJenis').val();
+        $('#frmLaporanKeuangan [data-lap]').each(function () {
+            $(this).toggle(String($(this).data('lap')).split(' ').indexOf(jenis) >= 0);
+        });
+    }
+
+    // format "xlsx" = unduh Excel langsung; selain itu buka viewer (PDF / cetak dari viewer).
+    function printReport(format) {
+        const jenis = $('#lapJenis').val();
+        const data = { jenis: jenis };
+        if (jenis === 'bukukas' || jenis === 'aruskas') {
+            data.dari = $('#lapDari').val();
+            data.sampai = $('#lapSampai').val();
+            data.akun = $('#lapAkun').val();
+            if (!data.dari || !data.sampai) { AppUI.alertWarning('Isi rentang tanggal.'); return; }
+            if (data.sampai < data.dari) { AppUI.alertWarning('Tanggal akhir harus sesudah tanggal awal.'); return; }
+        } else if (jenis === 'realisasi') {
+            data.anggaran = $('#lapAnggaran').val();
+            if (!data.anggaran) { AppUI.alertWarning('Pilih anggaran.'); return; }
+        } else {
+            data.iuran = $('#lapIuran').val();
+            data.section = $('#lapSection').val();
+            if (!data.iuran) { AppUI.alertWarning('Pilih pengaturan iuran.'); return; }
+        }
+        if (format === 'xlsx') {
+            data.xlsx = 1;
+            window.location.href = URL.cetakLaporan + '?' + $.param(data);
+            return;
+        }
+        AppUI.closeModal(MODAL);
+        AppUI.openReport(REPORT_TITLE[jenis], URL.cetakLaporan + '?' + $.param(data));
+    }
+
     /* ===== Saldo ===== */
 
     function openBalance() {
@@ -140,6 +182,7 @@ window.Transaksi = (function () {
     }
 
     return {
+        report: report, reportTypeChanged: reportTypeChanged, printReport: printReport,
         add: add, save: save, typeChanged: typeChanged, addAttachment: addAttachment, removeAttachment: removeAttachment, openBalance: openBalance,
         statusTemplate: statusTemplate, balanceStatusTemplate: balanceStatusTemplate, typeTemplate: typeTemplate,
         transactionActionTemplate: transactionActionTemplate, balanceActionTemplate: balanceActionTemplate, masterActionTemplate: masterActionTemplate

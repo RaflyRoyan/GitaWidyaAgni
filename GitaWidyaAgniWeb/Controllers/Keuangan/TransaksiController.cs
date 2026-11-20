@@ -55,6 +55,14 @@ namespace GitaWidyaAgniWeb.Controllers.Keuangan
             }
         }
 
+        // ---------- Laporan keuangan (buku kas, arus kas, realisasi anggaran, rekap iuran; ?pdf=1 = unduh)
+        [AccessAs(Acc.Index)] public IActionResult FormLaporan() => Bagian(() => new Models.Keuangan.KeuanganCetak.Form(), "Laporan");
+
+        [AccessAs(Acc.Index)]
+        public IActionResult CetakLaporan(string? jenis, DateTime? dari, DateTime? sampai, int? akun, int? anggaran, int? iuran, int? section)
+            => Laporan(() => Models.Keuangan.KeuanganCetak.Cetak(jenis, dari, sampai, akun, anggaran, iuran, section,
+                HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath));
+
         // ---------- Saldo periode
         [AccessAs(Acc.Index)] public IActionResult ListSaldo() => Bagian(() => new VM.ListSaldo());
         [HttpPost, AccessAs(Acc.Process)] public IActionResult BukaSaldo([FromBody] VM.BukaSaldoInput i) => Aksi(u => (object)VM.Method.BukaSaldo(i, u), "Saldo periode dibuka.");

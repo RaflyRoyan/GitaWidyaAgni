@@ -58,6 +58,11 @@ namespace GitaWidyaAgniWeb.Controllers.Inventaris
             return View("~/Views/Shared/_ReportViewer.cshtml", report);
         }
 
+        // Laporan inventaris (DevExpress; ?pdf=1 / ?xlsx=1 = unduh): kondisi aset + riwayat perawatan dari..sampai.
+        [AccessAs(Acc.Index)]
+        public IActionResult CetakLaporan(DateTime? dari, DateTime? sampai, int? kategori) => Laporan(() => Models.Inventaris.InventarisCetak.Cetak(dari, sampai, kategori,
+            HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath));
+
         private Microsoft.Extensions.Caching.Memory.IMemoryCache Cache => HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Caching.Memory.IMemoryCache>();
         private static string LabelCacheKey(string? id, string user) => $"label-qr:{user}:{id}";
 

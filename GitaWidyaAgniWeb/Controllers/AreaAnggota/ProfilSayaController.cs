@@ -37,5 +37,9 @@ namespace GitaWidyaAgniWeb.Controllers.AreaAnggota
         public IActionResult Kta() => Laporan(() => Models.Anggota.KtaCetak.Satu(Saya(), LibUser,
             HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath,
             AsetLabel.BaseUrl(Request, HttpContext.RequestServices.GetRequiredService<IConfiguration>())));
+
+        // Rapor milik sendiri per periode (kosong = periode Aktif; ?pdf=1 = unduh PDF).
+        public IActionResult Rapor(int? periode) => Laporan(() => Models.Anggota.RaporCetak.Saya(LibUser, periode,
+            HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath));
     }
 }

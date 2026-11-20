@@ -17,6 +17,10 @@ namespace GitaWidyaAgniWeb.Models
         /// <summary>Anggota aktif yang berulang tahun dalam BIRTHDAY_DAYS hari ke depan (hari ini termasuk).</summary>
         public List<GWALib.Lib.Master.Anggota.Member.BirthdayRow> Birthdays { get; set; } = new();
         public const int BIRTHDAY_DAYS = 7;
+        /// <summary>Ringkasan pribadi bila user punya data anggota (Dashboard.GetMine), else null.</summary>
+        public Dashboard.MySummary? Saya { get; set; }
+        /// <summary>Sesi presensi anggota hari ini (belum selesai) + mendatang, maksimal 3 (AttendanceSession.GetMyAttendance).</summary>
+        public List<GWALib.Lib.Transaksi.Presensi.AttendanceSession.MySession> SesiSaya { get; set; } = new();
 
         public bool Can(string controller) => Allowed == null || Allowed.Contains(controller.ToLowerInvariant() + "/index");
     }

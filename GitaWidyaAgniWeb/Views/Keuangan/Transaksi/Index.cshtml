@@ -25,7 +25,7 @@
                     ("btn-outline-primary", "ri-check-double-line", "Posting"),
                     ("btn-outline-warning", "ri-edit-2-line", "Ubah (Draft)"),
                     ("btn-outline-secondary", "ri-close-circle-line", "Batalkan"),
-                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus (Draft)")) { LegendId = "legendTransaksi" }' />
+                    ("btn-outline-danger", "ri-delete-bin-line", "Hapus (Draft)")) { LegendId = "legendTransaksi", Extra = new[] { ("btn-outline-dark", "ri-printer-line", "Cetak Laporan Keuangan", "Transaksi.report()") } }' />
                 <div id="targetTransaksi" class="mt-3"></div>
             </div>
             <div class="tab-pane fade" id="tabSaldo" role="tabpanel">
@@ -56,7 +56,7 @@
             });
         });
         ['PostingTransaksi', 'BatalTransaksi', 'Lampiran', 'TambahLampiran', 'HapusLampiran', 'BerkasLampiran',
-            'BukaSaldo', 'SegarkanSaldo', 'TutupSaldo', 'BukaLagiSaldo'].forEach(function (a) {
+            'BukaSaldo', 'SegarkanSaldo', 'TutupSaldo', 'BukaLagiSaldo', 'FormLaporan', 'CetakLaporan'].forEach(function (a) {
             window.TransaksiUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
         });
     </script>

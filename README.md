@@ -23,7 +23,7 @@ Organisasi adalah level tertinggi. Tidak ada tenant, kampus, kategori UKM, atau 
 4. [Database](#database)
 5. [Konfigurasi](#konfigurasi)
 6. [Data contoh (GWASeeder)](#data-contoh-gwaseeder)
-7. [Panduan per menu](#panduan-per-menu)
+7. [Panduan per menu](#panduan-per-menu) (panduan pengguna per peran: [docs/panduan](docs/panduan/README.md))
 8. [Laporan (DevExpress Reports)](#laporan-devexpress-reports)
 9. [Job terjadwal dan pengiriman pesan](#job-terjadwal-dan-pengiriman-pesan)
 10. [Autentikasi dan hak akses](#autentikasi-dan-hak-akses)
@@ -373,6 +373,8 @@ Siapa yang boleh menyetujui dokumen tetap ditentukan alur persetujuan. Pada data
 
 Bagian ini menjelaskan **untuk apa** setiap menu, siapa yang biasanya memakainya, dan alur kerjanya. URL dashboard berbentuk `/<Area>/<Controller>`. Semua grid punya pencarian, filter, dan **export Excel + PDF**; tombol **Tampilkan Legenda** menjelaskan arti setiap tombol aksi di grid.
 
+Panduan langkah demi langkah untuk pengguna akhir, per peran (anggota, ketua / wakil, sekretaris, bendahara, kadiv / section leader, administrator), ada di [docs/panduan](docs/panduan/README.md).
+
 ### Halaman publik (tanpa login)
 
 | URL | Untuk apa |
@@ -387,6 +389,8 @@ Bagian ini menjelaskan **untuk apa** setiap menu, siapa yang biasanya memakainya
 ### Dashboard
 
 Halaman pertama setelah login. Menampilkan sapaan dan periode aktif, kartu ringkas (jumlah anggota, kegiatan mendatang, saldo kas, iuran belum lunas), grafik arus kas 6 bulan dan anggota per section, agenda terdekat, daftar **Perlu tindakan** (pengajuan yang menunggu persetujuan Anda, izin kegiatan, disposisi, iuran sendiri), 5 poin tertinggi, dan pintasan menu. Bagian yang tampil menyesuaikan hak akses. Bila ada anggota yang berulang tahun dalam 7 hari ke depan, muncul kartu **Ulang tahun** (hari ini ditandai).
+
+Akun yang terhubung ke data anggota juga melihat **Ringkasan saya** di atas: kehadiran periode aktif dan bulan ini (merah + peringatan bila di bawah 75%), poin dan peringkat periode aktif, iuran belum dibayar dan jatuh tempo terdekat, kepanitiaan mendatang, jumlah prestasi / sertifikat / peminjaman berjalan, serta jadwal presensi 7 hari ke depan dengan tombol Check-in / Check-out. Setiap kartu menuju halaman Area Anggota terkait.
 
 ### Akses (SUPERADMIN)
 
@@ -524,7 +528,7 @@ Pemilihan ketua umum atau lainnya secara rahasia: kandidat (pendaftaran dan veri
 
 | Menu | Untuk apa |
 |---|---|
-| **Profil Saya** | Mengubah kontak dan foto, melihat riwayat section, jabatan dan divisi, lama bergabung, mengganti password. **Lihat KTA / Unduh PDF**: Kartu Tanda Anggota digital (depan-belakang) dengan QR; siapa pun yang memindai QR melihat halaman verifikasi `/kta/...` berisi status keanggotaan terkini. |
+| **Profil Saya** | Mengubah kontak dan foto, melihat riwayat section, jabatan dan divisi, lama bergabung, mengganti password. **Rapor** per periode (lihat / unduh PDF). **Lihat KTA / Unduh PDF**: Kartu Tanda Anggota digital (depan-belakang) dengan QR; siapa pun yang memindai QR melihat halaman verifikasi `/kta/...` berisi status keanggotaan terkini. |
 | **Presensi** | Absensi gaya aplikasi lapangan: kartu sesi yang sedang berlangsung / berikutnya, tab **Hari Ini / Mendatang / Riwayat**, dan tombol **Check-In / Check-Out**. Check-in membuka kamera langsung untuk selfie (bisa ganti kamera / foto ulang, atau pilih dari galeri bila kamera tidak tersedia), mengambil lokasi otomatis beserta jarak ke titik, lalu simpan. Sesi mode QR meminta scan QR dulu. Check-in bisa sejak 30 menit sebelum mulai. Berhalangan? Tekan **Ajukan izin** di kartu sesi (hari ini atau mendatang), isi alasan, lalu tunggu persetujuan pengurus di Daftar Kegiatan; status izin (menunggu / disetujui / ditolak) tampil di kartu dan pengajuan yang masih menunggu bisa ditarik. Di samping ada grafik kehadiran 6 bulan terakhir beserta peringatan bila di bawah 75%. |
 | **Kegiatan Saya** | Kegiatan yang otomatis diikuti (mis. latihan rutin) dan **ajukan tidak ikut** satu pertemuan atau seluruh kegiatan; daftar / batal kegiatan dengan pendaftaran; melamar tim pelaksana dan melihat tugas panitia. |
 | **Iuran Saya** | Melihat tagihan iuran sendiri dan statusnya. |
@@ -601,6 +605,34 @@ A4 landscape dengan bingkai emas, logo, nomor, nama penerima dan NIA, kalimat pe
 ### Rekap kehadiran
 
 **Kegiatan › Presensi › Cetak Rekap Kehadiran**: pilih rentang tanggal, kegiatan, dan section. Isinya ringkasan (jumlah sesi ditutup, jumlah anggota, rata-rata hadir) dan tabel per anggota: jumlah sesi, hadir (berapa yang terlambat), izin / sakit, alpa, dan persentase hadir. Baris dengan kehadiran di bawah 75% diberi latar. Ditandatangani Sekretaris yang sedang menjabat.
+
+### Laporan keuangan
+
+**Keuangan › Transaksi › Cetak Laporan Keuangan** membuka pilihan jenis laporan. Semua laporan hanya menghitung transaksi berstatus Diposting dan ditandatangani Bendahara serta Ketua Umum periode aktif.
+
+| Laporan | Pilihan | Isi |
+|---|---|---|
+| Buku kas (landscape) | Rentang tanggal, akun (atau semua) | Per akun: saldo awal (saldo awal akun + transaksi sebelum tanggal mulai), setiap transaksi dengan saldo berjalan, jumlah dan saldo akhir; ringkasan per akun bila lebih dari satu |
+| Arus kas | Rentang tanggal, akun (atau semua) | Pemasukan dan pengeluaran per kategori, ringkasan saldo awal / surplus-defisit / saldo akhir, dan tabel per bulan (bulan defisit diberi latar) |
+| Realisasi anggaran (landscape) | Anggaran | Per item RAB: kategori, uraian + program, volume × harga, RAB, realisasi, sisa, persentase (melebihi RAB diberi latar); lalu pengeluaran periode itu yang tidak memakai item anggaran |
+| Rekap iuran (landscape) | Pengaturan iuran, section | Per periode tagihan (tagihan, lunas, dibebaskan, belum, terkumpul, tunggakan) dan per anggota (tunggakan beserta periode yang belum dibayar, urut tunggakan terbesar) |
+
+Tombol **Unduh Excel** di modal yang sama mengunduh laporan terpilih sebagai `.xlsx` (`CetakLaporan?...&xlsx=1`). Semua laporan DevExpress menerima `?xlsx=1` (dan `?pdf=1`) untuk unduh langsung.
+
+### Rapor anggota
+
+Rapor per periode kepengurusan: identitas dan foto, kehadiran (ringkasan + per bulan dari sesi yang sudah ditutup), poin per sumber dan peringkat, jabatan dan divisi, kepanitiaan, prestasi, dan sertifikat pada periode itu. Ditandatangani Sekretaris dan Ketua Umum periode rapor.
+
+- Pengurus: **Data Anggota** › baris anggota › **Rapor anggota**, pilih periode.
+- Anggota: **Area Anggota › Profil Saya** › pilih periode › **Lihat Rapor** / **Unduh PDF**.
+
+### Laporan inventaris
+
+**Inventaris › Aset › Cetak Laporan Inventaris** (landscape): pilih kategori (atau semua) dan rentang tanggal riwayat perawatan (bawaan awal periode aktif s.d. hari ini). Isinya ringkasan (jenis aset, jumlah barang / unit, kondisi, nilai perolehan, perawatan), daftar aset yang belum dihapuskan per kategori (kode, nama, jumlah, baik, rusak ringan / berat, hilang, lalu keterangan: dipinjam, perawatan, lokasi, perolehan), dan riwayat perawatan (tanggal, aset / unit, pekerjaan, vendor, biaya, status). Aset per unit dihitung dari unitnya; aset cukup jumlah memakai kondisi asetnya. Ditandatangani Sekretaris dan Ketua Umum periode aktif.
+
+### Rekap poin keaktifan
+
+**Prestasi › Lomba & Prestasi › tab Poin › Cetak Rekap Poin** (landscape): pilih periode (bawaan aktif) dan section. Tabel per anggota: peringkat (poin sama = peringkat sama, dihitung di antara semua anggota periode itu), nama + NIA + section saat ini, poin hadir, panitia, pengurus, prestasi, lainnya (termasuk pemateri), dan total; tiga besar diberi latar. Ditandatangani Sekretaris dan Ketua Umum periode itu.
 
 ### Label QR inventaris (Aset › Unit & label QR)
 

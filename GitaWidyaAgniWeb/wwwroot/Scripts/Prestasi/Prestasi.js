@@ -133,6 +133,23 @@ window.Prestasi = (function () {
         }
     }
 
+    // Rekap poin: periode (bawaan aktif), lalu section (kosong = semua); viewer DevExpress (ekspor PDF / Excel dari toolbar viewer).
+    function pointReport() {
+        $.when($.getJSON(URL.opsiPeriode), $.getJSON(URL.opsiSection)).done(function (p, s) {
+            const periods = p[0] || [];
+            if (periods.length === 0) { AppUI.alertWarning('Belum ada periode kepengurusan.'); return; }
+            const active = periods.find(function (x) { return x.Text.indexOf('(aktif)') >= 0; }) || periods[0];
+            const title = 'Rekap Poin Keaktifan';
+            AppUI.promptInput({ title: title, text: 'Periode', input: 'select', options: new Map(periods.map(function (x) { return [String(x.Value), x.Text]; })), value: String(active.Value), confirmText: 'Lanjut' }).then(function (periode) {
+                if (!periode) return;
+                AppUI.promptInput({ title: title, text: 'Section', input: 'select', options: new Map([['', 'Semua section']].concat((s[0] || []).map(function (x) { return [String(x.Value), x.Text]; }))), value: '', confirmText: 'Cetak' }).then(function (section) {
+                    if (section === null) return;
+                    AppUI.openReport(title, URL.cetakRekapPoin + '?' + $.param({ periode: periode, section: section || '' }));
+                });
+            });
+        });
+    }
+
     /* ===== Grid ===== */
 
     const competitionStatusTemplate = AppUI.badgeTemplate({ 'Akan Datang': 'secondary', 'Pendaftaran': 'info', 'Berlangsung': 'primary', 'Selesai': 'success', 'Dibatalkan': 'dark' });
@@ -202,7 +219,7 @@ window.Prestasi = (function () {
     return {
         add: add, saveCompetition: saveCompetition, saveAchievement: saveAchievement, saveMaterial: saveMaterial, savePoint: savePoint, saveRule: saveRule,
         registerParticipant: registerParticipant, participate: participate, withdraw: withdraw,
-        generateActivity: generateActivity, generatePeriod: generatePeriod, leaderboard: leaderboard,
+        generateActivity: generateActivity, generatePeriod: generatePeriod, leaderboard: leaderboard, pointReport: pointReport,
         competitionStatusTemplate: competitionStatusTemplate, competitionActionTemplate: competitionActionTemplate,
         achievementActionTemplate: achievementActionTemplate, materialActionTemplate: materialActionTemplate,
         pointActionTemplate: pointActionTemplate, ruleActionTemplate: ruleActionTemplate

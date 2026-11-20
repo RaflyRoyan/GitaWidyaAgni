@@ -1,0 +1,78 @@
+@model GitaWidyaAgniWeb.Models.Keuangan.KeuanganCetak.Form
+@using GitaWidyaAgniWeb.Models.Keuangan
+
+@* Modal "Cetak Laporan Keuangan": isian tampil sesuai jenis (Transaksi.printReport membaca nilainya). *@
+<div class="gwa-mform" id="frmLaporanKeuangan">
+    <div class="gwa-mform-note mb-3">Laporan hanya menghitung transaksi berstatus <b>Diposting</b>. Penanda tangan: Bendahara dan Ketua Umum periode aktif.</div>
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label" for="lapJenis">Jenis laporan</label>
+            <select id="lapJenis" class="form-select" onchange="Transaksi.reportTypeChanged()">
+                <option value="@KeuanganCetak.BUKU_KAS">Buku kas (per akun, saldo berjalan)</option>
+                <option value="@KeuanganCetak.ARUS_KAS">Arus kas (per kategori dan per bulan)</option>
+                <option value="@KeuanganCetak.REALISASI">Realisasi anggaran (RAB vs realisasi)</option>
+                <option value="@KeuanganCetak.IURAN">Rekap iuran anggota</option>
+            </select>
+        </div>
+        <div class="col-6" data-lap="@KeuanganCetak.BUKU_KAS @KeuanganCetak.ARUS_KAS">
+            <label class="form-label" for="lapDari">Dari tanggal</label>
+            <input id="lapDari" type="date" class="form-control" value="@Model.Dari.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-6" data-lap="@KeuanganCetak.BUKU_KAS @KeuanganCetak.ARUS_KAS">
+            <label class="form-label" for="lapSampai">Sampai tanggal</label>
+            <input id="lapSampai" type="date" class="form-control" value="@Model.Sampai.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="col-12" data-lap="@KeuanganCetak.BUKU_KAS @KeuanganCetak.ARUS_KAS">
+            <label class="form-label" for="lapAkun">Akun kas</label>
+            <select id="lapAkun" class="form-select">
+                <option value="">Semua akun</option>
+                @foreach (var a in Model.Akun)
+                {
+                    <option value="@a.Value">@a.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-12" data-lap="@KeuanganCetak.REALISASI">
+            <label class="form-label" for="lapAnggaran">Anggaran</label>
+            <select id="lapAnggaran" class="form-select">
+                @if (Model.Anggaran.Count == 0)
+                {
+                    <option value="">Belum ada anggaran</option>
+                }
+                @foreach (var a in Model.Anggaran)
+                {
+                    <option value="@a.Value">@a.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-7" data-lap="@KeuanganCetak.IURAN">
+            <label class="form-label" for="lapIuran">Pengaturan iuran</label>
+            <select id="lapIuran" class="form-select">
+                @if (Model.Iuran.Count == 0)
+                {
+                    <option value="">Belum ada pengaturan iuran</option>
+                }
+                @foreach (var a in Model.Iuran)
+                {
+                    <option value="@a.Value">@a.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-5" data-lap="@KeuanganCetak.IURAN">
+            <label class="form-label" for="lapSection">Section</label>
+            <select id="lapSection" class="form-select">
+                <option value="">Semua section</option>
+                @foreach (var s in Model.Section)
+                {
+                    <option value="@s.Value">@s.Text</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-outline-success" onclick="Transaksi.printReport('xlsx')"><i class="ri-file-excel-2-line me-1"></i> Unduh Excel</button>
+        <button type="button" class="btn btn-success" onclick="Transaksi.printReport()"><i class="ri-printer-line me-1"></i> Cetak</button>
+    </div>
+</div>
+<script>Transaksi.reportTypeChanged();</script>

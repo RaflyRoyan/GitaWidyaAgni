@@ -156,6 +156,11 @@ namespace GitaWidyaAgniWeb.Controllers.Prestasi
         [AccessAs(Acc.Index)] public IActionResult Peringkat(int? periodId) => Bagian(() => new VM.Peringkat(periodId));
         [AccessAs(Acc.Index)] public IActionResult OpsiKegiatan() => Json(Opsi.Kegiatan());
         [AccessAs(Acc.Index)] public IActionResult OpsiPeriode() => Json(Opsi.Periode());
+        [AccessAs(Acc.Index)] public IActionResult OpsiSection() => Json(Opsi.Section());
+        // Rekap poin per periode (DevExpress; ?pdf=1 / ?xlsx=1 = unduh). Periode kosong = periode Aktif.
+        [AccessAs(Acc.Index)]
+        public IActionResult CetakRekapPoin(int? periode, int? section) => Laporan(() => Models.Prestasi.PoinCetak.Cetak(periode, section,
+            HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath));
 
         [HttpPost, AccessAs(Acc.Process)]
         public IActionResult GenerateKegiatan([FromBody] GwaVM.StatusInput i)

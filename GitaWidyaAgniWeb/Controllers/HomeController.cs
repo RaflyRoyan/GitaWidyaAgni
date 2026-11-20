@@ -51,6 +51,19 @@ namespace GitaWidyaAgniWeb.Controllers
             }
             try
             {
+                model.Saya = Dashboard.GetMine(LibUser);
+                if (model.Saya != null)
+                {
+                    var my = GWALib.Lib.Transaksi.Presensi.AttendanceSession.GetMyAttendance(LibUser, 7, 0);
+                    model.SesiSaya = my.Today.Where(x => x.CloseAt >= DateTime.Now).Concat(my.Upcoming).Take(3).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Ringkasan anggota gagal dimuat");
+            }
+            try
+            {
                 model.Birthdays = GWALib.Lib.Master.Anggota.Member.GetBirthdays(DateOnly.FromDateTime(DateTime.Today), HomeVM.BIRTHDAY_DAYS);
             }
             catch (Exception ex)

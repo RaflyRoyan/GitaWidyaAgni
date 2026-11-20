@@ -95,6 +95,12 @@ a { text-underline-offset: 3px; }
 .gwa-stat-label { font-size: .78rem; color: var(--gwa-muted); font-weight: 500; }
 .gwa-stat-value { font-size: 1.35rem; font-weight: 700; color: var(--gwa-text); line-height: 1.25; font-variant-numeric: tabular-nums; word-break: break-word; }
 .gwa-stat-sub { font-size: .75rem; color: var(--gwa-muted); }
+/* Ringkasan saya (anggota) */
+a.gwa-stat-link { text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+a.gwa-stat-link:hover, a.gwa-stat-link:focus-visible { border-color: var(--gwa-gold); box-shadow: 0 4px 14px rgba(154, 107, 0, .12); }
+.gwa-mine .gwa-stat { background: var(--gwa-ivory, #fbf8f2); }
+.gwa-mine-subtitle { font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--gwa-muted); }
+.gwa-mine-sessions .list-group-item { gap: 12px; }
 
 .gwa-agenda .list-group-item, .gwa-rank .list-group-item { display: flex; align-items: center; gap: 12px; }
 .gwa-agenda-date { flex: 0 0 48px; text-align: center; padding: 6px 0; border-radius: 10px; background: var(--gwa-cream); line-height: 1.1; }
