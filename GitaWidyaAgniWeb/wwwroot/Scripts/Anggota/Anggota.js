@@ -103,13 +103,38 @@ window.Anggota = (function () {
         const row = options.data;
         container.append(AppUI.actionButton({ css: 'btn-outline-info', icon: 'ri-image-line', title: 'Foto anggota', onClick: function () { photos(row); } }));
         container.append(AppUI.actionButton({ css: 'btn-outline-success', icon: 'ri-music-2-line', title: 'Riwayat section', onClick: function () { sections(row); } }));
+        if (row.BisaKta) {
+            container.append(AppUI.actionButton({ css: 'btn-outline-primary', icon: 'ri-bank-card-line', title: 'Cetak KTA', onClick: function () { printCard(row); } }));
+            container.append(AppUI.actionButton({ css: 'btn-outline-secondary', icon: 'ri-qr-code-line', title: 'Ganti QR KTA (kartu hilang)', onClick: function () { renewCard(row); } }));
+        }
         container.append(AppUI.actionButton({ css: 'btn-outline-warning', icon: 'ri-edit-2-line', title: 'Ubah anggota', onClick: function () { edit(row.EncDecrKey); } }));
         if (row.Aktif) {
             container.append(AppUI.actionButton({ css: 'btn-outline-danger', icon: 'ri-forbid-line', title: 'Nonaktifkan anggota', onClick: function () { deactivate(row); } }));
         }
     }
 
+    /* ===== KTA ===== */
+
+    function printCard(row) {
+        AppUI.openReport('KTA ' + row.Fullname, URL.cetakKta + '?' + $.param({ key: row.EncDecrKey }));
+    }
+    function printCards() {
+        const opsi = (window.AnggotaOpsi || {}).section || {};
+        AppUI.promptInput({
+            title: 'Cetak KTA Massal', text: 'Semua anggota aktif, atau satu section. Anggota yang belum punya QR KTA dibuatkan.', input: 'select',
+            options: new Map([['', 'Semua section']].concat(Object.entries(opsi))), value: '', confirmText: 'Cetak'
+        }).then(function (section) {
+            if (section === null) return;
+            AppUI.openReport('KTA Anggota', URL.cetakKtaMassal + '?' + $.param({ section: section || '' }));
+        });
+    }
+    function renewCard(row) {
+        AppUI.confirmPost('Ganti QR KTA ' + row.Fullname + '?', 'QR pada kartu lama langsung tidak berlaku. Cetak ulang kartunya setelah ini.',
+            URL.gantiQrKta, { Key: row.EncDecrKey }, 'Ganti QR', 'btn-danger');
+    }
+
     return {
+        printCards: printCards,
         add: add, save: save, update: update, refresh: refresh, addPhoto: addPhoto, removePhoto: removePhoto,
         nameTemplate: nameTemplate, statusTemplate: statusTemplate, actionTemplate: actionTemplate
     };

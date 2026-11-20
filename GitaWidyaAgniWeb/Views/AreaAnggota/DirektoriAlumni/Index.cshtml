@@ -1,0 +1,176 @@
+@model GitaWidyaAgniWeb.Controllers.AreaAnggota.DirektoriAlumniController.IndexVM
+@using GWAShared.Enums
+@{
+    ViewData["Title"] = "Direktori Alumni";
+    var saya = Model.Saya;
+    string Inisial(string n) => string.Concat(n.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(x => char.ToUpperInvariant(x[0])));
+    string? Wa(string? phone)
+    {
+        var d = new string((phone ?? "").Where(char.IsDigit).ToArray());
+        return d.Length < 8 ? null : d.StartsWith("0") ? "62" + d[1..] : d;
+    }
+}
+
+@if (saya != null)
+{
+    <div class="card">
+        <div class="card-header d-flex align-items-center">
+            <h5 class="card-title mb-0 flex-grow-1"><i class="ri-user-star-line align-bottom me-1"></i> Profil alumni saya</h5>
+            @if (!saya.HasProfile)
+            {
+                <span class="badge bg-warning-subtle text-warning">Belum diisi</span>
+            }
+        </div>
+        <div class="card-body">
+            <p class="text-muted small">Isi agar adik-adik dan sesama alumni tahu kabar Anda. Pekerjaan, perusahaan, LinkedIn, WhatsApp, dan email hanya tampil di direktori bila Anda <b>bersedia dihubungi</b>.</p>
+            <form id="frmAlumniSaya" class="row g-3" onsubmit="return false">
+                <div class="col-6 col-md-3">
+                    <label class="form-label" for="alTahun">Tahun lulus</label>
+                    <input id="alTahun" type="number" min="1900" max="@DateTime.Today.Year" class="form-control" value="@saya.GraduationYear" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label" for="alKota">Kota domisili</label>
+                    <input id="alKota" class="form-control" maxlength="100" value="@saya.City" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="alIndustri">Bidang / industri</label>
+                    <input id="alIndustri" class="form-control" maxlength="100" value="@saya.Industry" placeholder="mis. Pendidikan, Teknologi, Kesehatan" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="alKerja">Pekerjaan</label>
+                    <input id="alKerja" class="form-control" maxlength="150" value="@saya.CurrentJob" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="alPerusahaan">Perusahaan / instansi</label>
+                    <input id="alPerusahaan" class="form-control" maxlength="150" value="@saya.Company" />
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label" for="alLinkedin">URL LinkedIn</label>
+                    <input id="alLinkedin" type="url" class="form-control" maxlength="255" value="@saya.LinkedinUrl" placeholder="https://www.linkedin.com/in/..." />
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="alBersedia" @(saya.IsContactable == ContactPermission.Bersedia ? "checked" : "") />
+                        <label class="form-check-label" for="alBersedia">Bersedia dihubungi</label>
+                    </div>
+                </div>
+                <div class="col-12 text-end">
+                    <button type="button" class="btn btn-success" onclick="DirektoriAlumni.save()"><i class="ri-save-3-line me-1"></i> Simpan Profil</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0"><i class="ri-graduation-cap-line align-bottom me-1"></i> Direktori Alumni</h5>
+        <p class="gwa-card-intro">@Model.Total alumni terdata. Kontak hanya tampil untuk alumni yang bersedia dihubungi; gunakan dengan sopan.</p>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-2 mb-3" role="search">
+            <div class="col-md-6">
+                <label class="visually-hidden" for="cari">Cari</label>
+                <input id="cari" name="cari" class="form-control" value="@Model.Cari" placeholder="Cari nama, NIA, kota, bidang, perusahaan..." />
+            </div>
+            <div class="col-7 col-md-3">
+                <label class="visually-hidden" for="angkatan">Angkatan</label>
+                <select id="angkatan" name="angkatan" class="form-select">
+                    <option value="">Semua angkatan</option>
+                    @foreach (var a in Model.AngkatanOpsi)
+                    {
+                        <option value="@a" selected="@(Model.Angkatan == a)">Angkatan @a</option>
+                    }
+                </select>
+            </div>
+            <div class="col-5 col-md-3 d-flex gap-2">
+                <button class="btn btn-primary flex-grow-1"><i class="ri-search-line me-1"></i> Cari</button>
+                @if (!string.IsNullOrWhiteSpace(Model.Cari) || Model.Angkatan != null)
+                {
+                    <a class="btn btn-light" href="@Url.Action("Index")" aria-label="Hapus saringan"><i class="ri-close-line"></i></a>
+                }
+            </div>
+        </form>
+
+        @if (Model.Rows.Count == 0)
+        {
+            <div class="text-center text-muted py-5">
+                <i class="ri-user-search-line fs-1 d-block mb-2" aria-hidden="true"></i>
+                @(Model.Total == 0 ? "Belum ada alumni terdata." : "Tidak ada alumni yang cocok.")
+            </div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var r in Model.Rows)
+                {
+                    var wa = Wa(r.Phone);
+                    <div class="col-md-6 col-xl-4">
+                        <div class="border rounded-3 p-3 h-100 d-flex gap-3">
+                            <div class="avatar-sm flex-shrink-0"><span class="avatar-title rounded-circle bg-soft-warning text-warning fw-bold">@Inisial(r.Fullname)</span></div>
+                            <div class="min-w-0 flex-grow-1">
+                                <div class="fw-semibold text-truncate">@r.Fullname</div>
+                                <div class="small text-muted">
+                                    @(r.Angkatan != null ? "Angkatan " + r.Angkatan : "Angkatan -")
+                                    @(r.GraduationYear != null ? " · lulus " + r.GraduationYear : "")
+                                    @(string.IsNullOrEmpty(r.LastSection) ? "" : " · " + r.LastSection)
+                                </div>
+                                @if (r.Contactable && (!string.IsNullOrEmpty(r.CurrentJob) || !string.IsNullOrEmpty(r.Company)))
+                                {
+                                    <div class="small mt-1"><i class="ri-briefcase-4-line me-1 text-muted"></i>@string.Join(" · ", new[] { r.CurrentJob, r.Company }.Where(x => !string.IsNullOrEmpty(x)))</div>
+                                }
+                                @if (!string.IsNullOrEmpty(r.City) || !string.IsNullOrEmpty(r.Industry))
+                                {
+                                    <div class="small text-muted"><i class="ri-map-pin-line me-1"></i>@string.Join(" · ", new[] { r.City, r.Industry }.Where(x => !string.IsNullOrEmpty(x)))</div>
+                                }
+                                @if (r.Contactable)
+                                {
+                                    <div class="d-flex flex-wrap gap-1 mt-2">
+                                        @if (wa != null)
+                                        {
+                                            <a class="btn btn-sm btn-outline-success" target="_blank" rel="noopener" href="https://wa.me/@wa"><i class="ri-whatsapp-line"></i> WhatsApp</a>
+                                        }
+                                        @if (!string.IsNullOrEmpty(r.Email))
+                                        {
+                                            <a class="btn btn-sm btn-outline-secondary" href="mailto:@r.Email"><i class="ri-mail-line"></i> Email</a>
+                                        }
+                                        @if (!string.IsNullOrEmpty(r.LinkedinUrl) && (r.LinkedinUrl.StartsWith("https://") || r.LinkedinUrl.StartsWith("http://")))
+                                        {
+                                            <a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener noreferrer" href="@r.LinkedinUrl"><i class="ri-linkedin-box-line"></i> LinkedIn</a>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="small text-muted fst-italic mt-1">Belum bersedia dihubungi</div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @if (saya != null)
+    {
+        <script>
+            window.DirektoriAlumni = {
+                save: function () {
+                    const form = document.getElementById('frmAlumniSaya');
+                    if (!form.reportValidity()) return;
+                    const tahun = $('#alTahun').val();
+                    AppUI.postJson('@Url.Action("SimpanProfil")', {
+                        GraduationYear: tahun ? parseInt(tahun, 10) : null,
+                        CurrentJob: $('#alKerja').val(), Company: $('#alPerusahaan').val(), Industry: $('#alIndustri').val(),
+                        City: $('#alKota').val(), LinkedinUrl: $('#alLinkedin').val(), Bersedia: $('#alBersedia').is(':checked')
+                    }).done(function (r) {
+                        AppUI.alertSuccess(r.Message).then(function () { window.location.reload(); });
+                    });
+                }
+            };
+        </script>
+    }
+}

@@ -14,6 +14,8 @@ namespace GitaWidyaAgniWeb.Models.Anggota
     {
         public class Index
         {
+            // Saringan cetak KTA massal.
+            public List<GwaVM.OpsiItem> SectionOpsi { get; set; } = Opsi.Section();
         }
 
         public class List
@@ -37,6 +39,9 @@ namespace GitaWidyaAgniWeb.Models.Anggota
             public string? Phone { get; set; }
             public string? Email { get; set; }
             public DateTime? JoinedAt { get; set; }
+            // Lama keanggotaan dari tanggal bergabung s.d. hari ini (atau tanggal keluar).
+            public string? Lama { get; set; }
+            public bool BisaKta { get; set; }
             public int JumlahFoto { get; set; }
             public int? FotoId { get; set; }
             public bool Aktif { get; set; }
@@ -223,6 +228,8 @@ namespace GitaWidyaAgniWeb.Models.Anggota
                     Phone = x.Phone,
                     Email = x.Email,
                     JoinedAt = Opsi.KeDateTime(x.JoinedAt),
+                    Lama = Member.TenureText(x.JoinedAt, x.LeftAt),
+                    BisaKta = x.Status != MemberStatus.Inactive,
                     JumlahFoto = photos.TryGetValue(x.Id, out var p) ? p.Count : 0,
                     FotoId = photos.TryGetValue(x.Id, out var p2) ? p2[0].Id : null,
                     Aktif = x.Status == MemberStatus.Active

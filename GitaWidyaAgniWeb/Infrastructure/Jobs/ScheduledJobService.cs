@@ -41,6 +41,9 @@ namespace GitaWidyaAgniWeb.Infrastructure.Jobs
         public const string JOB_GENERATE_SESSIONS = "GENERATE_ATTENDANCE_SESSIONS";
         public const string JOB_SYNC_SESSIONS = "SYNC_ATTENDANCE_SESSIONS";
         public const string JOB_PURGE = "PURGE_OLD_DATA";
+        public const string JOB_BIRTHDAY = "BIRTHDAY_GREETINGS";
+        // Ucapan ulang tahun dikirim mulai jam ini (job dicek tiap jam; anggota yang sudah diberi ucapan hari ini dilewati).
+        private const int BIRTHDAY_HOUR = 7;
         private const int OUTBOX_BATCH = 50;
 
         private record Job(string Name, TimeSpan Interval, Func<string, CancellationToken, Task<(int Count, string? Message)>> Run, bool LogWhenIdle = true);
@@ -64,6 +67,7 @@ namespace GitaWidyaAgniWeb.Infrastructure.Jobs
                 new Job(JOB_BORROW_OVERDUE, TimeSpan.FromMinutes(30), (u, t) => Task.FromResult((BorrowRequest.MarkOverdue(u).Ok(), (string?)null))),
                 new Job(JOB_GENERATE_SESSIONS, TimeSpan.FromHours(6), GenerateSessionsAsync),
                 new Job(JOB_SYNC_SESSIONS, TimeSpan.FromMinutes(1), SyncSessionsAsync, LogWhenIdle: false),
+                new Job(JOB_BIRTHDAY, TimeSpan.FromHours(1), BirthdayAsync, LogWhenIdle: false),
                 new Job(JOB_PURGE, TimeSpan.FromDays(1), PurgeAsync)
             };
         }
@@ -223,6 +227,27 @@ namespace GitaWidyaAgniWeb.Infrastructure.Jobs
             return Task.FromResult((count, (string?)summary));
         }
 
+
+        // Ucapan ulang tahun (in-app + WhatsApp template BIRTHDAY) mulai BIRTHDAY_HOUR; dicatat hanya bila ada yang diberi ucapan.
+        private Task<(int, string?)> BirthdayAsync(string user, CancellationToken token)
+        {
+            if (DateTime.Now.Hour < BIRTHDAY_HOUR)
+            {
+                return Task.FromResult((0, (string?)null));
+            }
+            var count = GWALib.Lib.Master.Anggota.Member.SendBirthdayGreetings(user).Ok();
+            if (count == 0)
+            {
+                return Task.FromResult((0, (string?)null));
+            }
+            var summary = $"{count} anggota diberi ucapan";
+            var start = ScheduledJobLog.Start(JOB_BIRTHDAY, user);
+            if (start.Status == ResponseStatus.Success && start.Data != null)
+            {
+                start.Data.Finish(count, summary, user);
+            }
+            return Task.FromResult((count, (string?)summary));
+        }
         private Task<(int, string?)> PurgeAsync(string user, CancellationToken token)
         {
             var now = DateTime.Now;

@@ -10,6 +10,7 @@ namespace GWALib.EF;
 [Index("Nim", Name = "uq_member_nim", IsUnique = true)]
 [Index("MemberNumber", Name = "uq_member_number", IsUnique = true)]
 [Index("UserId", Name = "uq_member_user", IsUnique = true)]
+[Index("CardToken", Name = "uq_member_card_token", IsUnique = true)]
 public partial class MMember
 {
     [Key]
@@ -102,6 +103,19 @@ public partial class MMember
     [Column("address")]
     [StringLength(255)]
     public string? Address { get; set; }
+
+    /// <summary>
+    /// Token acak 128-bit (hex huruf besar) untuk QR KTA /kta/{token}; NULL = KTA belum pernah diterbitkan
+    /// </summary>
+    [Column("card_token")]
+    [StringLength(32)]
+    public string? CardToken { get; set; }
+
+    /// <summary>
+    /// Waktu token KTA dibuat / diganti
+    /// </summary>
+    [Column("card_issued_at", TypeName = "datetime")]
+    public DateTime? CardIssuedAt { get; set; }
 
     /// <summary>
     /// 1=ACTIVE, 2=ALUMNI, 3=INACTIVE

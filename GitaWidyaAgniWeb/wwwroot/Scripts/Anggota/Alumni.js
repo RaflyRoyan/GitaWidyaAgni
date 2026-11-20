@@ -38,5 +38,26 @@ window.Alumni = (function () {
         container.append(AppUI.actionButton({ css: 'btn-outline-danger', icon: 'ri-delete-bin-line', title: 'Hapus profil', onClick: function () { remove(row); } }));
     }
 
-    return { add: add, save: save, update: update, refresh: refresh, actionTemplate: actionTemplate };
+    /* ===== Undangan alumni ===== */
+
+    function invite() {
+        AppUI.openModal(MODAL, 'Undang Alumni', URL.undang, null, 'lg');
+    }
+    function sendInvite() {
+        const form = document.getElementById('frmUndang');
+        if (!form.reportValidity()) return;
+        const body = {
+            Judul: $('#undJudul').val(),
+            Pesan: $('#undPesan').val(),
+            Kegiatan: $('#undKegiatan').val() || null,
+            Angkatan: $('#undAngkatan').val() || null,
+            KirimWa: $('#undWa').is(':checked')
+        };
+        AppUI.postJson(URL.kirimUndangan, body).done(function (r) {
+            AppUI.closeModal(MODAL);
+            AppUI.alertSuccess(r.Data || r.Message);
+        });
+    }
+
+    return { add: add, save: save, update: update, refresh: refresh, actionTemplate: actionTemplate, invite: invite, sendInvite: sendInvite };
 })();

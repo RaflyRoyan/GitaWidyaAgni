@@ -32,6 +32,7 @@ mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-18_asset_qr_token
 mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-18_activity_absence.sql
 mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-19_attendance_mode.sql
 mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-19_attendance_reminder.sql
+mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-20_member_card.sql
 ```
 
 ## Aturan perubahan skema

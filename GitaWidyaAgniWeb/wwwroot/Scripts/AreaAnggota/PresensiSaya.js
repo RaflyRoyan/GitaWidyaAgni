@@ -282,5 +282,37 @@ window.PresensiSaya = (function () {
         }).always(function () { update(); btn.blur(); });
     }
 
-    return { open: open, useCode: useCode, startCamera: startCamera, switchCamera: switchCamera, snap: snap, pickFile: pickFile, locate: locate, submit: submit };
+    /* ===== Izin dari kartu sesi ===== */
+
+    function requestLeave(btn) {
+        const d = $(btn).data();
+        AppUI.promptInput({
+            title: 'Ajukan izin',
+            text: d.nama + ' · ' + d.jam,
+            input: 'textarea',
+            label: 'Alasan',
+            placeholder: 'Mis. sakit demam, ada ujian, acara keluarga...',
+            required: true,
+            confirmText: 'Kirim izin',
+            confirmCss: 'btn-info'
+        }).then(function (alasan) {
+            if (alasan === null) return;
+            AppUI.postJson(URL_.ajukanIzin, { Kegiatan: d.kegiatan, Sesi: d.id, Alasan: alasan }).done(function (r) {
+                AppUI.alertSuccess(r.Message).then(function () { window.location.reload(); });
+            });
+        });
+    }
+    function withdrawLeave(btn) {
+        AppUI.confirm('Tarik pengajuan izin?', 'Anda kembali dihitung wajib hadir.', 'Tarik', 'btn-danger').then(function (ok) {
+            if (!ok) return;
+            AppUI.postJson(URL_.tarikIzin, { Key: $(btn).data('key') }).done(function (r) {
+                AppUI.alertSuccess(r.Message).then(function () { window.location.reload(); });
+            });
+        });
+    }
+
+    return {
+        open: open, useCode: useCode, startCamera: startCamera, switchCamera: switchCamera, snap: snap, pickFile: pickFile, locate: locate, submit: submit,
+        requestLeave: requestLeave, withdrawLeave: withdrawLeave
+    };
 })();

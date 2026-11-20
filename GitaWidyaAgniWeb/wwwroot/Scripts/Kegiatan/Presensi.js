@@ -18,7 +18,80 @@ window.Presensi = (function () {
 
     function refresh(tab) {
         loaded[tab] = true;
+        if (tab === 'Statistik') return refreshStats();
         return AppUI.loadPartial('#target' + tab, URL['list' + tab]);
+    }
+
+    /* ===== Statistik keaktifan ===== */
+
+    const STAT_COLOR = { Hadir: '#1f7a45', Terlambat: '#e8b52a', Izin: '#2f5f9e', Sakit: '#7aa0d4', Alpa: '#c8202a', Line: '#9a6b00' };
+
+    $(function () {
+        $('#frmStatistik select').on('change', refreshStats);
+        $('#targetStatistik').on('click', '[data-anggota]', function () {
+            $('#statAnggota').val(String($(this).data('anggota')));
+            refreshStats();
+        });
+    });
+
+    function refreshStats() {
+        loaded.Statistik = true;
+        const q = { bulan: $('#statBulan').val(), section: $('#statSection').val(), anggota: $('#statAnggota').val() };
+        return AppUI.loadPartial('#targetStatistik', URL.statistik, q).done(drawStats);
+    }
+
+    function drawStats() {
+        const raw = document.getElementById('statistikData');
+        if (!raw) return;
+        const data = JSON.parse(raw.textContent);
+        const pct = function (v) { return (v === null || v === undefined) ? '–' : Number(v).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + '%'; };
+        if ($('#chartStatBulan').length) {
+            $('#chartStatBulan').dxChart({
+                dataSource: data.Months,
+                commonSeriesSettings: { argumentField: 'Bulan', type: 'stackedBar', barPadding: 0.35 },
+                series: ['Hadir', 'Terlambat', 'Izin', 'Sakit', 'Alpa'].map(function (k) {
+                    return { valueField: k, name: k, color: STAT_COLOR[k] };
+                }).concat([{
+                    type: 'spline', valueField: 'Persen', name: '% Hadir', axis: 'persen', color: STAT_COLOR.Line, width: 3,
+                    point: { visible: true, size: 8 }, label: { visible: true, customizeText: function (e) { return pct(e.value); }, backgroundColor: STAT_COLOR.Line }
+                }]),
+                valueAxis: [
+                    { name: 'jumlah', allowDecimals: false, title: { text: 'Catatan' }, grid: { color: '#ece4d3' } },
+                    {
+                        name: 'persen', position: 'right', min: 0, max: 100, showZero: true, title: { text: '% Hadir' },
+                        label: { customizeText: function (e) { return e.value + '%'; } },
+                        constantLines: [{ value: data.Batas, color: STAT_COLOR.Alpa, dashStyle: 'dash', width: 1.5, label: { text: 'Batas ' + data.Batas + '%', font: { color: STAT_COLOR.Alpa } } }]
+                    }
+                ],
+                argumentAxis: { grid: { visible: false } },
+                legend: { verticalAlignment: 'top', horizontalAlignment: 'center', itemTextPosition: 'right' },
+                tooltip: {
+                    enabled: true, shared: true,
+                    customizeTooltip: function (e) {
+                        const d = e.point.data;
+                        return { text: e.argumentText + '\nHadir ' + d.Hadir + ' · Telat ' + d.Terlambat + '\nIzin ' + d.Izin + ' · Sakit ' + d.Sakit + ' · Alpa ' + d.Alpa + '\nKehadiran ' + pct(d.Persen) };
+                    }
+                }
+            });
+        }
+        if ($('#chartStatSection').length) {
+            $('#chartStatSection').dxChart({
+                dataSource: data.Sections,
+                rotated: true,
+                series: [{ argumentField: 'Name', valueField: 'Persen', type: 'bar', name: '% Hadir', barPadding: 0.3, label: { visible: true, customizeText: function (e) { return pct(e.value); } } }],
+                customizePoint: function () { return { color: this.value < data.Batas ? STAT_COLOR.Alpa : STAT_COLOR.Hadir }; },
+                valueAxis: {
+                    min: 0, max: 100, label: { customizeText: function (e) { return e.value + '%'; } }, grid: { color: '#ece4d3' },
+                    constantLines: [{ value: data.Batas, color: STAT_COLOR.Alpa, dashStyle: 'dash', width: 1.5 }]
+                },
+                argumentAxis: { inverted: true },
+                legend: { visible: false },
+                tooltip: {
+                    enabled: true,
+                    customizeTooltip: function (e) { const d = e.point.data; return { text: d.Name + ': ' + pct(d.Persen) + '\n' + d.Members + ' anggota · ' + d.Sessions + ' catatan' }; }
+                }
+            });
+        }
     }
 
     function add(tab) {
@@ -290,7 +363,7 @@ window.Presensi = (function () {
     const minuteStatusTemplate = AppUI.badgeTemplate({ Draft: 'secondary', Final: 'success' });
 
     return {
-        add: add, save: save, saveMinute: saveMinute, refreshMonitor: refreshMonitor, recapReport: recapReport, rotateQr: rotateQr, fullscreenQr: fullscreenQr, manual: manual, generate: generate,
+        add: add, save: save, saveMinute: saveMinute, refreshMonitor: refreshMonitor, recapReport: recapReport, refreshStats: refreshStats, rotateQr: rotateQr, fullscreenQr: fullscreenQr, manual: manual, generate: generate,
         sessionTemplate: sessionTemplate, sessionActionTemplate: sessionActionTemplate, scheduleActionTemplate: scheduleActionTemplate,
         recordActionTemplate: recordActionTemplate, minuteActionTemplate: minuteActionTemplate, modeTemplate: modeTemplate,
         sessionStatusTemplate: sessionStatusTemplate, recordStatusTemplate: recordStatusTemplate, minuteStatusTemplate: minuteStatusTemplate

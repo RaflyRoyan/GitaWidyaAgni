@@ -40,6 +40,7 @@ namespace GWASeeder
             new("Pemilihan", "E-voting (memilih)", Array.Empty<string>(), true),
             new("PrestasiSaya", "Prestasi, poin & sertifikat saya", Array.Empty<string>(), true),
             new("DisposisiSaya", "Disposisi untuk saya", Array.Empty<string>(), true),
+            new("DirektoriAlumni", "Direktori alumni & profil alumni saya", Array.Empty<string>(), true),
             new("Notifikasi", "Notifikasi saya", Array.Empty<string>(), true),
 
             // Pengelolaan.
@@ -50,7 +51,7 @@ namespace GWASeeder
             new("Jabatan", "Jabatan pengurus", Array.Empty<string>()),
             new("Kepengurusan", "Penugasan pengurus", new[] { PROCESS }),
             new("Anggota", "Data anggota", Array.Empty<string>()),
-            new("Alumni", "Profil alumni", Array.Empty<string>()),
+            new("Alumni", "Profil alumni & undangan alumni", new[] { PROCESS }),
             new("Rekrutmen", "Rekrutmen anggota", new[] { PROCESS }),
             new("ProgramKerja", "Program kerja, tugas, timeline", new[] { PROCESS }),
             new("Kegiatan", "Kegiatan, peserta, laporan", new[] { PROCESS, SUBMIT, APPROVE }),
@@ -93,7 +94,7 @@ namespace GWASeeder
                 new MenuDef("PeminjamanSaya", "Peminjaman Alat", "ri-swap-box-line"), new MenuDef("Toko", "Toko Merchandise", "ri-store-2-line"),
                 new MenuDef("FormulirSaya", "Formulir & Aspirasi", "ri-survey-line"), new MenuDef("Pemilihan", "E-Voting", "ri-checkbox-circle-line"),
                 new MenuDef("PrestasiSaya", "Prestasi & Poin", "ri-medal-2-line"), new MenuDef("DisposisiSaya", "Disposisi", "ri-mail-check-line"),
-                new MenuDef("Notifikasi", "Notifikasi", "ri-notification-3-line")
+                new MenuDef("DirektoriAlumni", "Direktori Alumni", "ri-graduation-cap-line"), new MenuDef("Notifikasi", "Notifikasi", "ri-notification-3-line")
             }),
             new("Organisasi", "Organisasi", "ri-building-4-line", null, new[]
             {

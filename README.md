@@ -216,6 +216,7 @@ Struktur dan konvensinya mengikuti project ClubSphere (ClubLib / ClubShared). Pa
   mysql -u root -p gitawidyaagni < database/migrations/2026-11-18_activity_absence.sql
   mysql -u root -p gitawidyaagni < database/migrations/2026-11-19_attendance_mode.sql
   mysql -u root -p gitawidyaagni < database/migrations/2026-11-19_attendance_reminder.sql
+  mysql -u root -p gitawidyaagni < database/migrations/2026-11-20_member_card.sql
   ```
 
 Riwayat migrasi:
@@ -228,6 +229,7 @@ Riwayat migrasi:
 | 2026-11-18 | `2026-11-18_activity_absence.sql` | Tabel `t_activity_absence_request`: anggota otomatis ikut kegiatan audiensnya (mis. latihan rutin) dan mengajukan tidak ikut satu pertemuan atau seluruh kegiatan, disetujui pengurus |
 | 2026-11-19 | `2026-11-19_attendance_mode.sql` | Kolom `attendance_mode` pada `t_activity_schedule` dan `t_attendance_session` (1 = Tanpa QR, 2 = Wajib scan QR). Data lama otomatis mode QR |
 | 2026-11-19 | `2026-11-19_attendance_reminder.sql` | Kolom `reminder_sent_at` dan `checkout_reminder_sent_at` pada `t_attendance_session` (pengingat presensi tidak terkirim dua kali) |
+| 2026-11-20 | `2026-11-20_member_card.sql` | Kolom `card_token` (unik) dan `card_issued_at` pada `m_member` untuk QR Kartu Tanda Anggota (KTA) |
 
 ### Konvensi skema
 
@@ -297,6 +299,8 @@ Saluran email atau WhatsApp yang belum dikonfigurasi tidak dikirim, dan pesannya
 | `BORROW_DUE` | WhatsApp | Peminjaman jatuh tempo | `{name} {number} {due}` |
 | `ATTENDANCE_REMINDER` | WhatsApp | Pengingat presensi dibuka | `{name} {session} {time} {place}` |
 | `ATTENDANCE_CHECKOUT` | WhatsApp | Pengingat check-out | `{name} {session} {time} {place}` |
+| `BIRTHDAY` | WhatsApp | Ucapan ulang tahun | `{name} {age} {org}` |
+| `ALUMNI_INVITE` | WhatsApp | Undangan alumni (mis. reuni) | `{name} {title} {message} {link}` |
 
 Template WhatsApp presensi bersifat opsional: tanpa template, pengingat tetap dikirim sebagai notifikasi in-app.
 
@@ -382,7 +386,7 @@ Bagian ini menjelaskan **untuk apa** setiap menu, siapa yang biasanya memakainya
 
 ### Dashboard
 
-Halaman pertama setelah login. Menampilkan sapaan dan periode aktif, kartu ringkas (jumlah anggota, kegiatan mendatang, saldo kas, iuran belum lunas), grafik arus kas 6 bulan dan anggota per section, agenda terdekat, daftar **Perlu tindakan** (pengajuan yang menunggu persetujuan Anda, izin kegiatan, disposisi, iuran sendiri), 5 poin tertinggi, dan pintasan menu. Bagian yang tampil menyesuaikan hak akses.
+Halaman pertama setelah login. Menampilkan sapaan dan periode aktif, kartu ringkas (jumlah anggota, kegiatan mendatang, saldo kas, iuran belum lunas), grafik arus kas 6 bulan dan anggota per section, agenda terdekat, daftar **Perlu tindakan** (pengajuan yang menunggu persetujuan Anda, izin kegiatan, disposisi, iuran sendiri), 5 poin tertinggi, dan pintasan menu. Bagian yang tampil menyesuaikan hak akses. Bila ada anggota yang berulang tahun dalam 7 hari ke depan, muncul kartu **Ulang tahun** (hari ini ditandai).
 
 ### Akses (SUPERADMIN)
 
@@ -418,8 +422,8 @@ Satu halaman dengan beberapa tab untuk mengatur perilaku aplikasi:
 
 | Menu | Untuk apa |
 |---|---|
-| **Data Anggota** | Buku induk anggota: NIA, NIM, fakultas, kontak, foto, section, jenis (anggota / pengurus), status (aktif / alumni / keluar), dan akun login. Tombol riwayat section ada di sini. |
-| **Alumni** | Profil alumni (pekerjaan, kontak) untuk anggota berstatus Alumni. |
+| **Data Anggota** | Buku induk anggota: NIA, NIM, fakultas, kontak, foto, section, jenis (anggota / pengurus), status (aktif / alumni / keluar), dan akun login. Tombol riwayat section ada di sini. Kolom **Lama Bergabung** dihitung dari tanggal bergabung. **Cetak KTA** (per anggota, seukuran kartu depan-belakang) dan **Cetak KTA Massal** (A4, semua anggota aktif atau satu section) membuat Kartu Tanda Anggota dengan QR verifikasi; **Ganti QR KTA** dipakai bila kartu hilang (QR lama langsung tidak berlaku). |
+| **Alumni** | Profil alumni (pekerjaan, kontak, kesediaan dihubungi) untuk anggota berstatus Alumni. **Undang Alumni** mengirim undangan (mis. reuni) ke semua alumni atau satu angkatan, bisa ditautkan ke kegiatan: notifikasi aplikasi untuk alumni yang punya akun, WhatsApp (template `ALUMNI_INVITE`) hanya untuk yang bersedia dihubungi. |
 | **Rekrutmen** | Membuka pendaftaran anggota baru (Draft → Open → Closed), kuota, formulir tambahan, lalu menyeleksi pelamar. Pelamar yang diterima otomatis menjadi data anggota (wajib pilih section). |
 
 ### Program Kerja
@@ -435,7 +439,7 @@ Rencana kerja periode: program per **bidang** (divisi) dan **jangka** (pendek / 
 | **Presensi** | Mengatur kehadiran anggota. Lihat penjelasan lengkap di bawah tabel. |
 | **Galeri** | Album foto kegiatan (Draft → Published → Archived) dan foto sampul. Album publik tampil di landing page dan menjadi lampiran dokumentasi LPJ. |
 
-**Presensi** terdiri dari tiga tab:
+**Presensi** terdiri dari empat tab:
 
 - **Jadwal Rutin**: jadwal mingguan (mis. latihan Selasa & Jumat 18.30–21.00). Isi hari, jam, toleransi terlambat, **mode presensi**, dan **titik lokasi + radius** lewat peta (klik peta, tombol *Lokasi saya*, atau *Lokasi kegiatan*). Begitu disimpan, sesi 7 hari ke depan langsung dibuat, lalu job menambah sesi berikutnya. Mengubah atau menonaktifkan jadwal ikut menyesuaikan sesi yang belum dipakai.
 - **Sesi**: satu pertemuan yang diabsen. Dibuat otomatis dari jadwal rutin, otomatis untuk kegiatan non-rutin yang punya koordinat (satu sesi dari jam mulai sampai selesai), atau manual.
@@ -446,6 +450,7 @@ Rencana kerja periode: program per **bidang** (divisi) dan **jangka** (pendek / 
   - **Rekap & presensi manual**: mencatat Izin / Sakit / Alpa / Hadir oleh pengurus atau mengoreksi Alpa otomatis (poin ikut disesuaikan).
   - **Cetak Rekap Kehadiran**: laporan per anggota untuk rentang tanggal, kegiatan, dan section tertentu.
 - **Notulen**: notulen rapat untuk sesi yang sudah dibuka / ditutup (agenda, pembahasan, keputusan, tindak lanjut, lampiran), Draft → Final.
+- **Statistik**: grafik keaktifan dari sesi yang sudah ditutup. Saring 3 / 6 / 12 bulan terakhir, section, atau satu anggota. Isinya ringkasan (persen hadir, hadir, izin / sakit, alpa), grafik tren per bulan (batang bertumpuk + garis % hadir dengan batas 75%), grafik % hadir per section, dan **daftar anggota dengan kehadiran di bawah 75%** (minimal 3 catatan). Klik nama anggota untuk melihat tren anggota itu.
 
 ### LPJ
 
@@ -519,8 +524,8 @@ Pemilihan ketua umum atau lainnya secara rahasia: kandidat (pendaftaran dan veri
 
 | Menu | Untuk apa |
 |---|---|
-| **Profil Saya** | Mengubah kontak dan foto, melihat riwayat section, jabatan dan divisi, mengganti password. |
-| **Presensi** | Absensi gaya aplikasi lapangan: kartu sesi yang sedang berlangsung / berikutnya, tab **Hari Ini / Mendatang / Riwayat**, dan tombol **Check-In / Check-Out**. Check-in membuka kamera langsung untuk selfie (bisa ganti kamera / foto ulang, atau pilih dari galeri bila kamera tidak tersedia), mengambil lokasi otomatis beserta jarak ke titik, lalu simpan. Sesi mode QR meminta scan QR dulu. Check-in bisa sejak 30 menit sebelum mulai. |
+| **Profil Saya** | Mengubah kontak dan foto, melihat riwayat section, jabatan dan divisi, lama bergabung, mengganti password. **Lihat KTA / Unduh PDF**: Kartu Tanda Anggota digital (depan-belakang) dengan QR; siapa pun yang memindai QR melihat halaman verifikasi `/kta/...` berisi status keanggotaan terkini. |
+| **Presensi** | Absensi gaya aplikasi lapangan: kartu sesi yang sedang berlangsung / berikutnya, tab **Hari Ini / Mendatang / Riwayat**, dan tombol **Check-In / Check-Out**. Check-in membuka kamera langsung untuk selfie (bisa ganti kamera / foto ulang, atau pilih dari galeri bila kamera tidak tersedia), mengambil lokasi otomatis beserta jarak ke titik, lalu simpan. Sesi mode QR meminta scan QR dulu. Check-in bisa sejak 30 menit sebelum mulai. Berhalangan? Tekan **Ajukan izin** di kartu sesi (hari ini atau mendatang), isi alasan, lalu tunggu persetujuan pengurus di Daftar Kegiatan; status izin (menunggu / disetujui / ditolak) tampil di kartu dan pengajuan yang masih menunggu bisa ditarik. Di samping ada grafik kehadiran 6 bulan terakhir beserta peringatan bila di bawah 75%. |
 | **Kegiatan Saya** | Kegiatan yang otomatis diikuti (mis. latihan rutin) dan **ajukan tidak ikut** satu pertemuan atau seluruh kegiatan; daftar / batal kegiatan dengan pendaftaran; melamar tim pelaksana dan melihat tugas panitia. |
 | **Iuran Saya** | Melihat tagihan iuran sendiri dan statusnya. |
 | **Peminjaman Alat** | Mengajukan dan membatalkan peminjaman alat sebagai anggota. |
@@ -529,6 +534,7 @@ Pemilihan ketua umum atau lainnya secara rahasia: kandidat (pendaftaran dan veri
 | **E-Voting** | Memilih, menerima tanda terima satu kali, mengecek tanda terima, dan melihat hasil. |
 | **Prestasi & Poin** | Prestasi, poin dan peringkat, lomba yang diikuti, serta mengunduh sertifikat sendiri. |
 | **Disposisi** | Disposisi surat yang ditujukan ke saya dan menandainya selesai. |
+| **Direktori Alumni** | Daftar alumni (cari nama, kota, bidang, perusahaan; saring angkatan). WhatsApp, email, dan LinkedIn hanya tampil untuk alumni yang bersedia dihubungi. Alumni yang login bisa mengisi **Profil alumni saya** (tahun lulus, pekerjaan, perusahaan, kota, LinkedIn, bersedia dihubungi). |
 | **Notifikasi** | Semua notifikasi (persetujuan, tagihan, pengingat presensi, ...); lonceng di header menampilkan jumlah yang belum dibaca. |
 
 User yang belum terhubung ke data anggota melihat pesan "bukan anggota" di halaman ini.
@@ -610,6 +616,7 @@ Web menjalankan job lewat `ScheduledJobService` (hosted service, dicek tiap meni
 |---|---|---|
 | `SEND_OUTBOX` | 1 menit | Kirim `t_message_outbox` yang jatuh tempo (email SMTP, WhatsApp via gateway). Gagal 5 kali = Gagal, bisa diulang dari Pengaturan. |
 | `SYNC_ATTENDANCE_SESSIONS` | 1 menit | Presensi: kirim pengingat (check-in dibuka / jelang check-out), buka sesi 30 menit sebelum mulai, tutup sesi yang sudah selesai (Alpa + poin hadir). Dicatat di log hanya bila ada perubahan. |
+| `BIRTHDAY_GREETINGS` | 1 jam (mulai 07.00) | Ucapan ulang tahun in-app + WhatsApp ke anggota aktif dan alumni yang berulang tahun hari ini; yang sudah diberi ucapan hari ini dilewati |
 | `CLOSE_EXPIRED_ELECTION` | 5 menit | `Election.CloseExpired()` |
 | `MARK_BORROW_OVERDUE` | 30 menit | `BorrowRequest.MarkOverdue` (anggota peminjam mendapat notifikasi) |
 | `GENERATE_ATTENDANCE_SESSIONS` | 6 jam | Sesi presensi dari jadwal rutin, hari ini s.d. `Jobs:SessionDaysAhead` hari ke depan (tanggal yang jamnya sudah lewat dilewati) |
@@ -713,7 +720,7 @@ Satuan bawaan laporan adalah 1/100 inci (A4 = 827 × 1169).
 3. Isi environment variable server: `ConnectionStrings__Default`, `EVoting__Key`, `App__PublicUrl`, `Smtp__*`, `WhatsApp__*`, dan `Jobs__Enabled` (`false` di instance tambahan).
 4. Jalankan di belakang HTTPS. Cookie login `Secure`, serta kamera dan lokasi untuk presensi, hanya bekerja di HTTPS.
 5. Isi menu dan hak akses dengan `dotnet run --project GWASeeder -- --sync-akses` (connection string dari env `GWA_DB`), lalu buat admin pertama lewat `Bootstrap:*`.
-6. Isi template pesan WhatsApp (`ATTENDANCE_REMINDER`, `ATTENDANCE_CHECKOUT`, dan lainnya) di Pengaturan Sistem bila ingin pengingat lewat WhatsApp.
+6. Isi template pesan WhatsApp (`ATTENDANCE_REMINDER`, `ATTENDANCE_CHECKOUT`, `BIRTHDAY`, `ALUMNI_INVITE`, dan lainnya) di Pengaturan Sistem bila ingin pengingat lewat WhatsApp.
 
 ## Troubleshooting
 

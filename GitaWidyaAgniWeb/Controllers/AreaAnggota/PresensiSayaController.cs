@@ -1,5 +1,7 @@
 using GitaWidyaAgniWeb.Infrastructure;
+using GitaWidyaAgniWeb.Models;
 using GWALib.Lib.Transaksi.Presensi;
+using GWALib.Lib.Transaksi.Program;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GitaWidyaAgniWeb.Controllers.AreaAnggota
@@ -47,5 +49,29 @@ namespace GitaWidyaAgniWeb.Controllers.AreaAnggota
                 return EnumHelper.Text(rec.Status);
             }, keluar ? "Check-out tercatat." : "Check-in tercatat.");
         }
+
+        public class IzinInput
+        {
+            public int Kegiatan { get; set; }
+            public int Sesi { get; set; }
+            public string? Alasan { get; set; }
+        }
+
+        // Ajukan izin tidak hadir satu sesi langsung dari kartu sesi. GWALib memeriksa sesi milik kegiatan, anggota termasuk audiens,
+        // sesi belum ditutup, belum presensi, dan tidak ada pengajuan ganda; anggota diambil dari user login.
+        [HttpPost]
+        public IActionResult AjukanIzin([FromBody] IzinInput m) => Aksi(u =>
+        {
+            if (m.Kegiatan <= 0 || m.Sesi <= 0)
+            {
+                throw new ArgumentException("Sesi tidak valid.");
+            }
+            ActivityAbsenceRequest.Submit(new ActivityAbsenceRequest.NewRow { ActivityId = m.Kegiatan, SessionId = m.Sesi, Reason = m.Alasan ?? "" }, u).Ok();
+        }, "Izin terkirim. Tunggu persetujuan pengurus.");
+
+        // Tarik pengajuan yang masih Menunggu (Withdraw memeriksa pemiliknya).
+        [HttpPost]
+        public IActionResult TarikIzin([FromBody] GwaVM.KeyInput i)
+            => Aksi(u => { LibExtensions.Load<ActivityAbsenceRequest>(i.Key, "Pengajuan").Withdraw(u).Ok(); }, "Pengajuan izin ditarik.");
     }
 }

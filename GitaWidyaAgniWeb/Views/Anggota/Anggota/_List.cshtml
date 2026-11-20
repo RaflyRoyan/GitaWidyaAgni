@@ -18,6 +18,7 @@
         columns.AddFor(m => m.Section).Caption("Section");
         columns.AddFor(m => m.Prodi).Caption("Prodi / Instansi");
         columns.AddFor(m => m.Angkatan).Caption("Angkatan").Alignment(HorizontalAlignment.Center).Width(95);
+        columns.AddFor(m => m.Lama).Caption("Lama Bergabung").AllowFiltering(false);
         columns.AddFor(m => m.Tipe).Caption("Tipe").Alignment(HorizontalAlignment.Center);
         columns.AddFor(m => m.StatusText).Caption("Status").Alignment(HorizontalAlignment.Center).CellTemplate(new JS("Anggota.statusTemplate"));
         columns.AddFor(m => m.Username).Caption("Akun").CellTemplate(new JS("AppUI.codeTemplate"));

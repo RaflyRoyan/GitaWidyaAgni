@@ -36,5 +36,24 @@ namespace GitaWidyaAgniWeb.Controllers.Anggota
         [HttpPost]
         public IActionResult Delete([FromBody] GwaVM.KeyInput input)
             => Aksi(user => AlumniVM.Method.Hapus(input.Key, user), "Profil alumni dihapus.");
+
+        // ---------- Undangan alumni (mis. reuni)
+        [AccessAs(Acc.Process)]
+        public IActionResult Undang() => Bagian(() => new AlumniVM.Undang());
+
+        [HttpPost, AccessAs(Acc.Process)]
+        public IActionResult KirimUndangan([FromBody] AlumniVM.UndangInput m) => Aksi(user =>
+        {
+            var r = GWALib.Lib.Master.Anggota.AlumniProfile.Invite(new GWALib.Lib.Master.Anggota.AlumniProfile.InviteRow
+            {
+                Title = m.Judul ?? "",
+                Message = m.Pesan ?? "",
+                ActivityId = m.Kegiatan,
+                Angkatan = m.Angkatan,
+                SendWhatsApp = m.KirimWa,
+                BaseUrl = AsetLabel.BaseUrl(Request, HttpContext.RequestServices.GetRequiredService<IConfiguration>())
+            }, user).Ok();
+            return $"Undangan untuk {r.Alumni} alumni: {r.InApp} notifikasi aplikasi, {r.WhatsApp} WhatsApp dijadwalkan.";
+        }, "Undangan terkirim.");
     }
 }

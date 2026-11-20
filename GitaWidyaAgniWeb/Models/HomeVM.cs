@@ -14,6 +14,9 @@ namespace GitaWidyaAgniWeb.Models
         public HashSet<string>? Allowed { get; set; }
         /// <summary>Pintasan dari menu user (judul, ikon, URL), maksimal 8.</summary>
         public List<(string Title, string Icon, string Url)> Shortcuts { get; set; } = new();
+        /// <summary>Anggota aktif yang berulang tahun dalam BIRTHDAY_DAYS hari ke depan (hari ini termasuk).</summary>
+        public List<GWALib.Lib.Master.Anggota.Member.BirthdayRow> Birthdays { get; set; } = new();
+        public const int BIRTHDAY_DAYS = 7;
 
         public bool Can(string controller) => Allowed == null || Allowed.Contains(controller.ToLowerInvariant() + "/index");
     }

@@ -25,6 +25,8 @@ namespace GWALib.Lib.Transaksi.Information
         internal const string TYPE_ASSIGNMENT = "KEPENGURUSAN";
         internal const string TYPE_ABSENCE = "IZIN_KEGIATAN";
         internal const string TYPE_ATTENDANCE = "PRESENSI";
+        internal const string TYPE_BIRTHDAY = "ULANG_TAHUN";
+        internal const string TYPE_ALUMNI = "ALUMNI";
 
         // Halaman web tujuan.
         internal const string LINK_LETTER = "/Persuratan/Surat";
@@ -40,6 +42,7 @@ namespace GWALib.Lib.Transaksi.Information
         internal const string LINK_MY_FORM = "/AreaAnggota/FormulirSaya";
         internal const string LINK_MY_PROFILE = "/AreaAnggota/ProfilSaya";
         internal const string LINK_MY_ATTENDANCE = "/AreaAnggota/PresensiSaya";
+        internal const string LINK_ALUMNI_DIRECTORY = "/AreaAnggota/DirektoriAlumni";
         internal const string LINK_NEWS = "/berita/";
 
         internal static int ToUsers(EF.ModelContext context, IEnumerable<int?> userIds, string type, string title, string? message,

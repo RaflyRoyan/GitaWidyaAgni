@@ -12,6 +12,24 @@ namespace GitaWidyaAgniWeb.Models.Anggota
         {
         }
 
+        // Modal undangan alumni (mis. reuni): kegiatan tujuan opsional, satu angkatan atau semua.
+        public class Undang
+        {
+            public List<GwaVM.OpsiItem> KegiatanOpsi { get; set; } = Opsi.Kegiatan(true);
+            public List<short> AngkatanOpsi { get; set; } = Member.GetDataList(MemberStatus.Alumni).Where(x => x.Angkatan != null)
+                .Select(x => x.Angkatan!.Value).Distinct().OrderByDescending(x => x).ToList();
+            public int JumlahAlumni { get; set; } = Member.GetDataList(MemberStatus.Alumni).Count;
+        }
+
+        public class UndangInput
+        {
+            public string? Judul { get; set; }
+            public string? Pesan { get; set; }
+            public int? Kegiatan { get; set; }
+            public short? Angkatan { get; set; }
+            public bool KirimWa { get; set; } = true;
+        }
+
         public class List
         {
             public List<Row> Rows { get; set; } = Method.GetDataList().ToList();

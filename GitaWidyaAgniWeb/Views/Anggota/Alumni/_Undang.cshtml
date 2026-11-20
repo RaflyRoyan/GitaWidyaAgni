@@ -1,0 +1,52 @@
+@model GitaWidyaAgniWeb.Models.Anggota.AlumniVM.Undang
+@* Modal undangan alumni: notifikasi aplikasi ke alumni yang punya akun, WhatsApp (template ALUMNI_INVITE) ke alumni yang bersedia dihubungi. *@
+<div class="gwa-mform">
+    <div class="gwa-mform-info">
+        <span class="gwa-mform-info-icon" aria-hidden="true"><i class="ri-mail-send-line"></i></span>
+        <div>
+            <div class="gwa-mform-info-title">Undang alumni</div>
+            <div class="gwa-mform-info-meta"><span>@Model.JumlahAlumni alumni terdata</span><span>WhatsApp hanya ke yang bersedia dihubungi</span></div>
+        </div>
+    </div>
+    <form id="frmUndang" class="row g-3" onsubmit="return false">
+        <div class="col-12">
+            <label class="form-label" for="undJudul">Judul <span class="text-danger">*</span></label>
+            <input id="undJudul" name="Judul" class="form-control" maxlength="150" required placeholder="mis. Reuni Akbar MB GWA 2026" />
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="undPesan">Pesan <span class="text-danger">*</span></label>
+            <textarea id="undPesan" name="Pesan" class="form-control" rows="4" maxlength="500" required placeholder="Ajak alumni hadir, sebutkan dresscode, kontak panitia, dsb."></textarea>
+            <div class="form-text">Maksimal 500 karakter. Tanggal dan tempat kegiatan ditambahkan otomatis bila kegiatan dipilih.</div>
+        </div>
+        <div class="col-md-7">
+            <label class="form-label" for="undKegiatan">Kegiatan (opsional)</label>
+            <select id="undKegiatan" name="Kegiatan" class="form-select">
+                <option value="">Tanpa kegiatan (undangan umum)</option>
+                @foreach (var o in Model.KegiatanOpsi)
+                {
+                    <option value="@o.Value">@o.Text</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-5">
+            <label class="form-label" for="undAngkatan">Angkatan</label>
+            <select id="undAngkatan" name="Angkatan" class="form-select">
+                <option value="">Semua angkatan</option>
+                @foreach (var a in Model.AngkatanOpsi)
+                {
+                    <option value="@a">@a</option>
+                }
+            </select>
+        </div>
+        <div class="col-12">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="undWa" name="KirimWa" checked />
+                <label class="form-check-label" for="undWa">Kirim juga lewat WhatsApp (perlu template ALUMNI_INVITE)</label>
+            </div>
+        </div>
+    </form>
+    <div class="gwa-mform-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-success" onclick="Alumni.sendInvite()"><i class="ri-send-plane-line me-1"></i> Kirim Undangan</button>
+    </div>
+</div>

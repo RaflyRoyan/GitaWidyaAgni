@@ -32,5 +32,10 @@ namespace GitaWidyaAgniWeb.Controllers.AreaAnggota
             var foto = saya == null ? null : MemberPhoto.GetDataList(saya.Id).OrderByDescending(x => x.InsDate).FirstOrDefault();
             return foto == null ? NotFound() : File(foto.Photo, foto.ContentType);
         }
+
+        // KTA milik sendiri (DevExpress Reports, seukuran kartu; ?pdf=1 = unduh PDF). Token QR dibuat saat pertama kali dibuka.
+        public IActionResult Kta() => Laporan(() => Models.Anggota.KtaCetak.Satu(Saya(), LibUser,
+            HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath,
+            AsetLabel.BaseUrl(Request, HttpContext.RequestServices.GetRequiredService<IConfiguration>())));
     }
 }

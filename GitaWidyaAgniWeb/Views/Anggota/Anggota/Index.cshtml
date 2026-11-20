@@ -14,8 +14,10 @@
         <partial name="_Toolbar" model='new ToolbarModel("Tambah Anggota", "Anggota.add()",
             ("btn-outline-info", "ri-image-line", "Foto anggota"),
             ("btn-outline-success", "ri-music-2-line", "Riwayat section"),
+            ("btn-outline-primary", "ri-bank-card-line", "Cetak KTA"),
+            ("btn-outline-secondary", "ri-qr-code-line", "Ganti QR KTA (kartu hilang)"),
             ("btn-outline-warning", "ri-edit-2-line", "Ubah anggota"),
-            ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan anggota"))' />
+            ("btn-outline-danger", "ri-forbid-line", "Nonaktifkan anggota")) { Extra = new[] { ("btn-outline-dark", "ri-printer-line", "Cetak KTA Massal", "Anggota.printCards()") } }' />
         <div id="target" class="mt-3"></div>
     </div>
 </div>
@@ -32,8 +34,12 @@
             foto: '@Url.Action("Foto")',
             gambar: '@Url.Action("Gambar")',
             tambahFoto: '@Url.Action("TambahFoto")',
-            hapusFoto: '@Url.Action("HapusFoto")'
+            hapusFoto: '@Url.Action("HapusFoto")',
+            cetakKta: '@Url.Action("CetakKta")',
+            cetakKtaMassal: '@Url.Action("CetakKtaMassal")',
+            gantiQrKta: '@Url.Action("GantiQrKta")'
         };
+        window.AnggotaOpsi = { section: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.SectionOpsi.ToDictionary(x => x.Value.ToString(), x => x.Text))) };
     </script>
     <script>
         window.SectionRiwayatUrl = {

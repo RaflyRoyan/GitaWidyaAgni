@@ -120,3 +120,11 @@ a { text-underline-offset: 3px; }
 .gwa-shortcut:hover, .gwa-shortcut:focus-visible { border-color: var(--gwa-gold); color: var(--gwa-bronze); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(154, 107, 0, .12); }
 @media (prefers-reduced-motion: reduce) { .gwa-shortcut { transition: none; } .gwa-shortcut:hover { transform: none; } }
 @media (max-width: 575.98px) { .gwa-dash-next { width: 100%; } .gwa-stat { padding: 14px; } .gwa-stat-value { font-size: 1.1rem; } }
+
+/* Dashboard: ulang tahun anggota */
+.gwa-bday { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.gwa-bday-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #ece3d3; border-radius: 12px; background: #fff; }
+.gwa-bday-item.is-today { background: #fdf3d6; border-color: #e8b52a; }
+.gwa-bday-date { flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fcebe6; color: #c8202a; font-size: .68rem; font-weight: 700; text-transform: uppercase; line-height: 1.1; }
+.gwa-bday-date b { font-size: 1.15rem; }
+.gwa-bday-item.is-today .gwa-bday-date { background: #c8202a; color: #fff; }

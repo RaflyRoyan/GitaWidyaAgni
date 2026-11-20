@@ -247,6 +247,33 @@
         </div>
     </div>
 
+
+    @* ===== Ulang tahun minggu ini ===== *@
+    @if (Model.Birthdays.Count > 0)
+    {
+        var idc = new System.Globalization.CultureInfo("id-ID");
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center">
+                <h5 class="card-title mb-0 flex-grow-1"><i class="ri-cake-2-line align-bottom me-1"></i> Ulang tahun @HomeVM.BIRTHDAY_DAYS hari ke depan</h5>
+                <span class="badge bg-warning-subtle text-warning">@Model.Birthdays.Count anggota</span>
+            </div>
+            <div class="card-body">
+                <div class="gwa-bday">
+                    @foreach (var b in Model.Birthdays)
+                    {
+                        var hariIni = b.DaysLeft == 0;
+                        <div class="gwa-bday-item @(hariIni ? "is-today" : "")">
+                            <span class="gwa-bday-date" aria-hidden="true"><b>@b.NextBirthday.Day</b>@b.NextBirthday.ToString("MMM", idc)</span>
+                            <div class="min-w-0">
+                                <div class="fw-semibold text-truncate">@b.Fullname</div>
+                                <div class="small text-muted">@(hariIni ? "Hari ini 🎉" : b.DaysLeft == 1 ? "Besok" : b.NextBirthday.ToString("dddd", idc)) · ke-@b.Age@(string.IsNullOrEmpty(b.Section) ? "" : " · " + b.Section)</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
     @* ===== Pintasan ===== *@
     @if (Model.Shortcuts.Count > 0)
     {

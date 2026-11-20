@@ -1,7 +1,7 @@
 -- =====================================================================================
 -- GitaWidyaAgni: skema database lengkap (MySQL 8, utf8mb4_0900_ai_ci)
 -- Dihasilkan dari database pengembangan pada 2026-11-18 (mysqldump --no-data), 135 tabel,
--- sudah termasuk migrasi 2026-11-17 (t_lpj, t_program.division_id / term) dan 2026-11-18 (section, qr_token unit aset, pengajuan tidak ikut kegiatan) dan 2026-11-19 (attendance_mode jadwal / sesi presensi, pengingat presensi).
+-- sudah termasuk migrasi 2026-11-17 (t_lpj, t_program.division_id / term) dan 2026-11-18 (section, qr_token unit aset, pengajuan tidak ikut kegiatan) dan 2026-11-19 (attendance_mode jadwal / sesi presensi, pengingat presensi) dan 2026-11-20 (token KTA anggota).
 --
 -- Pakai untuk database BARU. Database lama cukup menjalankan berkas di database/migrations/
 -- yang tanggalnya lebih baru dari skemanya.
@@ -498,6 +498,8 @@ CREATE TABLE `m_member` (
   `phone` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `email` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+  `card_token` char(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT 'Token acak 128-bit (hex huruf besar) untuk QR KTA /kta/{token}; NULL = KTA belum pernah diterbitkan',
+  `card_issued_at` datetime DEFAULT NULL COMMENT 'Waktu token KTA dibuat / diganti',
   `status` int NOT NULL DEFAULT '1' COMMENT '1=ACTIVE, 2=ALUMNI, 3=INACTIVE',
   `ins_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `ins_by` int DEFAULT NULL,
@@ -507,6 +509,7 @@ CREATE TABLE `m_member` (
   UNIQUE KEY `uq_member_nim` (`nim`),
   UNIQUE KEY `uq_member_number` (`member_number`),
   UNIQUE KEY `uq_member_user` (`user_id`),
+  UNIQUE KEY `uq_member_card_token` (`card_token`),
   CONSTRAINT `fk_member_user` FOREIGN KEY (`user_id`) REFERENCES `m_user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;

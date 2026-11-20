@@ -27,6 +27,10 @@ namespace GWALib.Lib.Transaksi.Presensi
         private const int CHECKOUT_REMINDER_MINUTE = 15;
         public const string TEMPLATE_REMINDER = "ATTENDANCE_REMINDER";
         public const string TEMPLATE_CHECKOUT = "ATTENDANCE_CHECKOUT";
+        // Statistik keaktifan: batas kehadiran rendah (%), minimal catatan agar dinilai, dan jumlah bulan di halaman anggota.
+        public const int LOW_PERCENT = 75;
+        public const int LOW_MIN_SESSIONS = 3;
+        public const int MONTHS_MINE = 6;
 
         #region SYNC
         // Untuk job (tiap menit): buka sesi Terjadwal yang masuk jendela check-in, tutup sesi yang sudah lewat CloseAt (ALPA dicatat).
@@ -57,6 +61,25 @@ namespace GWALib.Lib.Transaksi.Presensi
             }
             using var context = DBClass.GetContext();
             return Recap(context, from.ToDateTime(TimeOnly.MinValue), to.AddDays(1).ToDateTime(TimeOnly.MinValue), activityId, sectionId);
+        }
+        // Statistik keaktifan dari sesi Ditutup dengan OpenAt dalam [from, to]: tren per bulan, per section (section saat ini),
+        // dan anggota berkehadiran rendah. Opsional dibatasi satu section dan / atau satu anggota.
+        public static ActivityStats GetStats(DateOnly from, DateOnly to, int? sectionId = null, int? memberId = null)
+        {
+            if (to < from)
+            {
+                throw new ArgumentException(ExceptionMessage.DATE_RANGE_INVALID);
+            }
+            using var context = DBClass.GetContext();
+            var start = from.ToDateTime(TimeOnly.MinValue);
+            var end = to.AddDays(1).ToDateTime(TimeOnly.MinValue);
+            var members = Recap(context, start, end, null, sectionId, memberId);
+            var sections = members.GroupBy(x => x.Section ?? "Tanpa section")
+                .Select(g => new GroupStat(g.Key, g.Count(), g.Sum(x => x.Hadir), g.Sum(x => x.Terlambat), g.Sum(x => x.Izin), g.Sum(x => x.Sakit), g.Sum(x => x.Alpa)))
+                .OrderByDescending(x => x.Percent).ThenBy(x => x.Name).ToList();
+            var low = members.Where(x => x.Sessions >= LOW_MIN_SESSIONS && x.Percent < LOW_PERCENT)
+                .OrderBy(x => x.Percent).ThenByDescending(x => x.Alpa).ThenBy(x => x.Name).ToList();
+            return new ActivityStats(from, to, Monthly(context, start, end, sectionId, memberId), sections, members, low);
         }
         // Jadwal presensi anggota user login: hari ini (semua sesi yang tidak dibatalkan), daysAhead hari ke depan,
         // dan historyTake catatan presensi terakhir sebelum hari ini. Anggota tanpa data / tidak aktif = daftar kosong.
@@ -606,17 +629,50 @@ namespace GWALib.Lib.Transaksi.Presensi
             return new MonitorData(session.Id, session.Name, session.Activity.Title, session.OpenAt, session.CloseAt, (AttendanceSessionStatus)session.Status,
                 (AttendanceMode)session.AttendanceMode, session.RadiusMeter, DateTime.Now, rows);
         }
-        private static List<RecapRow> Recap(EF.ModelContext context, DateTime from, DateTime to, int? activityId, int? sectionId)
+        // Catatan presensi sesi Ditutup dalam [from, to), opsional per kegiatan / section saat ini / anggota.
+        private static IQueryable<EF.TAttendanceRecord> ClosedRecords(EF.ModelContext context, DateTime from, DateTime to, int? activityId, int? sectionId, int? memberId)
         {
             int closed = (int)AttendanceSessionStatus.Closed;
-            int hadir = (int)AttendanceStatus.Hadir, telat = (int)AttendanceStatus.Terlambat, izin = (int)AttendanceStatus.Izin,
-                sakit = (int)AttendanceStatus.Sakit, alpa = (int)AttendanceStatus.Alpa;
             var query = context.TAttendanceRecords.Where(x => x.Session.Status == closed && x.Session.OpenAt >= from && x.Session.OpenAt < to
-                && (activityId == null || x.Session.ActivityId == activityId));
+                && (activityId == null || x.Session.ActivityId == activityId) && (memberId == null || x.MemberId == memberId));
             if (sectionId != null)
             {
                 query = query.Where(x => x.Member.TSectionMembers.Any(s => s.SectionId == sectionId && s.EndDate == null));
             }
+            return query;
+        }
+        // Tren per bulan; bulan tanpa catatan di antara from..to tetap muncul dengan nilai nol.
+        private static List<MonthStat> Monthly(EF.ModelContext context, DateTime from, DateTime to, int? sectionId, int? memberId)
+        {
+            int hadir = (int)AttendanceStatus.Hadir, telat = (int)AttendanceStatus.Terlambat, izin = (int)AttendanceStatus.Izin,
+                sakit = (int)AttendanceStatus.Sakit, alpa = (int)AttendanceStatus.Alpa;
+            var grouped = ClosedRecords(context, from, to, null, sectionId, memberId)
+                .GroupBy(x => new { x.Session.OpenAt.Year, x.Session.OpenAt.Month })
+                .Select(g => new
+                {
+                    g.Key.Year,
+                    g.Key.Month,
+                    Hadir = g.Count(x => x.Status == hadir),
+                    Terlambat = g.Count(x => x.Status == telat),
+                    Izin = g.Count(x => x.Status == izin),
+                    Sakit = g.Count(x => x.Status == sakit),
+                    Alpa = g.Count(x => x.Status == alpa)
+                }).ToList()
+                .ToDictionary(x => (x.Year, x.Month));
+            var result = new List<MonthStat>();
+            for (var m = new DateTime(from.Year, from.Month, 1); m < to; m = m.AddMonths(1))
+            {
+                result.Add(grouped.TryGetValue((m.Year, m.Month), out var g)
+                    ? new MonthStat(m.Year, m.Month, g.Hadir, g.Terlambat, g.Izin, g.Sakit, g.Alpa)
+                    : new MonthStat(m.Year, m.Month, 0, 0, 0, 0, 0));
+            }
+            return result;
+        }
+        private static List<RecapRow> Recap(EF.ModelContext context, DateTime from, DateTime to, int? activityId, int? sectionId, int? memberId = null)
+        {
+            int hadir = (int)AttendanceStatus.Hadir, telat = (int)AttendanceStatus.Terlambat, izin = (int)AttendanceStatus.Izin,
+                sakit = (int)AttendanceStatus.Sakit, alpa = (int)AttendanceStatus.Alpa;
+            var query = ClosedRecords(context, from, to, activityId, sectionId, memberId);
             var grouped = query.GroupBy(x => x.MemberId).Select(g => new
             {
                 MemberId = g.Key,
@@ -675,7 +731,7 @@ namespace GWALib.Lib.Transaksi.Presensi
         }
         private static MyAttendance MyAttendanceData(EF.ModelContext context, int userId, int daysAhead, int historyTake)
         {
-            var empty = new MyAttendance(new List<MySession>(), new List<MySession>(), new List<MySession>());
+            var empty = new MyAttendance(new List<MySession>(), new List<MySession>(), new List<MySession>(), new List<MonthStat>());
             var member = context.MMembers.SingleOrDefault(x => x.UserId == userId && x.Status == (int)MemberStatus.Active);
             if (member == null)
             {
@@ -696,15 +752,27 @@ namespace GWALib.Lib.Transaksi.Presensi
             var expected = new Dictionary<(int, DateOnly), List<int>>();
             sessions = sessions.Where(x => records.ContainsKey(x.Id) || x.Activity.AudienceType == (int)AudienceType.SemuaAnggota
                 || ExpectedCached(context, expected, x).Contains(member.Id)).ToList();
-            var current = sessions.Select(x => ToMySession(x, records.GetValueOrDefault(x.Id), now)).ToList();
+            // Pengajuan izin anggota (bukan yang ditarik): untuk seluruh kegiatan yang masih berlaku, atau pengajuan terakhir per sesi.
+            var activityIds = sessions.Select(x => x.ActivityId).Distinct().ToList();
+            int withdrawn = (int)AbsenceRequestStatus.Ditarik, waiting = (int)AbsenceRequestStatus.Menunggu, approved = (int)AbsenceRequestStatus.Disetujui;
+            var requests = context.TActivityAbsenceRequests
+                .Where(x => x.MemberId == member.Id && activityIds.Contains(x.ActivityId) && x.Status != withdrawn)
+                .OrderByDescending(x => x.Id).ToList();
+            EF.TActivityAbsenceRequest? RequestOf(EF.TAttendanceSession s)
+                => requests.FirstOrDefault(r => r.ActivityId == s.ActivityId && r.SessionId == null && (r.Status == waiting || r.Status == approved))
+                    ?? requests.FirstOrDefault(r => r.SessionId == s.Id);
+            var current = sessions.Select(x => ToMySession(x, records.GetValueOrDefault(x.Id), now, RequestOf(x))).ToList();
 
             // Riwayat: catatan presensi anggota pada sesi sebelum hari ini.
             var history = context.TAttendanceRecords.Include(x => x.Session).ThenInclude(x => x.Activity)
                 .Where(x => x.MemberId == member.Id && x.Session.OpenAt < today)
                 .OrderByDescending(x => x.Session.OpenAt).Take(Math.Max(historyTake, 0)).ToList()
-                .Select(x => ToMySession(x.Session, x, now)).ToList();
+                .Select(x => ToMySession(x.Session, x, now, null)).ToList();
 
-            return new MyAttendance(current.Where(x => x.OpenAt < tomorrow).ToList(), current.Where(x => x.OpenAt >= tomorrow).ToList(), history);
+            var monthFrom = new DateTime(today.Year, today.Month, 1).AddMonths(1 - MONTHS_MINE);
+            var monthly = Monthly(context, monthFrom, tomorrow, null, member.Id);
+
+            return new MyAttendance(current.Where(x => x.OpenAt < tomorrow).ToList(), current.Where(x => x.OpenAt >= tomorrow).ToList(), history, monthly);
         }
         // Audiens per (kegiatan, tanggal) dihitung sekali saja untuk banyak sesi.
         private static List<int> ExpectedCached(EF.ModelContext context, Dictionary<(int, DateOnly), List<int>> cache, EF.TAttendanceSession session)
@@ -717,18 +785,25 @@ namespace GWALib.Lib.Transaksi.Presensi
             }
             return ids;
         }
-        private static MySession ToMySession(EF.TAttendanceSession x, EF.TAttendanceRecord? rec, DateTime now)
+        private static MySession ToMySession(EF.TAttendanceSession x, EF.TAttendanceRecord? rec, DateTime now, EF.TActivityAbsenceRequest? absence)
         {
             var status = (AttendanceSessionStatus)x.Status;
             var running = status == AttendanceSessionStatus.Scheduled || status == AttendanceSessionStatus.Open;
             var activityOpen = x.Activity.Status == (int)ProgramStatus.Planned || x.Activity.Status == (int)ProgramStatus.Ongoing;
             var start = CheckInStart(x);
             var inWindow = running && activityOpen && now >= start && now <= x.CloseAt;
+            var absenceStatus = absence == null ? (AbsenceRequestStatus?)null : (AbsenceRequestStatus)absence.Status;
+            var canRequest = running && activityOpen && now < x.CloseAt && rec == null
+                && x.Activity.AudienceType != (int)AudienceType.PesertaTerdaftar
+                && (absenceStatus == null || absenceStatus == AbsenceRequestStatus.Ditolak);
             return new MySession(x.Id, x.Name, x.Activity.Title, x.OpenAt, x.CloseAt, x.LateToleranceMinute, x.Location, (AttendanceMode)x.AttendanceMode,
                 x.Latitude, x.Longitude, x.RadiusMeter, status, start,
                 CanCheckIn: inWindow && rec == null,
                 CanCheckOut: inWindow && rec?.CheckInAt != null && rec.CheckOutAt == null,
-                rec?.CheckInAt, rec?.CheckOutAt, rec == null ? null : (AttendanceStatus)rec.Status);
+                rec?.CheckInAt, rec?.CheckOutAt, rec == null ? null : (AttendanceStatus)rec.Status,
+                x.ActivityId, canRequest, absenceStatus, absence != null && absence.SessionId == null,
+                absence == null ? null : absence.Id.ToString().EncryptString<ActivityAbsenceRequest>(),
+                absence?.ReviewNote);
         }
         private static void SetCancel(EF.ModelContext context, EF.TAttendanceSession row, string reason, int userId)
         {

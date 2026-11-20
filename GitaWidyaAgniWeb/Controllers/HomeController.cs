@@ -49,6 +49,14 @@ namespace GitaWidyaAgniWeb.Controllers
                 _logger.LogError(ex, "Ringkasan dashboard gagal dimuat");
                 model.Error = "Ringkasan belum bisa dimuat. Coba muat ulang halaman.";
             }
+            try
+            {
+                model.Birthdays = GWALib.Lib.Master.Anggota.Member.GetBirthdays(DateOnly.FromDateTime(DateTime.Today), HomeVM.BIRTHDAY_DAYS);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Daftar ulang tahun gagal dimuat");
+            }
             return View(model);
         }
 

@@ -39,6 +39,8 @@ namespace GitaWidyaAgniWeb.Controllers.Kegiatan
         [AccessAs(Acc.Index)]
         public IActionResult CetakRekap(DateTime? dari, DateTime? sampai, int? kegiatan, int? section)
             => Laporan(() => Models.Kegiatan.PresensiCetak.Rekap(dari, sampai, kegiatan, section, WebRoot));
+        [AccessAs(Acc.Index)]
+        public IActionResult Statistik(int bulan = 6, int? section = null, int? anggota = null) => Bagian(() => new VM.Statistik(bulan, section, anggota));
         private string WebRoot => HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath;
         [AccessAs(Acc.Index)] public IActionResult Rekap(string encKey) => Bagian(() => new VM.Rekap(encKey));
         [AccessAs(Acc.Index)] public IActionResult RekapList(string encKey) => Bagian(() => new VM.RekapList(encKey));

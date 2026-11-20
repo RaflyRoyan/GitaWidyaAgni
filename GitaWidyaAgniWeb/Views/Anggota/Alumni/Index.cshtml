@@ -13,7 +13,7 @@
     <div class="card-body">
         <partial name="_Toolbar" model='new ToolbarModel("Tambah Profil Alumni", "Alumni.add()",
             ("btn-outline-warning", "ri-edit-2-line", "Ubah profil"),
-            ("btn-outline-danger", "ri-delete-bin-line", "Hapus profil"))' />
+            ("btn-outline-danger", "ri-delete-bin-line", "Hapus profil")) { Extra = new[] { ("btn-outline-success", "ri-mail-send-line", "Undang Alumni", "Alumni.invite()") } }' />
         <div id="target" class="mt-3"></div>
     </div>
 </div>
@@ -26,7 +26,9 @@
             edit: '@Url.Action("Edit")',
             simpanBaru: '@Url.Action("SimpanBaru")',
             update: '@Url.Action("Update")',
-            hapus: '@Url.Action("Delete")'
+            hapus: '@Url.Action("Delete")',
+            undang: '@Url.Action("Undang")',
+            kirimUndangan: '@Url.Action("KirimUndangan")'
         };
     </script>
     <script src="~/Scripts/Anggota/Alumni.js" asp-append-version="true"></script>

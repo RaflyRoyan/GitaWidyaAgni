@@ -8,6 +8,7 @@
     var st = StatusOf(s);
     var qr = s.Mode == AttendanceMode.Qr;
     var adaAksi = Model.Aksi && (s.CanCheckIn || s.CanCheckOut);
+    var izin = s.RecordStatus == null ? IzinText(s) : null;
 }
 <div class="ps-shift">
     <div class="ps-time" aria-hidden="true">
@@ -63,10 +64,33 @@
             <div class="ps-hint"><i class="ri-lock-unlock-line"></i> Check-in dibuka pukul @s.CheckInFrom.ToString("HH:mm")</div>
         }
 
-        @if (adaAksi)
+        @if (izin != null)
+        {
+            <div class="ps-izin ps-izin--@s.AbsenceStatus.ToString()!.ToLowerInvariant()">
+                <i class="@(s.AbsenceStatus == AbsenceRequestStatus.Ditolak ? "ri-close-circle-line" : "ri-mail-send-line")" aria-hidden="true"></i>
+                <span>@izin</span>
+                @if (s.AbsenceStatus == AbsenceRequestStatus.Menunggu && s.AbsenceKey != null)
+                {
+                    <button type="button" class="btn btn-link btn-sm p-0 ms-auto" data-key="@s.AbsenceKey" onclick="PresensiSaya.withdrawLeave(this)">Tarik</button>
+                }
+            </div>
+        }
+
+        @if (adaAksi || s.CanRequestAbsence)
         {
             <div class="ps-actions">
-                <partial name="_AksiButton" model="(s, s.CanCheckOut, false)" />
+                @if (adaAksi)
+                {
+                    <partial name="_AksiButton" model="(s, s.CanCheckOut, false)" />
+                }
+                @if (s.CanRequestAbsence)
+                {
+                    <button type="button" class="btn btn-sm btn-outline-info" data-kegiatan="@s.ActivityId" data-id="@s.Id"
+                            data-nama="@s.Name" data-jam="@s.OpenAt.ToString("dddd d MMM, HH:mm", System.Globalization.CultureInfo.GetCultureInfo("id-ID"))"
+                            onclick="PresensiSaya.requestLeave(this)">
+                        <i class="ri-mail-send-line me-1"></i>@(s.AbsenceStatus == AbsenceRequestStatus.Ditolak ? "Ajukan izin lagi" : "Ajukan izin")
+                    </button>
+                }
             </div>
         }
     </article>

@@ -72,5 +72,23 @@ namespace GitaWidyaAgniWeb.Controllers.Anggota
         [HttpPost, AccessAs(Acc.Edit)]
         public IActionResult HapusFoto([FromBody] AnggotaVM.FotoInput input)
             => Aksi(user => AnggotaVM.Method.HapusFoto(input, user), "Foto dihapus.");
+
+        // ---------- KTA (Kartu Tanda Anggota). Mencetak menerbitkan token QR bila belum ada, jadi memakai hak Edit.
+        private string WebRoot => HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().WebRootPath;
+        private string PublicBase => AsetLabel.BaseUrl(Request, HttpContext.RequestServices.GetRequiredService<IConfiguration>());
+
+        [AccessAs(Acc.Edit)]
+        public IActionResult CetakKta(string key)
+            => Laporan(() => KtaCetak.Satu(LibExtensions.Load<GWALib.Lib.Master.Anggota.Member>(key, "Anggota"), LibUser, WebRoot, PublicBase));
+
+        [AccessAs(Acc.Edit)]
+        public IActionResult CetakKtaMassal(int? section)
+            => Laporan(() => KtaCetak.Massal(section > 0 ? section : null, LibUser, WebRoot, PublicBase));
+
+        // Kartu hilang: token diganti, QR kartu lama tidak berlaku lagi.
+        [HttpPost, AccessAs(Acc.Edit)]
+        public IActionResult GantiQrKta([FromBody] GwaVM.KeyInput input)
+            => Aksi(user => { LibExtensions.Load<GWALib.Lib.Master.Anggota.Member>(input.Key, "Anggota").RenewCard(user).Ok(); },
+                "QR KTA diganti. Kartu lama tidak berlaku lagi; cetak ulang KTA.");
     }
 }

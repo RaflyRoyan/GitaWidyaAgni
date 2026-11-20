@@ -110,6 +110,27 @@
 .ps-done { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 10px; padding: 8px 12px; border-radius: 12px; background: var(--ps-canvas); font-size: .82rem; color: var(--ps-muted); }
     .ps-done b { color: var(--ps-ink); font-variant-numeric: tabular-nums; }
 .ps-hint { margin-top: 10px; font-size: .8rem; color: var(--ps-bronze); font-weight: 600; }
+/* Pengajuan izin di kartu sesi */
+.ps-izin { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; padding: 8px 12px; border-radius: 12px; font-size: .8rem; font-weight: 600; background: var(--ps-blue-soft); color: var(--ps-blue); }
+    .ps-izin i { margin-top: 1px; }
+    .ps-izin .btn-link { font-weight: 700; color: var(--ps-flame); min-height: 24px; }
+    .ps-izin--ditolak { background: var(--ps-flame-soft); color: var(--ps-flame); }
+
+/* Tren kehadiran bulanan (aside) */
+.ps-tren { margin-top: 14px; padding: 14px 16px; border-radius: 18px; background: var(--ps-surface); border: 1px solid var(--ps-line); }
+.ps-tren-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .ps-tren-head h6 { margin: 0; font-weight: 800; color: var(--ps-ink); font-size: .9rem; }
+    .ps-tren-head span { font-size: .74rem; color: var(--ps-muted); font-weight: 600; }
+.ps-tren-warn { display: flex; gap: 8px; margin-top: 10px; padding: 8px 12px; border-radius: 12px; background: var(--ps-flame-soft); color: var(--ps-flame); font-size: .78rem; font-weight: 600; }
+.ps-tren-bars { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin-top: 12px; }
+.ps-tren-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .ps-tren-col .nilai { font-size: .7rem; font-weight: 800; color: var(--ps-ink); font-variant-numeric: tabular-nums; }
+    .ps-tren-col .batang { position: relative; width: 100%; max-width: 30px; height: 84px; border-radius: 8px; background: var(--ps-canvas); overflow: hidden; }
+    .ps-tren-col .isi { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 8px; transition: height .4s ease; }
+    .ps-tren-col .isi.ok { background: var(--ps-leaf); }
+    .ps-tren-col .isi.rendah { background: var(--ps-flame); }
+    .ps-tren-col .bln { font-size: .7rem; font-weight: 700; color: var(--ps-muted); text-transform: capitalize; }
+
 .ps-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .ps-actions .btn { min-height: 44px; flex: 1; border-radius: 12px; font-weight: 700; }
 

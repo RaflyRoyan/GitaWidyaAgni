@@ -223,6 +223,32 @@ namespace GitaWidyaAgniWeb.Controllers
             return photo == null ? NotFound() : File(photo.Photo, photo.ContentType);
         }
 
+
+        // Verifikasi Kartu Tanda Anggota dari QR (token acak m_member.card_token). Tanpa kontak, alamat, atau NIM.
+        [HttpGet("kta/{token}")]
+        public IActionResult KtaPublik(string token)
+        {
+            var model = new KtaPublikVM
+            {
+                Token = token ?? "",
+                Data = Load(() => Member.VerifyCard(token), null),
+                OrgName = _access.GetAppName(),
+                WhatsApp = Load(LoadSite, new SiteInfo()).WhatsApp
+            };
+            if (model.Data == null)
+            {
+                Response.StatusCode = StatusCodes.Status404NotFound;
+            }
+            return View(model);
+        }
+
+        // Foto pemilik KTA untuk halaman verifikasi (kode = token QR; anggota Tidak Aktif tidak ditampilkan).
+        [ResponseCache(Duration = 300)]
+        public IActionResult KtaFoto(string kode)
+        {
+            var photo = Load(() => Member.GetCardPhoto(kode), null);
+            return photo == null ? NotFound() : File(photo, GWALib.General.Utilities.ImageUtility.GetContentType(photo));
+        }
         private TokoPageVM NewTokoModel()
         {
             var anggota = false;

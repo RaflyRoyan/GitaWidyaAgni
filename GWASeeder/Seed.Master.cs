@@ -341,7 +341,9 @@ namespace GWASeeder
                 ("LETTER_APPROVAL", NotificationChannel.InApp, "Surat menunggu persetujuan", "Surat {subject} menunggu persetujuan Anda."),
                 ("BORROW_DUE", NotificationChannel.WhatsApp, null, "Halo {name}, peminjaman {number} jatuh tempo {due}. Mohon segera dikembalikan."),
                 ("ATTENDANCE_REMINDER", NotificationChannel.WhatsApp, null, "Halo {name}, presensi {session} sudah dibuka. Mulai pukul {time} di {place}. Check-in dari Area Anggota > Presensi. - MB GWA"),
-                ("ATTENDANCE_CHECKOUT", NotificationChannel.WhatsApp, null, "Halo {name}, {session} selesai pukul {time}. Jangan lupa check-out di Area Anggota > Presensi. - MB GWA")
+                ("ATTENDANCE_CHECKOUT", NotificationChannel.WhatsApp, null, "Halo {name}, {session} selesai pukul {time}. Jangan lupa check-out di Area Anggota > Presensi. - MB GWA"),
+                ("BIRTHDAY", NotificationChannel.WhatsApp, null, "Selamat ulang tahun ke-{age}, {name}! Keluarga besar {org} mendoakan sehat, sukses, dan terus berkarya. 🎉"),
+                ("ALUMNI_INVITE", NotificationChannel.WhatsApp, null, "Halo {name}, {title}\n\n{message}\n\nInfo: {link}\n- MB GWA")
             };
             foreach (var t in templates)
             {

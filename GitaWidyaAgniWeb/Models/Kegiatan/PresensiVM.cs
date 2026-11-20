@@ -17,6 +17,29 @@ namespace GitaWidyaAgniWeb.Models.Kegiatan
             // Pilihan untuk cetak rekap kehadiran.
             public List<GwaVM.OpsiItem> KegiatanOpsi { get; set; } = Opsi.Kegiatan();
             public List<GwaVM.OpsiItem> SectionOpsi { get; set; } = Opsi.Section();
+            // Saringan tab Statistik.
+            public List<GwaVM.OpsiItem> AnggotaOpsi { get; set; } = Opsi.Anggota();
+        }
+
+        // Tab Statistik keaktifan: tren bulanan, per section, anggota di bawah batas. Bulan = jumlah bulan terakhir (termasuk bulan ini).
+        public class Statistik
+        {
+            public int Bulan { get; set; }
+            public int? SectionId { get; set; }
+            public int? MemberId { get; set; }
+            public string? MemberName { get; set; }
+            public AttendanceSession.ActivityStats Data { get; set; }
+
+            public Statistik(int bulan, int? section, int? anggota)
+            {
+                Bulan = Math.Clamp(bulan <= 0 ? 6 : bulan, 1, 24);
+                SectionId = section > 0 ? section : null;
+                MemberId = anggota > 0 ? anggota : null;
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                var from = new DateOnly(today.Year, today.Month, 1).AddMonths(1 - Bulan);
+                Data = AttendanceSession.GetStats(from, today, SectionId, MemberId);
+                MemberName = MemberId == null ? null : Data.Members.FirstOrDefault()?.Name;
+            }
         }
 
         // Pantauan langsung satu sesi (dimuat ulang berkala oleh Presensi.js).

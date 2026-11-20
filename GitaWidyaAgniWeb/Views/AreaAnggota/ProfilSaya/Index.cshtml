@@ -34,8 +34,27 @@
                         <dt class="col-5">Angkatan</dt><dd class="col-7">@(m.Angkatan?.ToString() ?? "-")</dd>
                         <dt class="col-5">Program Studi</dt><dd class="col-7">@(m.ProgramStudi ?? "-")</dd>
                         <dt class="col-5">Bergabung</dt><dd class="col-7">@(m.JoinedAt?.ToString("dd MMM yyyy") ?? "-")</dd>
+                        @if (m.JoinedAt != null)
+                        {
+                            <dt class="col-5">Lama</dt><dd class="col-7">@GWALib.Lib.Master.Anggota.Member.TenureText(m.JoinedAt, m.LeftAt)</dd>
+                        }
+                        @if (m.BirthDate != null)
+                        {
+                            <dt class="col-5">Ulang tahun</dt><dd class="col-7">@m.BirthDate.Value.ToString("d MMMM", new System.Globalization.CultureInfo("id-ID"))</dd>
+                        }
                     </dl>
                 </div>
+                @if (m.Status != GWAShared.Enums.MemberStatus.Inactive)
+                {
+                    <div class="card-body border-top">
+                        <div class="fw-semibold mb-1"><i class="ri-bank-card-line me-1"></i> Kartu Tanda Anggota</div>
+                        <p class="small text-muted mb-2">KTA digital ukuran kartu (depan &amp; belakang) dengan QR verifikasi. Cetak lalu laminasi, atau simpan di HP.</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-sm btn-primary" onclick="AppUI.openReport('Kartu Tanda Anggota', '@Url.Action("Kta")')"><i class="ri-eye-line me-1"></i> Lihat KTA</button>
+                            <a class="btn btn-sm btn-outline-primary" href="@Url.Action("Kta", new { pdf = 1 })"><i class="ri-download-2-line me-1"></i> Unduh PDF</a>
+                        </div>
+                    </div>
+                }
             }
         </div>
     </div>

@@ -15,6 +15,7 @@
             <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabSesi" data-tab="Sesi" type="button" role="tab"><i class="ri-qr-code-line me-1"></i>Sesi</button></li>
             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabJadwal" data-tab="Jadwal" type="button" role="tab"><i class="ri-calendar-schedule-line me-1"></i>Jadwal Rutin</button></li>
             <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabNotulen" data-tab="Notulen" type="button" role="tab"><i class="ri-file-text-line me-1"></i>Notulen</button></li>
+            <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabStatistik" data-tab="Statistik" type="button" role="tab"><i class="ri-bar-chart-box-line me-1"></i>Statistik</button></li>
         </ul>
 
         <div class="tab-content">
@@ -47,6 +48,43 @@
                     ("btn-outline-danger", "ri-delete-bin-line", "Hapus")) { LegendId = "legendNotulen" }' />
                 <div id="targetNotulen" class="mt-3"></div>
             </div>
+            <div class="tab-pane fade" id="tabStatistik" role="tabpanel">
+                <form class="row g-2 align-items-end" id="frmStatistik" onsubmit="return false">
+                    <div class="col-6 col-md-2">
+                        <label class="form-label small mb-1" for="statBulan">Rentang</label>
+                        <select class="form-select" id="statBulan" name="bulan">
+                            <option value="3">3 bulan</option>
+                            <option value="6" selected>6 bulan</option>
+                            <option value="12">12 bulan</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <label class="form-label small mb-1" for="statSection">Section</label>
+                        <select class="form-select" id="statSection" name="section">
+                            <option value="">Semua section</option>
+                            @foreach (var o in Model.SectionOpsi)
+                            {
+                                <option value="@o.Value">@o.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label small mb-1" for="statAnggota">Anggota</label>
+                        <select class="form-select" id="statAnggota" name="anggota">
+                            <option value="">Semua anggota</option>
+                            @foreach (var o in Model.AnggotaOpsi)
+                            {
+                                <option value="@o.Value">@o.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-auto ms-md-auto d-flex gap-2">
+                        <button type="button" class="btn btn-outline-primary" onclick="Presensi.refreshStats()"><i class="ri-refresh-line me-1"></i> Muat ulang</button>
+                        <button type="button" class="btn btn-outline-dark" onclick="Presensi.recapReport()"><i class="ri-printer-line me-1"></i> Cetak Rekap</button>
+                    </div>
+                </form>
+                <div id="targetStatistik" class="mt-3"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -63,7 +101,7 @@
                 window.PresensiUrl[a.toLowerCase() + t] = '@Url.Action("__")'.replace('__', a + t);
             });
         });
-        ['BukaSesi', 'TutupSesi', 'BatalSesi', 'Qr', 'Rekap', 'RekapList', 'Manual', 'Foto', 'Generate', 'FinalNotulen', 'BerkasNotulen', 'Pantau', 'PantauList', 'CetakRekap'].forEach(function (a) {
+        ['BukaSesi', 'TutupSesi', 'BatalSesi', 'Qr', 'Rekap', 'RekapList', 'Manual', 'Foto', 'Generate', 'FinalNotulen', 'BerkasNotulen', 'Pantau', 'PantauList', 'CetakRekap', 'Statistik'].forEach(function (a) {
             window.PresensiUrl[a.charAt(0).toLowerCase() + a.slice(1)] = '@Url.Action("__")'.replace('__', a);
         });
     </script>

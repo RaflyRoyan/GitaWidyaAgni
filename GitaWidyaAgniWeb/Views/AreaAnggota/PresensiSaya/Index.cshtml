@@ -21,8 +21,12 @@ else
     var siap = today.FirstOrDefault(x => x.CanCheckIn);
     var nanti = today.FirstOrDefault(x => !x.CanCheckIn && x.RecordStatus == null && x.CheckInFrom > now);
     var hadirHariIni = today.Count(x => x.CheckInAt != null);
-    var riwayatHadir = Model.History.Count(x => x.CheckInAt != null || x.RecordStatus == AttendanceStatus.Hadir || x.RecordStatus == AttendanceStatus.Terlambat);
-    var persen = Model.History.Count == 0 ? (int?)null : (int)Math.Round(100.0 * riwayatHadir / Model.History.Count);
+    // Kehadiran MONTHS_MINE bulan terakhir (sesi yang sudah ditutup).
+    var bulan = Model.Monthly;
+    var totalSesi = bulan.Sum(x => x.Sessions);
+    var totalHadir = bulan.Sum(x => x.Hadir + x.Terlambat);
+    var persen = totalSesi == 0 ? (int?)null : (int)Math.Round(100.0 * totalHadir / totalSesi);
+    var rendah = persen != null && totalSesi >= AttendanceSession.LOW_MIN_SESSIONS && persen < AttendanceSession.LOW_PERCENT;
 
     <div class="ps">
         <div class="ps-grid">
@@ -61,8 +65,37 @@ else
                 <div class="ps-ringkas">
                     <div><b>@today.Count</b><span>Sesi hari ini</span></div>
                     <div><b>@hadirHariIni</b><span>Sudah hadir</span></div>
-                    <div><b>@(persen == null ? "–" : persen + "%")</b><span>Kehadiran</span></div>
+                    <div><b>@(persen == null ? "–" : persen + "%")</b><span>Hadir @AttendanceSession.MONTHS_MINE bln</span></div>
                 </div>
+
+                <section class="ps-tren" aria-labelledby="psTrenTitle">
+                    <div class="ps-tren-head">
+                        <h6 id="psTrenTitle"><i class="ri-bar-chart-2-line"></i> Kehadiran @AttendanceSession.MONTHS_MINE bulan</h6>
+                        <span>@totalHadir dari @totalSesi sesi</span>
+                    </div>
+                    @if (rendah)
+                    {
+                        <div class="ps-tren-warn" role="status">
+                            <i class="ri-error-warning-line" aria-hidden="true"></i>
+                            Kehadiran Anda @persen%, di bawah batas @AttendanceSession.LOW_PERCENT%. Ajukan izin bila berhalangan agar tidak tercatat Alpa.
+                        </div>
+                    }
+                    <div class="ps-tren-bars" role="list">
+                        @foreach (var m in bulan)
+                        {
+                            var p = m.Sessions == 0 ? (decimal?)null : m.Percent;
+                            var css = p == null ? "kosong" : p < AttendanceSession.LOW_PERCENT ? "rendah" : "ok";
+                            var judul = m.Sessions == 0
+                                ? $"{BulanPendek(m)}: belum ada sesi"
+                                : $"{BulanPendek(m)}: {p:0.#}% hadir · {m.Hadir + m.Terlambat} hadir, {m.Izin + m.Sakit} izin/sakit, {m.Alpa} alpa dari {m.Sessions} sesi";
+                            <div class="ps-tren-col" role="listitem" title="@judul" aria-label="@judul">
+                                <span class="nilai">@(p == null ? "–" : p.Value.ToString("0") + "%")</span>
+                                <span class="batang"><span class="isi @css" style="height:@((p ?? 0).ToString("0", System.Globalization.CultureInfo.InvariantCulture))%"></span></span>
+                                <span class="bln">@BulanPendek(m)</span>
+                            </div>
+                        }
+                    </div>
+                </section>
             </aside>
 
             <main class="ps-main">
@@ -203,7 +236,7 @@ else
     @if (Model != null)
     {
         <script src="~/js/html5-qrcode.min.js"></script>
-        <script>window.PresensiSayaUrl = { kirim: '@Url.Action("Kirim")' };</script>
+        <script>window.PresensiSayaUrl = { kirim: '@Url.Action("Kirim")', ajukanIzin: '@Url.Action("AjukanIzin")', tarikIzin: '@Url.Action("TarikIzin")' };</script>
         <script src="~/Scripts/AreaAnggota/PresensiSaya.js" asp-append-version="true"></script>
     }
 }
