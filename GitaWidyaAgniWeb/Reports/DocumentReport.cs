@@ -34,8 +34,15 @@ namespace GitaWidyaAgniWeb.Reports
             public byte[]? Img2 { get; set; }
         }
 
-        /// <summary>Penanda tangan; Signature = gambar tanda tangan (opsional).</summary>
-        public record Signer(string Role, string? Name, string? Number, byte[]? Signature = null);
+        /// <summary>Penanda tangan; Signature = gambar tanda tangan (opsional); Wet = selalu tanda tangan basah (tanpa QR, mis. pihak luar).</summary>
+        public record Signer(string Role, string? Name, string? Number, byte[]? Signature = null, bool Wet = false)
+        {
+            /// <summary>URL QR tanda tangan elektronik (diisi Signatures bila qrType diberikan); null = tanda tangan basah.</summary>
+            public string? QrUrl { get; init; }
+        }
+
+        /// <summary>Keterangan dokumen untuk QR tanda tangan (nomor, filter, periode); tampil di halaman /ttd.</summary>
+        protected string? QrReference { get; set; }
 
         protected const string FONT = "Times New Roman";
         protected const float SIZE = 12f;
@@ -352,8 +359,15 @@ namespace GitaWidyaAgniWeb.Reports
         /// (satu penanda tangan di kanan). Gambar tanda tangan dipasang di atas nama bila ada.
         /// </summary>
         /// gap = jarak kosong di atas baris tempat/tanggal (lebih kecil untuk dokumen satu halaman yang padat, mis. invoice).
-        protected void Signatures(string? place, DateTime? date, List<Signer> signers, bool knownLast, float gap = 30)
+        /// qrType = kode jenis dokumen (TandaTanganQr.Jenis): penanda tangan bernama (bukan Wet) mendapat QR tanda tangan elektronik
+        /// di tempat tanda tangan basah; null = tanda tangan basah (mis. LPJ).
+        protected void Signatures(string? place, DateTime? date, List<Signer> signers, bool knownLast, float gap = 30, string? qrType = null)
         {
+            if (qrType != null)
+            {
+                var urls = TandaTanganQr.Terbitkan(qrType, DisplayName, QrReference, DateOnly.FromDateTime(date ?? DateTime.Today), signers);
+                signers = signers.Select((s, i) => urls[i] == null ? s : s with { QrUrl = urls[i] }).ToList();
+            }
             var block = Block(new List<Row> { new() });
             var top = knownLast && signers.Count > 1 ? signers.Take(signers.Count - 1).ToList() : signers;
             var height = (knownLast && signers.Count > 1 ? 400 : 230) - 30 + gap;
@@ -387,7 +401,25 @@ namespace GitaWidyaAgniWeb.Reports
         {
             var role = caption == null ? s.Role : caption + "\n" + s.Role;
             band.Controls.Add(Label(new RectangleF(x, y, width, 40), role, align: TextAlignment.TopCenter));
-            if (s.Signature != null && s.Signature.Length > 0)
+            if (s.QrUrl != null)
+            {
+                // QR tanda tangan elektronik menggantikan tanda tangan basah / gambar tanda tangan.
+                band.Controls.Add(new XRBarCode
+                {
+                    BoundsF = new RectangleF(x + (width - 64) / 2, y + 43, 64, 64),
+                    Symbology = new DevExpress.XtraPrinting.BarCode.QRCodeGenerator
+                    {
+                        CompactionMode = DevExpress.XtraPrinting.BarCode.QRCodeCompactionMode.Byte,
+                        ErrorCorrectionLevel = DevExpress.XtraPrinting.BarCode.QRCodeErrorCorrectionLevel.M,
+                        Version = DevExpress.XtraPrinting.BarCode.QRCodeVersion.AutoVersion
+                    },
+                    Text = s.QrUrl,
+                    ShowText = false,
+                    AutoModule = true,
+                    Padding = new PaddingInfo(0, 0, 0, 0)
+                });
+            }
+            else if (s.Signature != null && s.Signature.Length > 0)
             {
                 band.Controls.Add(Picture(new RectangleF(x + (width - 140) / 2, y + 42, 140, 64), s.Signature));
             }
@@ -400,6 +432,12 @@ namespace GitaWidyaAgniWeb.Reports
             if (!string.IsNullOrWhiteSpace(s.Number))
             {
                 band.Controls.Add(Label(new RectangleF(x, y + 132, width, 20), "NIA. " + s.Number, align: TextAlignment.TopCenter));
+            }
+            if (s.QrUrl != null)
+            {
+                var note = Label(new RectangleF(x, y + (string.IsNullOrWhiteSpace(s.Number) ? 132 : 152), width, 14), "Ditandatangani secara elektronik", 7.5f, false, TextAlignment.TopCenter);
+                note.ForeColor = Color.FromArgb(95, 88, 73);
+                band.Controls.Add(note);
             }
         }
 

@@ -242,6 +242,23 @@ namespace GitaWidyaAgniWeb.Controllers
             return View(model);
         }
 
+        // Verifikasi QR tanda tangan elektronik pada laporan cetak (token acak t_document_signature).
+        [HttpGet("ttd/{token}")]
+        public IActionResult TandaTanganPublik(string token)
+        {
+            var model = new TandaTanganPublikVM
+            {
+                Data = Load(() => GWALib.Lib.Transaksi.Information.DocumentSignature.Verify(token), null),
+                OrgName = _access.GetAppName(),
+                WhatsApp = Load(LoadSite, new SiteInfo()).WhatsApp
+            };
+            if (model.Data == null)
+            {
+                Response.StatusCode = StatusCodes.Status404NotFound;
+            }
+            return View(model);
+        }
+
         // Foto pemilik KTA untuk halaman verifikasi (kode = token QR; anggota Tidak Aktif tidak ditampilkan).
         [ResponseCache(Duration = 300)]
         public IActionResult KtaFoto(string kode)

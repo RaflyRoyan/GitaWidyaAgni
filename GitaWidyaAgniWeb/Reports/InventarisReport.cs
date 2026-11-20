@@ -89,7 +89,8 @@ namespace GitaWidyaAgniWeb.Reports
 
             r.Paragraphs("- Aset yang sudah dihapuskan tidak dicantumkan. Aset per unit dihitung dari unitnya; aset cukup jumlah memakai kondisi asetnya.\n"
                 + "- Baris berlatar = ada barang rusak berat atau hilang.", false, "CATATAN", left: 0);
-            r.Signatures(brand.City, DateTime.Today, signers, knownLast: false, gap: 16);
+            r.QrReference = d.Category ?? "Semua kategori";
+            r.Signatures(brand.City, DateTime.Today, signers, knownLast: false, gap: 16, qrType: "LAPORAN_INVENTARIS");
             return r;
         }
 

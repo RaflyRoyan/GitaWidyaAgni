@@ -140,12 +140,14 @@ window.Prestasi = (function () {
             if (periods.length === 0) { AppUI.alertWarning('Belum ada periode kepengurusan.'); return; }
             const active = periods.find(function (x) { return x.Text.indexOf('(aktif)') >= 0; }) || periods[0];
             const title = 'Rekap Poin Keaktifan';
-            AppUI.promptInput({ title: title, text: 'Periode', input: 'select', options: new Map(periods.map(function (x) { return [String(x.Value), x.Text]; })), value: String(active.Value), confirmText: 'Lanjut' }).then(function (periode) {
-                if (!periode) return;
-                AppUI.promptInput({ title: title, text: 'Section', input: 'select', options: new Map([['', 'Semua section']].concat((s[0] || []).map(function (x) { return [String(x.Value), x.Text]; }))), value: '', confirmText: 'Cetak' }).then(function (section) {
-                    if (section === null) return;
-                    AppUI.openReport(title, URL.cetakRekapPoin + '?' + $.param({ periode: periode, section: section || '' }));
-                });
+            AppUI.promptForm({
+                title: title, confirmText: 'Cetak', fields: [
+                    { name: 'periode', label: 'Periode', type: 'select', options: periods.map(function (x) { return [String(x.Value), x.Text]; }), value: String(active.Value), required: true },
+                    { name: 'section', label: 'Section', type: 'select', options: [['', 'Semua section']].concat((s[0] || []).map(function (x) { return [String(x.Value), x.Text]; })), value: '' }
+                ]
+            }).then(function (v) {
+                if (!v) return;
+                AppUI.openReport(title, URL.cetakRekapPoin + '?' + $.param(v));
             });
         });
     }

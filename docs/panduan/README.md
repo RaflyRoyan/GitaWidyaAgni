@@ -48,6 +48,8 @@ Laporan resmi (surat, LPJ, KTA, sertifikat, laporan keuangan, rapor, rekap) dibu
 
 Laporan memakai kop surat dari Profil Organisasi dan menampilkan penanda tangan dari data Kepengurusan. Jika nama penanda tangan kosong, berarti jabatan itu belum diisi di **Organisasi › Kepengurusan**.
 
+**Tanda tangan elektronik (QR).** Laporan keuangan, rapor, rekap poin, rekap kehadiran, laporan inventaris, invoice / kuitansi peminjaman, dan surat keluar yang sudah disetujui memakai QR di tempat tanda tangan, dengan tulisan "Ditandatangani secara elektronik". Siapa pun yang memindai QR melihat halaman verifikasi: nama dan jabatan penanda tangan, judul dan tanggal dokumen, serta kapan dokumen diterbitkan. Cocokkan isinya dengan dokumen; bila berbeda, dokumen sudah diubah. **LPJ** dan dokumen yang belum disetujui tetap memakai tanda tangan basah.
+
 ### Notifikasi
 
 Lonceng di kanan atas menampilkan jumlah notifikasi yang belum dibaca. Notifikasi dikirim untuk persetujuan, disposisi, tagihan iuran, pengingat presensi, keputusan izin, sertifikat baru, dan lain-lain. Atur saluran (aplikasi, email, WhatsApp) melalui administrator.

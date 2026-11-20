@@ -61,7 +61,8 @@ namespace GitaWidyaAgniWeb.Reports
                 new float[] { 34, r.W - 494, 110, 50, 90, 80, 55, 75 }, new[] { C, L, L, C, C, C, C, C }, rows, heading: "KEHADIRAN PER ANGGOTA", fontSize: 10.5f);
             r.Paragraphs("- Hadir termasuk terlambat (angka dalam kurung).\n- Baris berlatar menandai kehadiran di bawah 75%.", false, "CATATAN", left: 0);
 
-            r.Signatures(brand.City, DateTime.Today, new List<Signer> { d.Signer }, knownLast: false, gap: 10);
+            r.QrReference = d.Activity + " · " + d.Section;
+            r.Signatures(brand.City, DateTime.Today, new List<Signer> { d.Signer }, knownLast: false, gap: 10, qrType: "REKAP_KEHADIRAN");
             return r;
         }
     }

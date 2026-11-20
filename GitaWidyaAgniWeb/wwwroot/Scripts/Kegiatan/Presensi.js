@@ -210,18 +210,15 @@ window.Presensi = (function () {
         const first = new Date(today.getFullYear(), today.getMonth(), 1);
         const opsi = window.PresensiOpsi || { kegiatan: {}, section: {} };
         const title = 'Rekap Kehadiran';
-        AppUI.promptInput({ title: title, text: 'Dari tanggal', input: 'date', value: AppUI.toIsoDate(first), required: true, label: 'Dari', confirmText: 'Lanjut' }).then(function (dari) {
-            if (dari === null) return;
-            AppUI.promptInput({ title: title, text: 'Sampai tanggal', input: 'date', value: AppUI.toIsoDate(today), required: true, label: 'Sampai', confirmText: 'Lanjut' }).then(function (sampai) {
-                if (sampai === null) return;
-                AppUI.promptInput({ title: title, text: 'Kegiatan', input: 'select', options: new Map([['', 'Semua kegiatan']].concat(Object.entries(opsi.kegiatan))), value: '', confirmText: 'Lanjut' }).then(function (kegiatan) {
-                    if (kegiatan === null) return;
-                    AppUI.promptInput({ title: title, text: 'Section', input: 'select', options: new Map([['', 'Semua section']].concat(Object.entries(opsi.section))), value: '', confirmText: 'Cetak' }).then(function (section) {
-                        if (section === null) return;
-                        AppUI.openReport(title, URL.cetakRekap + '?' + $.param({ dari: dari, sampai: sampai, kegiatan: kegiatan || '', section: section || '' }));
-                    });
-                });
-            });
+        AppUI.promptForm({
+            title: title, confirmText: 'Cetak', fields: [
+                { type: 'daterange', names: ['dari', 'sampai'], label: 'Rentang tanggal', value: [AppUI.toIsoDate(first), AppUI.toIsoDate(today)], required: true },
+                { name: 'kegiatan', label: 'Kegiatan', type: 'select', options: [['', 'Semua kegiatan']].concat(Object.entries(opsi.kegiatan)), value: '' },
+                { name: 'section', label: 'Section', type: 'select', options: [['', 'Semua section']].concat(Object.entries(opsi.section)), value: '' }
+            ]
+        }).then(function (v) {
+            if (!v) return;
+            AppUI.openReport(title, URL.cetakRekap + '?' + $.param(v));
         });
     }
 
@@ -265,22 +262,21 @@ window.Presensi = (function () {
     }
 
     function generate() {
-        const today = AppUI.toIsoDate(new Date());
-        AppUI.promptInput({ title: 'Buat sesi dari jadwal', text: 'Tanggal awal', input: 'date', value: today, required: true, label: 'Dari', confirmText: 'Lanjut' })
-            .then(function (from) {
-                if (from === null) return;
-                const end = new Date(from);
-                end.setDate(end.getDate() + 30);
-                AppUI.promptInput({ title: 'Buat sesi dari jadwal', text: 'Tanggal akhir', input: 'date', value: AppUI.toIsoDate(end), required: true, label: 'Sampai', confirmText: 'Buat Sesi' })
-                    .then(function (to) {
-                        if (to === null) return;
-                        AppUI.postJson(URL.generate, { From: from, To: to }).done(function (resp) {
-                            AppUI.alertSuccess((resp.Data || 0) + ' sesi dibuat.');
-                            loaded.Sesi = false;
-                            refresh('Sesi');
-                        });
-                    });
+        const today = new Date();
+        const end = new Date();
+        end.setDate(end.getDate() + 30);
+        AppUI.promptForm({
+            title: 'Buat sesi dari jadwal', confirmText: 'Buat Sesi', fields: [
+                { type: 'daterange', names: ['From', 'To'], label: 'Rentang tanggal', value: [AppUI.toIsoDate(today), AppUI.toIsoDate(end)], required: true }
+            ]
+        }).then(function (v) {
+            if (!v) return;
+            AppUI.postJson(URL.generate, v).done(function (resp) {
+                AppUI.alertSuccess((resp.Data || 0) + ' sesi dibuat.');
+                loaded.Sesi = false;
+                refresh('Sesi');
             });
+        });
     }
 
     /* ===== Notulen ===== */

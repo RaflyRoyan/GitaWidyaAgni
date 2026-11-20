@@ -28,7 +28,7 @@ namespace GitaWidyaAgniWeb.Reports
 
         private void Close(ReportBrand brand, List<Signer> signers)
         {
-            Signatures(brand.City, DateTime.Today, signers, knownLast: false, gap: 16);
+            Signatures(brand.City, DateTime.Today, signers, knownLast: false, gap: 16, qrType: "LAPORAN_KEUANGAN");
         }
 
         // ================================================================= BUKU KAS

@@ -233,6 +233,8 @@ public partial class ModelContext : DbContext
 
     public virtual DbSet<TLpj> TLpjs { get; set; }
 
+    public virtual DbSet<TDocumentSignature> TDocumentSignatures { get; set; }
+
     public virtual DbSet<TMeetingMinute> TMeetingMinutes { get; set; }
 
     public virtual DbSet<TMemberPoint> TMemberPoints { get; set; }
@@ -2301,6 +2303,16 @@ public partial class ModelContext : DbContext
         modelBuilder.Entity<TManagementAssignment>(entity =>
         {
             entity.HasOne(d => d.Section).WithMany(p => p.TManagementAssignments).HasConstraintName("fk_assignment_section");
+        });
+
+        modelBuilder.Entity<TDocumentSignature>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PRIMARY");
+
+            entity.ToTable("t_document_signature", tb => tb.HasComment("Tanda tangan elektronik (QR) pada laporan cetak"));
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.InsDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<TLpj>(entity =>

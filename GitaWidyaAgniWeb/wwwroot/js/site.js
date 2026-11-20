@@ -140,14 +140,25 @@ window.AppUI = (function () {
      * Return Promise<string|null>: nilai yang diisi ('' bila kosong dan tidak wajib), atau null bila dibatalkan.
      */
     function promptInput(opts) {
+        // SweetAlert2 11.3 belum mengenal input 'date' / 'time' / 'datetime-local' (isian tidak tampil, validasi wajib tetap gagal):
+        // pakai input 'text' lalu ubah type-nya saat dialog terbuka.
+        const nativeType = ['date', 'time', 'datetime-local', 'month'].indexOf(opts.input) >= 0 ? opts.input : null;
+        const value = opts.value === undefined || opts.value === null ? '' : opts.value;
         return Swal.fire({
             title: opts.title,
             text: opts.text,
-            input: opts.input || 'text',
+            input: nativeType ? 'text' : (opts.input || 'text'),
+            didOpen: nativeType ? function () {
+                const input = Swal.getInput();
+                if (input) {
+                    input.type = nativeType;
+                    input.value = value;
+                }
+            } : undefined,
             inputOptions: opts.options,
             inputPlaceholder: opts.placeholder,
             inputLabel: opts.label,
-            inputValue: opts.value === undefined || opts.value === null ? '' : opts.value,
+            inputValue: value,
             showCancelButton: true,
             confirmButtonText: opts.confirmText || 'Simpan',
             cancelButtonText: 'Batal',
@@ -158,6 +169,108 @@ window.AppUI = (function () {
             }
         }).then(function (result) {
             return result.isConfirmed ? String(result.value || '').trim() : null;
+        });
+    }
+
+    /**
+     * Dialog beberapa isian sekaligus (ganti rantai promptInput). opts: { title, text, confirmText, confirmCss, fields: [...] }.
+     * Field: { name, label, type: 'text'|'number'|'textarea'|'select'|'date'|'daterange', value, required, placeholder, options, help }.
+     * - select: options = { nilai: teks } | Map | [[nilai, teks], ...] (urutan dipertahankan untuk Map / array).
+     * - daterange: names = ['dari', 'sampai'], value = [dari, sampai] (yyyy-MM-dd); sampai tidak boleh sebelum dari.
+     * Return Promise<object|null>: { name: nilai } (string, '' bila kosong), atau null bila dibatalkan.
+     */
+    function promptForm(opts) {
+        let seq = 0;
+        const form = document.createElement('div');
+        form.className = 'gwa-prompt-form text-start';
+        if (opts.text) {
+            $('<p class="text-muted small mb-3">').text(opts.text).appendTo(form);
+        }
+        const pairs = function (options) {
+            if (!options) return [];
+            if (options instanceof Map) return Array.from(options.entries());
+            if (Array.isArray(options)) return options;
+            return Object.entries(options);
+        };
+        const control = function (type, value, field) {
+            let el;
+            if (type === 'select') {
+                el = document.createElement('select');
+                el.className = 'form-select';
+                pairs(field.options).forEach(function (p) {
+                    const o = document.createElement('option');
+                    o.value = String(p[0]);
+                    o.textContent = p[1];
+                    el.appendChild(o);
+                });
+            } else if (type === 'textarea') {
+                el = document.createElement('textarea');
+                el.className = 'form-control';
+                el.rows = 3;
+            } else {
+                el = document.createElement('input');
+                el.className = 'form-control';
+                el.type = type || 'text';
+            }
+            el.id = 'gwaPf' + (++seq);
+            if (field.placeholder) el.placeholder = field.placeholder;
+            el.value = value === undefined || value === null ? '' : String(value);
+            return el;
+        };
+        (opts.fields || []).forEach(function (f) {
+            const group = $('<div class="mb-3">').appendTo(form);
+            if (f.type === 'daterange') {
+                const values = f.value || [];
+                const from = control('date', values[0], f);
+                const to = control('date', values[1], f);
+                from.dataset.name = f.names[0];
+                to.dataset.name = f.names[1];
+                from.setAttribute('aria-label', (f.label || 'Tanggal') + ' dari');
+                to.setAttribute('aria-label', (f.label || 'Tanggal') + ' sampai');
+                $('<label class="form-label">').attr('for', from.id).text(f.label || 'Rentang tanggal').appendTo(group);
+                $('<div class="input-group">')
+                    .append(from).append($('<span class="input-group-text">').text('s.d.')).append(to)
+                    .appendTo(group);
+            } else {
+                const el = control(f.type, f.value, f);
+                el.dataset.name = f.name;
+                $('<label class="form-label">').attr('for', el.id).text(f.label || f.name).appendTo(group);
+                group.append(el);
+            }
+            if (f.help) {
+                $('<div class="form-text">').text(f.help).appendTo(group);
+            }
+        });
+
+        return Swal.fire({
+            title: opts.title,
+            html: form,
+            showCancelButton: true,
+            focusConfirm: false,
+            confirmButtonText: opts.confirmText || 'Simpan',
+            cancelButtonText: 'Batal',
+            customClass: { confirmButton: 'btn ' + (opts.confirmCss || 'btn-success') + ' me-2', cancelButton: 'btn btn-light' },
+            buttonsStyling: false,
+            didOpen: function () {
+                const first = form.querySelector('input, select, textarea');
+                if (first) first.focus();
+            },
+            preConfirm: function () {
+                const result = {};
+                form.querySelectorAll('[data-name]').forEach(function (el) { result[el.dataset.name] = String(el.value || '').trim(); });
+                for (const f of opts.fields || []) {
+                    if (f.type === 'daterange') {
+                        const a = result[f.names[0]], b = result[f.names[1]];
+                        if (f.required && (!a || !b)) return Swal.showValidationMessage((f.label || 'Rentang tanggal') + ' harus diisi!');
+                        if (a && b && b < a) return Swal.showValidationMessage('Tanggal akhir harus sesudah tanggal awal.');
+                    } else if (f.required && !result[f.name]) {
+                        return Swal.showValidationMessage((f.label || f.name) + ' harus diisi!');
+                    }
+                }
+                return result;
+            }
+        }).then(function (r) {
+            return r.isConfirmed ? r.value : null;
         });
     }
 
@@ -458,6 +571,7 @@ window.AppUI = (function () {
         promptReason: promptReason,
         reasonPost: reasonPost,
         promptInput: promptInput,
+        promptForm: promptForm,
         inputPost: inputPost,
         toIsoDate: toIsoDate,
         toQuery: toQuery,

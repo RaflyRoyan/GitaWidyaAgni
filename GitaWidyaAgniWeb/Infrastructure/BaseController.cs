@@ -165,7 +165,12 @@ namespace GitaWidyaAgniWeb.Infrastructure
         {
             try
             {
-                var report = buat();
+                DevExpress.XtraReports.UI.XtraReport report;
+                // Konteks QR tanda tangan elektronik (pencetak + URL publik) selama laporan disusun.
+                using (Reports.TandaTanganQr.Mulai(LibUser, AsetLabel.BaseUrl(Request, HttpContext.RequestServices.GetRequiredService<IConfiguration>())))
+                {
+                    report = buat();
+                }
                 var nama = string.IsNullOrWhiteSpace(report.DisplayName) ? "laporan" : report.DisplayName.Replace('/', '-');
                 // ?pdf=1 = unduh PDF langsung tanpa viewer.
                 if (Request.Query["pdf"] == "1")

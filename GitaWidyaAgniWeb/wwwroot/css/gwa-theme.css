@@ -134,3 +134,7 @@ a.gwa-stat-link:hover, a.gwa-stat-link:focus-visible { border-color: var(--gwa-g
 .gwa-bday-date { flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fcebe6; color: #c8202a; font-size: .68rem; font-weight: 700; text-transform: uppercase; line-height: 1.1; }
 .gwa-bday-date b { font-size: 1.15rem; }
 .gwa-bday-item.is-today .gwa-bday-date { background: #c8202a; color: #fff; }
+
+/* AppUI.promptForm: dialog beberapa isian (SweetAlert2) */
+.gwa-prompt-form .form-label { font-size: .85rem; font-weight: 600; margin-bottom: .3rem; }
+.gwa-prompt-form .form-control, .gwa-prompt-form .form-select, .gwa-prompt-form .input-group-text { font-size: .9rem; }

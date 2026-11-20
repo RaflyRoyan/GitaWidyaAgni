@@ -72,21 +72,19 @@ window.Peminjaman = (function () {
             });
     }
     function returnQuantity(itemKey, sisa) {
-        AppUI.promptInput({ title: 'Jumlah kembali', text: 'Sisa belum kembali: ' + sisa, input: 'number', value: sisa, required: true, label: 'Kembali (baik / rusak)', confirmText: 'Lanjut' })
-            .then(function (returned) {
-                if (returned === null) return;
-                AppUI.promptInput({ title: 'Jumlah hilang', input: 'number', value: 0, label: 'Hilang', confirmText: 'Lanjut' }).then(function (lost) {
-                    if (lost === null) return;
-                    AppUI.promptInput({ title: 'Kondisi barang kembali', input: 'select', options: { 1: 'Baik', 2: 'Rusak Ringan', 3: 'Rusak Berat' }, value: '1', required: true, confirmText: 'Simpan' })
-                        .then(function (condition) {
-                            if (condition === null) return;
-                            AppUI.postJson(URL.kembaliJumlah, { Key: itemKey, Returned: Number(returned) || 0, Lost: Number(lost) || 0, Condition: Number(condition) }).done(function (resp) {
-                                AppUI.alertSuccess(resp.Message);
-                                reloadDetail();
-                            });
-                        });
-                });
+        AppUI.promptForm({
+            title: 'Pengembalian barang', text: 'Sisa belum kembali: ' + sisa, confirmText: 'Simpan', fields: [
+                { name: 'returned', label: 'Kembali (baik / rusak)', type: 'number', value: sisa, required: true },
+                { name: 'lost', label: 'Hilang', type: 'number', value: 0 },
+                { name: 'condition', label: 'Kondisi barang kembali', type: 'select', options: [['1', 'Baik'], ['2', 'Rusak Ringan'], ['3', 'Rusak Berat']], value: '1', required: true }
+            ]
+        }).then(function (v) {
+            if (!v) return;
+            AppUI.postJson(URL.kembaliJumlah, { Key: itemKey, Returned: Number(v.returned) || 0, Lost: Number(v.lost) || 0, Condition: Number(v.condition) }).done(function (resp) {
+                AppUI.alertSuccess(resp.Message);
+                reloadDetail();
             });
+        });
     }
     /* ===== Cetak (DevExpress Reports) ===== */
 
@@ -177,9 +175,17 @@ window.Peminjaman = (function () {
         }
         if (row.Status === STATUS.RETURNED && row.Tagihan > row.PaidAmount && !row.Seikhlasnya) {
             btn(container, 'btn-outline-info', 'ri-gift-line', 'Bebaskan denda', function () {
-                AppUI.promptInput({ title: 'Bebaskan denda', input: 'number', label: 'Nominal dibebaskan', required: true, confirmText: 'Lanjut' }).then(function (amount) {
-                    if (amount === null) return;
-                    AppUI.inputPost({ title: 'Catatan pembebasan', input: 'textarea', label: 'Catatan', confirmText: 'Bebaskan' }, URL.bebasDenda, { Key: row.EncDecrKey, Amount: Number(amount) }, 'Keterangan').done(refresh);
+                AppUI.promptForm({
+                    title: 'Bebaskan denda', confirmText: 'Bebaskan', fields: [
+                        { name: 'amount', label: 'Nominal dibebaskan', type: 'number', required: true },
+                        { name: 'note', label: 'Catatan', type: 'textarea' }
+                    ]
+                }).then(function (v) {
+                    if (!v) return;
+                    AppUI.postJson(URL.bebasDenda, { Key: row.EncDecrKey, Amount: Number(v.amount), Keterangan: v.note || null }).done(function (resp) {
+                        AppUI.alertSuccess(resp.Message);
+                        refresh();
+                    });
                 });
             });
         }

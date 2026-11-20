@@ -203,7 +203,7 @@ Struktur dan konvensinya mengikuti project ClubSphere (ClubLib / ClubShared). Pa
 
 | Berkas | Untuk |
 |---|---|
-| [`database/gitawidyaagni_create.sql`](database/gitawidyaagni_create.sql) | Membuat database baru lengkap: 135 tabel, semua relasi dan `COMMENT` kolom. Isinya hanya struktur, tanpa data. Sudah memuat semua migrasi sampai tanggal di kepala berkas. |
+| [`database/gitawidyaagni_create.sql`](database/gitawidyaagni_create.sql) | Membuat database baru lengkap: 136 tabel, semua relasi dan `COMMENT` kolom. Isinya hanya struktur, tanpa data. Sudah memuat semua migrasi sampai tanggal di kepala berkas. |
 | [`database/migrations/`](database/migrations/) | Perubahan skema setelah create script dibuat, satu berkas per perubahan (`YYYY-MM-DD_<nama>.sql`). Hanya untuk database lama. |
 | [`database/README.md`](database/README.md) | Cara pakai dan aturan menambah migrasi. |
 
@@ -322,7 +322,7 @@ dotnet run --project GWASeeder -- --sync-akses    # hanya sinkron controller/aks
 
 Opsi tambahan: `--evoting-key <base64>` dan `--admin-password <password>`.
 
-- Mengisi 134 dari 135 tabel lewat service GWALib, jadi semua validasi ikut berjalan. Hanya `t_lpj` yang tidak diisi; LPJ dibuat dari web. Datanya meliputi:
+- Mengisi 134 dari 136 tabel lewat service GWALib, jadi semua validasi ikut berjalan. `t_lpj` (LPJ dibuat dari web) dan `t_document_signature` (terisi saat laporan dicetak) tidak diisi. Datanya meliputi:
   - controller + aksi, menu sidebar (termasuk **Area Anggota**), role, dan hak akses;
   - profil MB GWA;
   - dua periode kepengurusan, dengan serah terima dari periode lama ke periode baru;
@@ -639,6 +639,16 @@ Rapor per periode kepengurusan: identitas dan foto, kehadiran (ringkasan + per b
 - Label A4, 4 kolom, ukuran 46 × 53 mm. Isinya logo, nama organisasi, QR, kode unit, nama aset, dan nomor seri.
 - Isi QR adalah URL publik `{App:PublicUrl}/aset/{token}` dengan token acak 32 karakter per unit (`m_asset_unit.qr_token`), jadi URL tidak bisa ditebak dari kode inventaris. Scan dengan kamera HP membuka detail alat tanpa login; kode unit biasa di URL ditolak (404). Scanner internal (checkout, pengembalian, inspeksi, perawatan) menerima URL itu, tokennya, atau kode unit yang diketik. Label yang dicetak sebelum 2026-11-18 harus dicetak ulang.
 - Isi `App:PublicUrl` dengan domain produksi **sebelum** mencetak label sungguhan.
+
+### Tanda tangan elektronik (QR)
+
+Di laporan yang memakai QR, tempat tanda tangan basah setiap penanda tangan yang namanya terisi diganti QR dengan tulisan "Ditandatangani secara elektronik". QR berisi `{App:PublicUrl}/ttd/{token}`. Saat dipindai, halaman publik (tanpa login) menampilkan status sah, nama, jabatan, NIA, tanggal tanda tangan, jenis dan judul dokumen, keterangan (nomor surat / filter), serta kapan dan oleh siapa dokumen pertama kali diterbitkan. Token yang tidak dikenal menampilkan peringatan (404).
+
+| Pakai QR | Tetap tanda tangan basah |
+|---|---|
+| Laporan keuangan, rapor anggota, rekap poin, rekap kehadiran, laporan inventaris, invoice dan kuitansi peminjaman (Bendahara), surat keluar yang sudah disetujui | LPJ, surat yang masih Draft / Ditolak, penyetor di kuitansi (pihak luar), jabatan yang belum ada pemegangnya |
+
+Token disimpan di `t_document_signature` (migrasi `2026-11-20_document_signature.sql`). Mencetak ulang dokumen yang sama (judul, keterangan, penanda tangan, tanggal) memakai token yang sama dan hanya menambah jumlah cetak. Isi `App:PublicUrl` dengan domain produksi sebelum mencetak dokumen resmi.
 
 ## Job terjadwal dan pengiriman pesan
 

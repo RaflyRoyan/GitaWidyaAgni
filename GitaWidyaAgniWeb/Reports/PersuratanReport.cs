@@ -58,7 +58,10 @@ namespace GitaWidyaAgniWeb.Reports
             {
                 r.Paragraphs(d.Summary, true, left: 0);
             }
-            r.Signatures(null, null, d.Signers.Count == 0 ? new List<Signer> { new("Ketua Umum", null, null) } : d.Signers, knownLast: d.Signers.Count > 2);
+            // QR tanda tangan hanya untuk surat yang sudah disetujui (tanpa tanda air DRAFT / DITOLAK); penanda tangan dari persetujuan surat.
+            r.QrReference = d.Number == null ? d.Subject : "No. " + d.Number + " · " + d.Subject;
+            r.Signatures(null, d.Date?.ToDateTime(TimeOnly.MinValue), d.Signers.Count == 0 ? new List<Signer> { new("Ketua Umum", null, null) } : d.Signers,
+                knownLast: d.Signers.Count > 2, qrType: d.Stamp == null ? "SURAT_KELUAR" : null);
             if (d.Stamp != null)
             {
                 r.Stamp(d.Stamp);

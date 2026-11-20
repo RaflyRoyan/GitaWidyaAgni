@@ -56,7 +56,8 @@ namespace GitaWidyaAgniWeb.Reports
 
             r.Paragraphs("- Peringkat dihitung di antara semua anggota yang punya poin di periode ini; poin sama = peringkat sama. Baris berlatar = tiga besar.\n"
                 + "- Section = section anggota saat ini. Lainnya termasuk poin pemateri.", false, "CATATAN", left: 0);
-            r.Signatures(brand.City, DateTime.Today, signers, knownLast: false, gap: 16);
+            r.QrReference = d.Section == null ? "Semua section" : "Section " + d.Section;
+            r.Signatures(brand.City, DateTime.Today, signers, knownLast: false, gap: 16, qrType: "REKAP_POIN");
             return r;
         }
     }

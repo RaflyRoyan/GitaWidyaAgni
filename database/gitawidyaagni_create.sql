@@ -1,7 +1,7 @@
 -- =====================================================================================
 -- GitaWidyaAgni: skema database lengkap (MySQL 8, utf8mb4_0900_ai_ci)
--- Dihasilkan dari database pengembangan pada 2026-11-18 (mysqldump --no-data), 135 tabel,
--- sudah termasuk migrasi 2026-11-17 (t_lpj, t_program.division_id / term) dan 2026-11-18 (section, qr_token unit aset, pengajuan tidak ikut kegiatan) dan 2026-11-19 (attendance_mode jadwal / sesi presensi, pengingat presensi) dan 2026-11-20 (token KTA anggota).
+-- Dihasilkan dari database pengembangan pada 2026-11-20 (mysqldump --no-data), 136 tabel,
+-- sudah termasuk migrasi 2026-11-17 (t_lpj, t_program.division_id / term) dan 2026-11-18 (section, qr_token unit aset, pengajuan tidak ikut kegiatan) dan 2026-11-19 (attendance_mode jadwal / sesi presensi, pengingat presensi) dan 2026-11-20 (token KTA anggota, tanda tangan elektronik t_document_signature).
 --
 -- Pakai untuk database BARU. Database lama cukup menjalankan berkas di database/migrations/
 -- yang tanggalnya lebih baru dari skemanya.
@@ -15,7 +15,6 @@
 
 CREATE DATABASE IF NOT EXISTS `gitawidyaagni` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 USE `gitawidyaagni`;
-
 
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -498,7 +497,7 @@ CREATE TABLE `m_member` (
   `phone` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `email` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
   `address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
-  `card_token` char(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT 'Token acak 128-bit (hex huruf besar) untuk QR KTA /kta/{token}; NULL = KTA belum pernah diterbitkan',
+  `card_token` char(32) DEFAULT NULL COMMENT 'Token acak 128-bit (hex huruf besar) untuk QR KTA /kta/{token}; NULL = KTA belum pernah diterbitkan',
   `card_issued_at` datetime DEFAULT NULL COMMENT 'Waktu token KTA dibuat / diganti',
   `status` int NOT NULL DEFAULT '1' COMMENT '1=ACTIVE, 2=ALUMNI, 3=INACTIVE',
   `ins_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1891,6 +1890,35 @@ CREATE TABLE `t_document_number_seq` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_docnum_seq` (`document_type`,`period_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `t_document_signature` (
+  `id` int NOT NULL COMMENT 'Dari m_sequence',
+  `token` char(32) NOT NULL COMMENT 'Token acak 128-bit (hex huruf besar) untuk QR /ttd/{token}',
+  `fingerprint` char(64) NOT NULL COMMENT 'SHA-256 hex dari jenis|judul|referensi|jabatan|nama|tanggal, untuk memakai ulang token saat dicetak ulang',
+  `doc_type` varchar(40) NOT NULL COMMENT 'Kode jenis dokumen, mis. LAPORAN_KEUANGAN, RAPOR, SURAT',
+  `doc_title` varchar(200) NOT NULL COMMENT 'Judul dokumen saat dicetak',
+  `doc_ref` varchar(255) DEFAULT NULL COMMENT 'Keterangan tambahan: nomor surat, periode, filter laporan',
+  `signer_role` varchar(100) NOT NULL COMMENT 'Jabatan penanda tangan seperti tercetak',
+  `signer_name` varchar(150) NOT NULL COMMENT 'Nama penanda tangan seperti tercetak',
+  `signer_number` varchar(50) DEFAULT NULL COMMENT 'NIA penanda tangan bila ada',
+  `sign_date` date NOT NULL COMMENT 'Tanggal tanda tangan pada dokumen',
+  `print_count` int NOT NULL COMMENT 'Berapa kali dokumen ini dicetak / dibuka',
+  `last_printed_at` datetime NOT NULL COMMENT 'Terakhir dicetak / dibuka',
+  `last_printed_by` int DEFAULT NULL COMMENT 'User yang terakhir mencetak',
+  `ins_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Pertama diterbitkan',
+  `ins_by` int DEFAULT NULL COMMENT 'User yang pertama mencetak (penerbit)',
+  `upd_date` datetime DEFAULT NULL,
+  `upd_by` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_document_signature_token` (`token`),
+  UNIQUE KEY `uq_document_signature_fingerprint` (`fingerprint`),
+  KEY `fk_document_signature_ins_by` (`ins_by`),
+  KEY `fk_document_signature_printed_by` (`last_printed_by`),
+  CONSTRAINT `fk_document_signature_ins_by` FOREIGN KEY (`ins_by`) REFERENCES `m_user` (`id`),
+  CONSTRAINT `fk_document_signature_printed_by` FOREIGN KEY (`last_printed_by`) REFERENCES `m_user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Tanda tangan elektronik (QR) pada laporan cetak';
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;

@@ -182,12 +182,14 @@ window.Surat = (function () {
         const label = arah === ARAH.MASUK ? 'Agenda Surat Masuk' : 'Agenda Surat Keluar';
         const today = new Date();
         const first = new Date(today.getFullYear(), 0, 1);
-        AppUI.promptInput({ title: label, text: 'Dari tanggal (kosongkan = semua)', input: 'date', value: AppUI.toIsoDate(first), confirmText: 'Lanjut' }).then(function (dari) {
-            if (dari === null) return;
-            AppUI.promptInput({ title: label, text: 'Sampai tanggal (kosongkan = sekarang)', input: 'date', value: AppUI.toIsoDate(today), confirmText: 'Cetak' }).then(function (sampai) {
-                if (sampai === null) return;
-                AppUI.openReport(label, URL.agenda + '?' + $.param({ arah: arah, dari: dari || '', sampai: sampai || '' }));
-            });
+        AppUI.promptForm({
+            title: label, confirmText: 'Cetak', fields: [
+                { type: 'daterange', names: ['dari', 'sampai'], label: 'Rentang tanggal', value: [AppUI.toIsoDate(first), AppUI.toIsoDate(today)],
+                    help: 'Kosongkan tanggal awal = semua; kosongkan tanggal akhir = sampai sekarang.' }
+            ]
+        }).then(function (v) {
+            if (!v) return;
+            AppUI.openReport(label, URL.agenda + '?' + $.param({ arah: arah, dari: v.dari, sampai: v.sampai }));
         });
     }
 

@@ -159,7 +159,8 @@ namespace GitaWidyaAgniWeb.Reports
                 }, labelWidth: 130, heading: notes.Count > 0 ? null : "PEMBAYARAN");
             }
 
-            r.Signatures(brand.City, System.DateTime.Today, new List<Signer> { d.Treasurer }, knownLast: false, gap: 10);
+            r.QrReference = d.RequestNumber;
+            r.Signatures(brand.City, System.DateTime.Today, new List<Signer> { d.Treasurer }, knownLast: false, gap: 10, qrType: "INVOICE_PEMINJAMAN");
             if (d.Stamp != null)
             {
                 r.Stamp(d.Stamp);
@@ -214,11 +215,13 @@ namespace GitaWidyaAgniWeb.Reports
                 r.Paragraphs($"Total tagihan {Rp(d.TotalDue)} · total dibayar {Rp(d.PaidAmount)} · sisa {Rp(rest)}" + (rest == 0 ? " (LUNAS)" : ""), false, left: 0);
             }
 
+            r.QrReference = number + " · " + Rp(amount);
             r.Signatures(brand.City, date.ToDateTime(TimeOnly.MinValue), new List<Signer>
             {
-                new("Penyetor,", d.BorrowerName, null),
+                // Penyetor (pihak luar / peminjam) tetap tanda tangan basah; QR hanya untuk Bendahara penerima.
+                new("Penyetor,", d.BorrowerName, null, Wet: true),
                 new("Penerima,\n" + d.Treasurer.Role, d.Treasurer.Name, d.Treasurer.Number)
-            }, knownLast: false);
+            }, knownLast: false, qrType: "KUITANSI_PEMINJAMAN");
             return r;
         }
 

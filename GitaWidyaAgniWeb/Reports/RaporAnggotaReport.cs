@@ -105,7 +105,7 @@ namespace GitaWidyaAgniWeb.Reports
 
             r.Paragraphs("- Kehadiran dihitung dari sesi presensi yang sudah ditutup; hadir termasuk terlambat. Baris berlatar = kehadiran di bawah 75%.\n"
                 + "- Poin, jabatan, kepanitiaan, prestasi, dan sertifikat dibatasi pada " + d.PeriodName + ".", false, "CATATAN", left: 0);
-            r.Signatures(brand.City, DateTime.Today, signers, knownLast: false, gap: 16);
+            r.Signatures(brand.City, DateTime.Today, signers, knownLast: false, gap: 16, qrType: "RAPOR_ANGGOTA");
             return r;
         }
 

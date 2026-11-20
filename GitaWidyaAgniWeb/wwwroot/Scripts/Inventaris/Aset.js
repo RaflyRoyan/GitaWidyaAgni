@@ -200,16 +200,14 @@ window.Aset = (function () {
     function report() {
         const opsi = window.AsetOpsi || { kategori: [], dari: '' };
         const title = 'Laporan Inventaris';
-        AppUI.promptInput({ title: title, text: 'Kategori aset', input: 'select', options: new Map([['', 'Semua kategori']].concat(opsi.kategori)), value: '', confirmText: 'Lanjut' }).then(function (kategori) {
-            if (kategori === null) return;
-            AppUI.promptInput({ title: title, text: 'Riwayat perawatan dari tanggal', input: 'date', value: opsi.dari, required: true, label: 'Dari', confirmText: 'Lanjut' }).then(function (dari) {
-                if (!dari) return;
-                AppUI.promptInput({ title: title, text: 'Sampai tanggal', input: 'date', value: AppUI.toIsoDate(new Date()), required: true, label: 'Sampai', confirmText: 'Cetak' }).then(function (sampai) {
-                    if (!sampai) return;
-                    if (sampai < dari) { AppUI.alertWarning('Tanggal akhir harus sesudah tanggal awal.'); return; }
-                    AppUI.openReport(title, URL.cetakLaporan + '?' + $.param({ kategori: kategori || '', dari: dari, sampai: sampai }));
-                });
-            });
+        AppUI.promptForm({
+            title: title, confirmText: 'Cetak', fields: [
+                { name: 'kategori', label: 'Kategori aset', type: 'select', options: [['', 'Semua kategori']].concat(opsi.kategori), value: '' },
+                { type: 'daterange', names: ['dari', 'sampai'], label: 'Riwayat perawatan', value: [opsi.dari, AppUI.toIsoDate(new Date())], required: true }
+            ]
+        }).then(function (v) {
+            if (!v) return;
+            AppUI.openReport(title, URL.cetakLaporan + '?' + $.param(v));
         });
     }
 

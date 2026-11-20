@@ -4,7 +4,7 @@ MySQL 8, database `gitawidyaagni`, charset `utf8mb4` / collation `utf8mb4_0900_a
 
 | Berkas | Untuk |
 |---|---|
-| `gitawidyaagni_create.sql` | Membuat database baru lengkap (135 tabel, semua foreign key dan COMMENT kolom). |
+| `gitawidyaagni_create.sql` | Membuat database baru lengkap (136 tabel, semua foreign key dan COMMENT kolom). |
 | `migrations/YYYY-MM-DD_<nama>.sql` | Perubahan skema setelah create script dibuat. Jalankan berurutan pada database yang sudah ada. |
 
 ## Setup database baru
@@ -33,6 +33,7 @@ mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-18_activity_absen
 mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-19_attendance_mode.sql
 mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-19_attendance_reminder.sql
 mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-20_member_card.sql
+mysql -u <user> -p gitawidyaagni < database/migrations/2026-11-20_document_signature.sql
 ```
 
 ## Aturan perubahan skema
